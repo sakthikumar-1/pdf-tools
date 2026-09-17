@@ -1,0 +1,18 @@
+# Simatrix Academy PDF Tools - Apache Security Configuration
+
+# Enable Rewrite Engine
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+</IfModule>
+
+# Block access to storage directories
+<IfModule mod_authz_core.c>
+  <FilesMatch "\.(php|phtml|php3|php4|php5|phps|pl|py|jsp|asp|sh|cgi)$">
+    Require all denied
+  </FilesMatch>
+</IfModule>
+
+# Options
+Options -Indexes
