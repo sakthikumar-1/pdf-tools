@@ -13,19 +13,6 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       },
-      '/api': {
-        target: 'http://localhost:8000',
-        changeOrigin: true,
-        secure: false,
-        configure: (proxy, _options) => {
-          proxy.on('error', (err, _req, res) => {
-            if (err.code === 'ECONNREFUSED' && res && !res.headersSent) {
-              res.writeHead(503, { 'Content-Type': 'application/json' });
-              res.end(JSON.stringify({ offline: true, error: 'PHP backend offline. Client WASM engine active.' }));
-            }
-          });
-        },
-      },
     },
   },
   build: {

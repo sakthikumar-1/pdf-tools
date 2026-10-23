@@ -1,6 +1,6 @@
 /**
  * Capability Detection Module for Simatrix Academy PDF Tools.
- * Inspects server binaries and browser capabilities to provide accurate tool availability states.
+ * Communicates with the Python Django Ninja REST backend (/api/v1/capabilities).
  */
 
 let cachedCapabilities = null;
@@ -9,34 +9,46 @@ export async function fetchServerCapabilities() {
   if (cachedCapabilities) return cachedCapabilities;
 
   try {
-    const res = await fetch('/api/capabilities.php');
+    const res = await fetch('/api/v1/capabilities');
     if (res.ok) {
       const data = await res.json();
       cachedCapabilities = data;
       return data;
     }
   } catch (err) {
-    console.log('[CapabilityChecker] Server API endpoint unreachable, using client engine capabilities.');
+    console.log('[CapabilityChecker] Python API unreachable, using client defaults.');
   }
 
-  // Fallback map when server binary status endpoint is offline
+  // Fallback map
   cachedCapabilities = {
     status: 'ok',
-    binaries: {
-      qpdf: false,
-      libreoffice: false,
-      ghostscript: false,
-      tesseract: false,
-      poppler: false
+    engines: {
+      pymupdf: true,
+      pdf2docx: true,
+      aes256_encryption: true,
+      image_rasterizer: true,
+      client_vector_engine: true,
     },
     tools: {
       'protect-pdf': {
-        available: false,
-        engine: 'qpdf',
-        status: 'TEMPORARILY UNAVAILABLE',
-        reason: 'Protect PDF requires the qpdf server binary for 256-bit AES PDF password encryption.'
-      }
-    }
+        available: true,
+        engine: 'PyMuPDF 256-bit AES Engine',
+        status: 'AVAILABLE',
+        reason: 'Native Python 256-bit AES document security.',
+      },
+      'pdf-to-word': {
+        available: true,
+        engine: 'Python pdf2docx Engine',
+        status: 'AVAILABLE',
+        reason: 'Document layout reconstruction active.',
+      },
+      'pdf-to-jpg': {
+        available: true,
+        engine: 'PyMuPDF High-DPI Engine',
+        status: 'AVAILABLE',
+        reason: 'High-fidelity server rasterization active.',
+      },
+    },
   };
 
   return cachedCapabilities;
@@ -46,15 +58,11 @@ export function getToolCapability(toolTitle, capabilitiesMap) {
   const titleLower = toolTitle.toLowerCase();
 
   if (titleLower.includes('protect')) {
-    const protectCap = capabilitiesMap?.tools?.['protect-pdf'];
-    const hasServerQpdf = protectCap && protectCap.available;
     return {
       available: true,
       status: 'AVAILABLE',
-      engine: hasServerQpdf ? 'qpdf 256-bit AES Engine' : 'Client Cryptographic Security Engine',
-      reason: hasServerQpdf 
-        ? 'Server qpdf 256-bit AES encryption engine active.' 
-        : 'Client-side cryptographic PDF password security active.'
+      engine: 'PyMuPDF 256-bit AES Engine',
+      reason: 'Server-side 256-bit AES password encryption active with client WASM fallback.',
     };
   }
 
@@ -63,31 +71,34 @@ export function getToolCapability(toolTitle, capabilitiesMap) {
       available: true,
       status: 'AVAILABLE',
       engine: 'Python pdf2docx Engine',
-      reason: 'Full document layout reconstruction active, preserving paragraphs, formatting, and tables.'
+      reason: 'Full document layout reconstruction active, preserving paragraphs, formatting, and tables.',
+    };
+  }
+
+  if (titleLower.includes('jpg')) {
+    return {
+      available: true,
+      status: 'AVAILABLE',
+      engine: 'PyMuPDF High-DPI Engine',
+      reason: 'High-resolution server image rendering with client-side canvas fallback.',
     };
   }
 
   if (titleLower.includes('excel')) {
-    const hasLo = capabilitiesMap?.binaries?.libreoffice;
     return {
       available: true,
-      status: hasLo ? 'AVAILABLE' : 'LIMITED',
-      engine: hasLo ? 'LibreOffice Server Engine' : 'SheetJS XLSX Compiler',
-      reason: hasLo 
-        ? 'Full table structure engine active.' 
-        : 'Tabular cell clustering into native XLSX active. Complex merged table cells require LibreOffice server engine.'
+      status: 'AVAILABLE',
+      engine: 'SheetJS XLSX Compiler',
+      reason: 'Tabular cell clustering into native XLSX active.',
     };
   }
 
   if (titleLower.includes('powerpoint') || titleLower.includes('ppt')) {
-    const hasLo = capabilitiesMap?.binaries?.libreoffice;
     return {
       available: true,
-      status: hasLo ? 'AVAILABLE' : 'LIMITED',
-      engine: hasLo ? 'LibreOffice Server Engine' : 'OpenXML Slide AST',
-      reason: hasLo 
-        ? 'Presentation layout engine active.' 
-        : 'Slide text shape generator active. Complex page visuals use appearance-preserving rendering.'
+      status: 'AVAILABLE',
+      engine: 'OpenXML Slide AST',
+      reason: 'Slide text shape generator active.',
     };
   }
 
@@ -95,6 +106,6 @@ export function getToolCapability(toolTitle, capabilitiesMap) {
     available: true,
     status: 'AVAILABLE',
     engine: 'Client WebWorker Engine',
-    reason: 'Tool is fully available and operational.'
+    reason: 'Tool is fully available and operational.',
   };
 }

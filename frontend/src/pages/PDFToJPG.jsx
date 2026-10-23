@@ -15,9 +15,8 @@ import JSZip from 'jszip';
 import UploadBox from '../components/UploadBox';
 import FileUploader from '../components/FileUploader';
 import ProgressBar from '../components/ProgressBar';
-import DownloadButton from '../components/DownloadButton';
 import { useFileUpload } from '../hooks/useFileUpload';
-import { uploadAndConvertPdf } from '../services/api';
+import { convertPdfToJpgPython } from '../services/api';
 import { downloadFile } from '../utils/fileUtils';
 import './PDFToJPG.css';
 
@@ -62,20 +61,26 @@ export default function PDFToJPG() {
     setError(null);
 
     try {
-      // First attempt PHP backend upload if accessible
+      // First attempt Python backend conversion if accessible
       let useClientRendering = true;
       try {
-        const result = await uploadAndConvertPdf(file, '/pdf/pdf-to-jpg.php', (percent) => {
+        const result = await convertPdfToJpgPython(file, qualityDpi, (percent) => {
           setProgress(Math.min(90, Math.round(percent * 0.5)));
         });
-        if (result && result.success && result.images) {
-          setConvertedImages(result.images);
+        if (result && result.success && result.images && result.images.length > 0) {
+          const formatted = result.images.map((img) => ({
+            pageNumber: img.page,
+            fileName: img.filename,
+            url: img.download_url,
+            size: img.size_bytes,
+          }));
+          setConvertedImages(formatted);
           setStatus('success');
           setProgress(100);
           useClientRendering = false;
         }
       } catch (backendErr) {
-        console.log('[PDFToJPG] Backend server not reachable or fallback enabled. Using fast local rendering engine.');
+        console.log('[PDFToJPG] Python backend offline or error, executing client canvas fallback:', backendErr);
       }
 
       // Fallback or Direct client-side PDF rendering

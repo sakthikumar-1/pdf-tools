@@ -443,26 +443,32 @@ export async function protectPdf(file, password, onProgress) {
 
   if (onProgress) onProgress(20);
 
-  // 1. Attempt server qpdf binary processing if available
+  // 1. Attempt Python PyMuPDF 256-bit AES encryption backend
   try {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('password', password);
 
-    const res = await fetch('/api/pdf/protect-pdf.php', {
+    const res = await fetch('/api/v1/security/protect-pdf', {
       method: 'POST',
       body: formData
     });
 
     if (res.ok) {
-      const blob = await res.blob();
-      if (blob && blob.type === 'application/pdf' && blob.size > 0) {
-        if (onProgress) onProgress(100);
-        return blob;
+      const data = await res.json();
+      if (data && data.success && data.download_url) {
+        const dlRes = await fetch(data.download_url);
+        if (dlRes.ok) {
+          const blob = await dlRes.blob();
+          if (blob && blob.size > 0) {
+            if (onProgress) onProgress(100);
+            return blob;
+          }
+        }
       }
     }
   } catch (e) {
-    console.log('[protectPdf] Server qpdf API offline, executing QPDF WASM client-side cryptographic security engine.');
+    console.log('[protectPdf] Python security API offline, executing QPDF WASM client fallback engine.');
   }
 
   // 2. Client-side Native 256-bit AES QPDF WebAssembly Cryptographic Security Engine

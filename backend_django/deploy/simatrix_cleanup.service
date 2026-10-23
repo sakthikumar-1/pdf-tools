@@ -1,0 +1,12 @@
+[Unit]
+Description=Simatrix PDF Tools Storage Cleanup Service
+
+[Service]
+Type=oneshot
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/simatrix-pdf-tools/backend_django
+Environment="DJANGO_SETTINGS_MODULE=core.settings.production"
+EnvironmentFile=/var/www/simatrix-pdf-tools/backend_django/.env
+
+ExecStart=/var/www/simatrix-pdf-tools/backend_django/venv/bin/python manage.py cleanup_storage --max-age 900

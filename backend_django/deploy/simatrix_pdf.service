@@ -1,0 +1,37 @@
+[Unit]
+Description=Simatrix Academy PDF Tools - Django Application Server
+After=network.target mysql.service
+
+[Service]
+Type=notify
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/simatrix-pdf-tools/backend_django
+Environment="DJANGO_SETTINGS_MODULE=core.settings.production"
+EnvironmentFile=/var/www/simatrix-pdf-tools/backend_django/.env
+
+# Gunicorn with Uvicorn workers for high-concurrency async/sync performance
+ExecStart=/var/www/simatrix-pdf-tools/backend_django/venv/bin/gunicorn \
+    --workers 4 \
+    --worker-class uvicorn.workers.UvicornWorker \
+    --bind 127.0.0.1:8001 \
+    --timeout 120 \
+    --graceful-timeout 30 \
+    --keep-alive 5 \
+    --max-requests 1000 \
+    --max-requests-jitter 50 \
+    --access-logfile /var/log/simatrix-pdf/gunicorn_access.log \
+    --error-logfile /var/log/simatrix-pdf/gunicorn_error.log \
+    core.asgi:application
+
+Restart=always
+RestartSec=5s
+
+# Security sandboxing
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target

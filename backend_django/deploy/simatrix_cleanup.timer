@@ -1,0 +1,11 @@
+[Unit]
+Description=Run Simatrix PDF Storage Cleanup every 15 minutes
+Requires=simatrix_cleanup.service
+
+[Timer]
+Unit=simatrix_cleanup.service
+OnCalendar=*:0/15
+Persistent=true
+
+[Install]
+WantedBy=timers.target

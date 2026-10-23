@@ -37,9 +37,3 @@ backend_django/storage/*
 
 # Storage & Temporary Files
 storage/
-backend/storage/uploads/*
-!backend/storage/uploads/index.php
-backend/storage/outputs/*
-!backend/storage/outputs/index.php
-backend/storage/processing/*
-!backend/storage/processing/index.php
