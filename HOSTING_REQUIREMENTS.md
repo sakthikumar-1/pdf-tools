@@ -1,53 +1,94 @@
-# SIMATRIX ACADEMY PDF TOOLS — HOSTING & SERVER BINARY REQUIREMENTS
+# SIMATRIX ACADEMY PDF TOOLS — SYSTEM ARCHITECTURE & RUNNING GUIDE
 
-## Overview & Infrastructure Compatibility
+## Overview
 
-The application is architected to operate on **any standard PHP shared hosting environment** (e.g. cPanel, Plesk, Apache/Nginx + PHP 8.x) as well as **dedicated VPS or Docker instances**.
-
-To prevent application failure, all tools use **Capability Detection**: if a server-side binary is unavailable, the application gracefully routes to browser-side WebWorker engines or displays a clear `"Temporarily Unavailable"` notice for tools that strictly require root-level server binaries (such as `qpdf` for 256-bit AES encryption).
-
----
-
-## 1. Master Server Binary Dependency Audit
-
-| Binary / Tool | Required For Which Tool(s)? | Optional? | Typical Shared Hosting Availability | Executable via PHP `shell_exec`? | Requires VPS / Root Access? | Failure State if Missing |
-| :--- | :--- | :---: | :---: | :---: | :---: | :--- |
-| **PHP 8.x** | All Backend APIs | **NO** | **100% Available** | Native | No | Frontend operates in client-only SPA mode. |
-| **`qpdf`** | Protect PDF (256-bit AES Encryption) | **YES** | Rare (~15%) | Yes (if disabled_functions permits) | Recommended | **TEMPORARILY UNAVAILABLE**: UI displays friendly server requirement notice without generating fake unencrypted files. |
-| **`soffice` / LibreOffice** | Production PDF → Word / Excel / PPT | **YES** | Rare (~5%) | Yes (requires high memory) | Yes (VPS/Docker) | **LIMITED MODE**: Client-side OpenXML AST generator & SheetJS XLSX compiler format documents. |
-| **`gs` / Ghostscript** | Lossless Vector PDF Compression | **YES** | Moderate (~40%) | Yes | No | **AVAILABLE**: Client-side canvas stream optimizer executes with exact size comparison. |
-| **`tesseract`** | Scanned PDF OCR Text Extraction | **YES** | Rare (~5%) | Yes | Yes (VPS/Docker) | **LIMITED MODE**: Client processes embedded text streams; image-only scanned PDFs report no text layer found. |
-| **`pdftotext` / Poppler** | Server-side text & PPM extraction | **YES** | Moderate (~35%) | Yes | No | **AVAILABLE**: Browser `pdfjs-dist` WebWorker parses text matrix coordinates. |
+The application has been modernized to a **100% Python server-side architecture** with a **React + Vite frontend**:
+- **Backend**: Python 3.10+ / 3.12, Django 5.1, Django Ninja REST API, MySQL 8.0, PyMuPDF, pdf2docx.
+- **Frontend**: React 18, Vite 5, pdf-lib, pdfjs-dist.
+- **PHP Status**: **Zero PHP runtime dependencies** (legacy PHP backend has been completely removed).
 
 ---
 
-## 2. Shared Hosting PHP Environment Checklist
+## 1. Quick Start (Local Development)
 
-### Required PHP Extensions:
-- `php-json`: Required for RESTful API responses.
-- `php-mbstring`: Required for UTF-8 string encoding.
-- `php-fileinfo`: Required for MIME type validation.
-- `php-zip`: Required for multi-page image ZIP archiving.
+### Prerequisites
+- **Python 3.10+** (Python 3.12 recommended)
+- **Node.js 18+** (Node.js 20 LTS recommended)
+- **MySQL 8.0** running locally on port 3306
 
-### Recommended PHP Configuration (`php.ini`):
-```ini
-upload_max_filesize = 50M
-post_max_size = 50M
-memory_limit = 256M
-max_execution_time = 120
+### Step 1: Start MySQL
+Ensure your MySQL service is running with database `pdf_tool` created:
+```sql
+CREATE DATABASE pdf_tool CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+```
+
+### Step 2: Start the Python Django Backend
+Open a terminal in `backend_django/`:
+```bash
+cd backend_django
+
+# Install dependencies (first time only)
+pip install -r requirements.txt
+
+# Run migrations (first time only)
+python manage.py migrate
+
+# Start Django development server on port 8001
+python manage.py runserver 127.0.0.1:8001
+```
+The Django backend and Swagger API documentation will be available at:
+- **API Base:** `http://127.0.0.1:8001/api/v1/`
+- **Interactive Swagger Docs:** `http://127.0.0.1:8001/api/v1/docs`
+- **Health Check:** `http://127.0.0.1:8001/api/v1/health`
+
+### Step 3: Start the React Frontend
+Open a second terminal in `frontend/`:
+```bash
+cd frontend
+
+# Install npm dependencies (first time only)
+npm install
+
+# Start Vite development server on port 3000
+npm run dev
+```
+Open your browser at:
+👉 **`http://localhost:3000`**
+
+Vite automatically proxies all `/api/v1` requests to the Django backend at `http://127.0.0.1:8001`.
+
+---
+
+## 2. Running Automated Tests
+
+### Python Backend Test Suite (20 Tests):
+```bash
+cd backend_django
+python manage.py test tests
+```
+
+### Frontend Production Build:
+```bash
+cd frontend
+npm run build
+```
+
+### Client-Side Engine Regression Tests:
+```bash
+# Vector Split & Anti-bloat Compression
+node scratch/test_phase2_split_compress.mjs
+
+# PowerPoint AST Generation
+node scratch/test_phase2_pptx_full.mjs
+
+# Excel & Word AST Generation
+node scratch/test_phase2_excel_word.mjs
 ```
 
 ---
 
-## 3. Deployment Topology Comparison
+## 3. Production Deployment (Linux VPS)
 
-### Option A: Standard Shared Hosting (cPanel / Plesk)
-* **Supported Tools**: PDF → JPG, PDF → PNG, PDF → Text, Merge PDF, Split PDF, Rotate PDF, Images → PDF, Compress PDF (Client Stream), PDF → Excel (SheetJS), PDF → Word (Client AST), PDF → PPT (Client AST).
-* **Unavailable Tools**: Protect PDF (Requires `qpdf` binary installation).
-
-### Option B: VPS / Dedicated Server / Docker Container (Ubuntu 22.04 LTS)
-* **Installation Command**:
-  ```bash
-  sudo apt-get update && sudo apt-get install -y php-fpm qpdf libreoffice ghostscript tesseract-ocr poppler-utils
-  ```
-* **Supported Tools**: **ALL 12 TOOLS 100% OPERATIONAL** including production 256-bit AES Protect PDF encryption and LibreOffice conversion pipelines.
+For deploying to an Ubuntu/Debian Linux VPS with Nginx, Gunicorn/Uvicorn, and SSL:
+Refer to the complete, step-by-step production deployment guide in:
+👉 [`DEPLOYMENT_VPS.md`](DEPLOYMENT_VPS.md)
