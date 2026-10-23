@@ -23,6 +23,7 @@ import ProtectPasswordPanel from '../components/ProtectPasswordPanel';
 import { useFileUpload } from '../hooks/useFileUpload';
 import { downloadFile } from '../utils/fileUtils';
 import { formatFileSize } from '../utils/formatFileSize';
+import { convertPdfToWordPython } from '../services/api';
 import { 
   extractTextFromPdf, 
   createDocxFile, 
@@ -37,7 +38,11 @@ import {
   splitPdf,
   rotatePdf,
   imagesToPdf,
-  protectPdf
+  protectPdf,
+  getPdfPageCount,
+  pdfToExcel,
+  pdfToDocx,
+  pdfToPptx
 } from '../utils/pdfProcessor';
 import { fetchServerCapabilities, getToolCapability } from '../utils/capabilityChecker';
 import './GenericTool.css';
@@ -87,6 +92,19 @@ export default function GenericTool({
   const [optionValue, setOptionValue] = useState('standard');
   const [processedResult, setProcessedResult] = useState(null);
   const [compressMeta, setCompressMeta] = useState(null);
+  const [docPageCount, setDocPageCount] = useState(null);
+  const [scannedWarning, setScannedWarning] = useState(false);
+  const [pptMode, setPptMode] = useState('editable');
+  const [pptMeta, setPptMeta] = useState(null);
+
+  useEffect(() => {
+    const targetFile = file || (files && files[0]);
+    if (targetFile && (targetFile.type === 'application/pdf' || targetFile.name?.toLowerCase().endsWith('.pdf'))) {
+      getPdfPageCount(targetFile).then((count) => setDocPageCount(count));
+    } else {
+      setDocPageCount(null);
+    }
+  }, [file, files]);
 
   const handleProcess = async () => {
     const targetFile = file || (files && files[0]);
@@ -96,6 +114,7 @@ export default function GenericTool({
     setProgress(15);
     setError(null);
     setCompressMeta(null);
+    setPptMeta(null);
 
     try {
       const titleLower = title.toLowerCase();
@@ -143,22 +162,37 @@ export default function GenericTool({
           filename = `${baseName}_png_images.zip`;
         }
       } else if (titleLower.includes('powerpoint') || titleLower.includes('ppt')) {
-        const { pageTexts } = await extractTextFromPdf(primaryFile, (p) => setProgress(Math.round(p * 0.4)));
-        const pageImages = await renderPdfToPngs(primaryFile, (p) => setProgress(40 + Math.round(p * 0.5)));
-        blob = await createPptxFile(pageTexts, pageImages, baseName);
+        const res = await pdfToPptx(primaryFile, pptMode, (p) => setProgress(p));
+        blob = res.blob;
         filename = `${baseName}_presentation.pptx`;
+        setPptMeta(res);
+        if (res.isScannedOnly) {
+          setScannedWarning(true);
+        }
       } else if (titleLower.includes('excel')) {
-        const { fullText } = await extractTextFromPdf(primaryFile, (p) => setProgress(p));
-        blob = createExcelFile(fullText, baseName);
+        const res = await pdfToExcel(primaryFile, (p) => setProgress(p));
+        blob = res.blob;
         filename = `${baseName}_converted.xlsx`;
+        if (res.isScannedOnly) {
+          setScannedWarning(true);
+        }
       } else if (titleLower.includes('text')) {
         const { fullText } = await extractTextFromPdf(primaryFile, (p) => setProgress(p));
         blob = createTxtFile(fullText);
         filename = `${baseName}_converted.txt`;
       } else if (titleLower.includes('word')) {
-        const { fullText } = await extractTextFromPdf(primaryFile, (p) => setProgress(p));
-        blob = await createDocxFile(fullText, baseName);
-        filename = `${baseName}_converted.docx`;
+        let res;
+        try {
+          res = await convertPdfToWordPython(primaryFile, (p) => setProgress(p));
+        } catch (backendErr) {
+          console.warn('[PDFToWord] Python backend error or offline, running client fallback:', backendErr);
+          res = await pdfToDocx(primaryFile, (p) => setProgress(p));
+        }
+        blob = res.blob;
+        filename = res.filename || `${baseName}_converted.docx`;
+        if (res.isScanned || res.isScannedOnly) {
+          setScannedWarning(true);
+        }
       } else {
         blob = await createPdfBlob(primaryFile, 'processed');
         filename = `${baseName}_processed.pdf`;
@@ -170,7 +204,7 @@ export default function GenericTool({
     } catch (err) {
       console.error('[Conversion Error]:', err);
       setError(err.message || 'Failed to process document. Please verify the file is valid.');
-      setStatus('error');
+      setStatus('selected');
     }
   };
 
@@ -183,8 +217,11 @@ export default function GenericTool({
   const handleReset = () => {
     setProcessedResult(null);
     setCompressMeta(null);
+    setPptMeta(null);
     setPassword('');
     setConfirmPassword('');
+    setDocPageCount(null);
+    setScannedWarning(false);
     reset();
   };
 
@@ -259,6 +296,29 @@ export default function GenericTool({
 
             {/* Custom Tool Processing Options */}
             <div className="options-panel">
+              {error && (
+                <div 
+                  className="process-error-banner" 
+                  style={{ 
+                    padding: '0.85rem 1.15rem', 
+                    background: 'rgba(239, 68, 68, 0.1)', 
+                    border: '1px solid rgba(239, 68, 68, 0.35)', 
+                    borderRadius: '10px', 
+                    color: '#EF4444', 
+                    marginBottom: '1.25rem', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '0.65rem', 
+                    fontSize: '0.92rem', 
+                    fontWeight: 600,
+                    animation: 'fadeIn 0.2s ease-in-out'
+                  }}
+                >
+                  <AlertCircle size={20} style={{ flexShrink: 0, color: '#EF4444' }} />
+                  <span>{error}</span>
+                </div>
+              )}
+
               <div className="options-header">
                 <Settings size={18} className="options-icon" />
                 <h3 className="options-title">Processing Options</h3>
@@ -267,19 +327,31 @@ export default function GenericTool({
               {/* SPLIT PDF OPTIONS */}
               {titleLower.includes('split') ? (
                 <div className="split-options-box" style={{ padding: '0.5rem 0' }}>
-                  <label className="option-label" style={{ fontWeight: 700, display: 'block', marginBottom: '0.5rem' }}>
-                    Pages to Extract:
-                  </label>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                    <label className="option-label" style={{ fontWeight: 700, margin: 0 }}>
+                      Pages to Extract:
+                    </label>
+                    {docPageCount !== null && (
+                      <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--color-primary)', background: 'rgba(37, 99, 235, 0.1)', padding: '0.15rem 0.55rem', borderRadius: '6px' }}>
+                        Total Pages: {docPageCount}
+                      </span>
+                    )}
+                  </div>
                   <input 
                     type="text"
                     value={splitRange}
-                    onChange={(e) => setSplitRange(e.target.value)}
-                    placeholder="e.g. 1-3, 5 (or enter 1 for page 1)"
+                    onChange={(e) => {
+                      setSplitRange(e.target.value);
+                      if (error) setError(null);
+                    }}
+                    placeholder={docPageCount ? `e.g. 1-${Math.min(docPageCount, 3)}, or 1` : "e.g. 1-3, 5 (or enter 1 for page 1)"}
                     className="password-input"
-                    style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '0.95rem' }}
+                    style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '8px', border: error ? '1px solid #EF4444' : '1px solid var(--color-border)', fontSize: '0.95rem' }}
                   />
                   <div style={{ marginTop: '0.6rem', fontSize: '0.82rem', color: 'var(--color-text-muted)' }}>
-                    Enter individual page numbers or page ranges separated by commas (e.g., <code>1-3, 5</code>).
+                    {docPageCount 
+                      ? `Enter individual page numbers or ranges between 1 and ${docPageCount} (e.g., 1-${docPageCount}, or 1, 2).`
+                      : 'Enter individual page numbers or page ranges separated by commas (e.g., 1-3, 5).'}
                   </div>
                 </div>
               ) : titleLower.includes('compress') ? (
@@ -375,6 +447,66 @@ export default function GenericTool({
                   setConfirmPassword={setConfirmPassword}
                   onValidationChange={setIsPassValid}
                 />
+              ) : (titleLower.includes('powerpoint') || titleLower.includes('ppt')) ? (
+                /* POWERPOINT CONVERSION OPTIONS */
+                <div>
+                  <div style={{ marginBottom: '1rem', fontSize: '0.9rem', color: 'var(--color-text-secondary)' }}>
+                    Select how you want your slides to be generated. You can choose native editable shapes and tables, or pixel-perfect visual slides.
+                  </div>
+                  <div className="options-grid">
+                    <div 
+                      className={`quality-card ${pptMode === 'editable' ? 'active' : ''}`}
+                      onClick={() => setPptMode('editable')}
+                    >
+                      <div className="quality-radio">
+                        {pptMode === 'editable' && <Check size={14} />}
+                      </div>
+                      <div className="quality-text">
+                        <span className="quality-name">Editable Text &amp; Layout (Recommended)</span>
+                        <span className="quality-desc">Generates native PowerPoint text shapes and tables using 2D coordinates. Scanned or image-only pages automatically fallback to visual slides so no content is lost.</span>
+                      </div>
+                    </div>
+
+                    <div 
+                      className={`quality-card ${pptMode === 'visual' ? 'active' : ''}`}
+                      onClick={() => setPptMode('visual')}
+                    >
+                      <div className="quality-radio">
+                        {pptMode === 'visual' && <Check size={14} />}
+                      </div>
+                      <div className="quality-text">
+                        <span className="quality-name">High-Fidelity Visual Slides</span>
+                        <span className="quality-desc">Renders pages as crisp, full-bleed slide images. Preserves 100% of complex graphics, charts, and fonts (slides are image-based, not text-editable).</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ marginTop: '1rem', padding: '0.75rem 1rem', background: 'rgba(59, 130, 246, 0.08)', border: '1px solid rgba(59, 130, 246, 0.2)', borderRadius: '8px', fontSize: '0.85rem', color: 'var(--color-text-secondary)', lineHeight: 1.5 }}>
+                    <strong style={{ color: 'var(--color-primary)' }}>Layout Note:</strong> Standard PDF text, titles, and data tables are extracted into editable PowerPoint elements. For scanned PDFs or documents containing intricate vector artwork, visual slide rendering preserves the exact visual appearance.
+                  </div>
+                </div>
+              ) : titleLower.includes('excel') ? (
+                /* EXCEL CONVERSION INFO */
+                <div className="tool-feature-box" style={{ padding: '0.75rem 0', color: 'var(--color-text-muted)', fontSize: '0.9rem', lineHeight: '1.5' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.4rem', color: 'var(--color-text-main)', fontWeight: 600 }}>
+                    <Check size={16} style={{ color: '#10B981' }} />
+                    <span>Intelligent Table & Coordinate Grid Extraction</span>
+                  </div>
+                  <div>
+                    Extracts genuine multi-column spreadsheets by calculating 2D visual alignments, formatting table headers, setting dynamic column widths, and separating multi-page documents into clean Excel worksheets.
+                  </div>
+                </div>
+              ) : titleLower.includes('word') ? (
+                /* WORD CONVERSION INFO */
+                <div className="tool-feature-box" style={{ padding: '0.75rem 0', color: 'var(--color-text-muted)', fontSize: '0.9rem', lineHeight: '1.5' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.4rem', color: 'var(--color-text-main)', fontWeight: 600 }}>
+                    <Check size={16} style={{ color: '#10B981' }} />
+                    <span>Structured Document & Table Conversion</span>
+                  </div>
+                  <div>
+                    Converts PDF content into rich Microsoft Word (.docx) format preserving document hierarchy, bold headings, font sizing, page breaks, and genuine formatted Word tables with clean borders and cell padding.
+                  </div>
+                </div>
               ) : (
                 /* DEFAULT STANDARD/HIGH PRECISION OPTIONS */
                 <div className="options-grid">
@@ -451,6 +583,68 @@ export default function GenericTool({
                   </div>
                 </div>
               )
+            )}
+
+            {/* PowerPoint Summary & Mode Notice */}
+            {pptMeta && (
+              <div style={{ margin: '1.25rem 0', padding: '1rem 1.25rem', background: 'var(--color-surface)', borderRadius: '12px', border: '1px solid var(--color-border)', textAlign: 'left' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                  <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--color-text)' }}>
+                    Presentation Details
+                  </div>
+                  <span style={{ 
+                    padding: '0.2rem 0.65rem', 
+                    borderRadius: '100px', 
+                    fontSize: '0.75rem', 
+                    fontWeight: 700, 
+                    textTransform: 'uppercase',
+                    background: pptMeta.mode === 'editable' ? 'rgba(16, 185, 129, 0.12)' : 'rgba(59, 130, 246, 0.12)',
+                    color: pptMeta.mode === 'editable' ? '#10B981' : '#3B82F6',
+                    border: `1px solid ${pptMeta.mode === 'editable' ? 'rgba(16, 185, 129, 0.3)' : 'rgba(59, 130, 246, 0.3)'}`
+                  }}>
+                    {pptMeta.mode === 'editable' ? 'Editable Shapes & Tables' : 'High-Fidelity Visual Deck'}
+                  </span>
+                </div>
+                <div style={{ fontSize: '0.88rem', color: 'var(--color-text-secondary)', lineHeight: 1.5 }}>
+                  {pptMeta.mode === 'editable' ? (
+                    <>
+                      Generated <strong>{pptMeta.pageCount} slide{pptMeta.pageCount === 1 ? '' : 's'}</strong> with native editable text boxes and PowerPoint layout coordinates.
+                      {pptMeta.tableDetected && <span> Detected tabular data was converted into native PowerPoint tables.</span>}
+                    </>
+                  ) : (
+                    <>
+                      Generated <strong>{pptMeta.pageCount} slide{pptMeta.pageCount === 1 ? '' : 's'}</strong> using high-resolution visual rendering. 100% of original visual appearance, diagrams, and typography preserved as image-based slides.
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Scanned Image Document Notice */}
+            {scannedWarning && (
+              <div 
+                style={{ 
+                  margin: '1.25rem 0', 
+                  padding: '0.85rem 1.15rem', 
+                  background: 'rgba(245, 158, 11, 0.1)', 
+                  border: '1px solid rgba(245, 158, 11, 0.35)', 
+                  borderRadius: '10px', 
+                  color: '#D97706', 
+                  fontSize: '0.88rem', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '0.65rem',
+                  textAlign: 'left'
+                }}
+              >
+                <AlertCircle size={20} style={{ flexShrink: 0, color: '#D97706' }} />
+                <span>
+                  <strong>Scanned Document Notice:</strong> This document contains scanned pages or images without an embedded text layer.
+                  {(titleLower.includes('powerpoint') || titleLower.includes('ppt'))
+                    ? ' Slides were generated as high-fidelity visual images so no content was lost. OCR (Optical Character Recognition) is required to convert scanned images into editable text.'
+                    : ' An informational notice has been included in your converted file.'}
+                </span>
+              </div>
             )}
 
             <div className="success-actions">

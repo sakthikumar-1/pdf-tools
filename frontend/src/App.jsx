@@ -76,7 +76,11 @@ export default function App() {
           />
           <Route 
             path="/pdf-to-ppt" 
-            element={<GenericTool title="PDF to PowerPoint" description="Convert PDF slides into editable Microsoft PPTX presentations." icon={Presentation} actionLabel="Convert to PowerPoint Now" />} 
+            element={<GenericTool title="PDF to PowerPoint" description="Convert PDF slides into Microsoft PPTX presentations with editable text and visual modes." icon={Presentation} actionLabel="Convert to PowerPoint Now" />} 
+          />
+          <Route 
+            path="/pdf-to-powerpoint" 
+            element={<GenericTool title="PDF to PowerPoint" description="Convert PDF slides into Microsoft PPTX presentations with editable text and visual modes." icon={Presentation} actionLabel="Convert to PowerPoint Now" />} 
           />
           <Route 
             path="/merge-pdf" 

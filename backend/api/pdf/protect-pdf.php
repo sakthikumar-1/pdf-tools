@@ -27,7 +27,7 @@ if (!$uploadResult['success']) {
 }
 
 $inputPath = $uploadResult['path'];
-$outputPath = OUTPUTS_DIR . '/protected_' . bin2hex(random_bytes(4)) . '.pdf';
+$outputPath = OUTPUTS_DIR . '/protected_' . bin2hex(random_bytes(16)) . '.pdf';
 
 $cmd = sprintf("qpdf --encrypt %s %s 256 -- %s %s 2>&1",
     escapeshellarg($password),

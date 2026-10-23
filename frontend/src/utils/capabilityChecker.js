@@ -59,14 +59,11 @@ export function getToolCapability(toolTitle, capabilitiesMap) {
   }
 
   if (titleLower.includes('word')) {
-    const hasLo = capabilitiesMap?.binaries?.libreoffice;
     return {
       available: true,
-      status: hasLo ? 'AVAILABLE' : 'LIMITED',
-      engine: hasLo ? 'LibreOffice Server Engine' : 'Client OpenXML AST',
-      reason: hasLo 
-        ? 'Full document layout engine active.' 
-        : 'Client-side text block & paragraph AST generator active. Multi-column magazine layouts require LibreOffice server engine for exact visual parity.'
+      status: 'AVAILABLE',
+      engine: 'Python pdf2docx Engine',
+      reason: 'Full document layout reconstruction active, preserving paragraphs, formatting, and tables.'
     };
   }
 

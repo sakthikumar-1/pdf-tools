@@ -75,3 +75,71 @@ export async function checkBackendHealth() {
     return false;
   }
 }
+
+/**
+ * Converts a PDF to Microsoft Word using the Python Django backend.
+ * Streams the upload, tracks progress, and fetches the resulting DOCX via the secure download token.
+ * @param {File} file
+ * @param {Function} onProgress
+ * @returns {Promise<{ blob: Blob, filename: string, isScanned: boolean, pageCount: number }>}
+ */
+export async function convertPdfToWordPython(file, onProgress) {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const xhr = new XMLHttpRequest();
+  const url = '/api/v1/convert/pdf-to-word';
+
+  const data = await new Promise((resolve, reject) => {
+    xhr.upload.addEventListener('progress', (e) => {
+      if (e.lengthComputable && onProgress) {
+        const percent = Math.round((e.loaded / e.total) * 60);
+        onProgress(percent);
+      }
+    });
+
+    xhr.addEventListener('load', () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          const json = JSON.parse(xhr.responseText);
+          resolve(json);
+        } catch (err) {
+          reject(new Error('Invalid response from Python conversion engine.'));
+        }
+      } else {
+        try {
+          const errData = JSON.parse(xhr.responseText);
+          reject(new Error(errData.detail || errData.message || `Server error: ${xhr.status}`));
+        } catch (e) {
+          reject(new Error(`Server error: ${xhr.status} ${xhr.statusText}`));
+        }
+      }
+    });
+
+    xhr.addEventListener('error', () => {
+      reject(new Error('Unable to connect to Python conversion backend.'));
+    });
+
+    xhr.open('POST', url, true);
+    xhr.send(formData);
+  });
+
+  if (onProgress) onProgress(80);
+
+  // Fetch the resulting DOCX from the secure download token URL
+  const downloadRes = await fetch(data.download_url);
+  if (!downloadRes.ok) {
+    throw new Error('Failed to retrieve converted DOCX file from server.');
+  }
+
+  const blob = await downloadRes.blob();
+  if (onProgress) onProgress(100);
+
+  return {
+    blob,
+    filename: data.filename || `${file.name.replace(/\.[^/.]+$/, '')}_converted.docx`,
+    isScanned: Boolean(data.is_scanned),
+    pageCount: data.page_count || 1,
+  };
+}
+

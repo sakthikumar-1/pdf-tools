@@ -13,7 +13,7 @@ class PDFService {
      * @return array
      */
     public function convertPdfToJpg($pdfPath, $dpi = 150) {
-        $outputPrefix = 'page_' . bin2hex(random_bytes(4));
+        $outputPrefix = 'page_' . bin2hex(random_bytes(16));
         $outputFolder = OUTPUTS_DIR;
         $generatedImages = [];
 

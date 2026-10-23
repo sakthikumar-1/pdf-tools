@@ -19,6 +19,16 @@ function validate_uploaded_pdf($fileKey = 'file') {
 
     $file = $_FILES[$fileKey];
 
+    // Verify file was genuinely uploaded via HTTP POST
+    if (!is_uploaded_file($file['tmp_name'])) {
+        return ['valid' => false, 'message' => 'Upload security validation failed.'];
+    }
+
+    // Check for null bytes in filename
+    if (strpos($file['name'], "\0") !== false) {
+        return ['valid' => false, 'message' => 'Invalid characters detected in filename.'];
+    }
+
     // Check size limit
     if ($file['size'] > MAX_UPLOAD_SIZE) {
         return ['valid' => false, 'message' => 'File size exceeds the 50MB limit.'];
