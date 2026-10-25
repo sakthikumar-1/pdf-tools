@@ -3,7 +3,10 @@
  * Communicates exclusively with the Python Django Ninja REST backend (/api/v1).
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
+const rawApiBase = import.meta.env.VITE_API_BASE_URL || '';
+export const API_BASE_URL = rawApiBase
+  ? (rawApiBase.endsWith('/api/v1') ? rawApiBase : `${rawApiBase.replace(/\/$/, '')}/api/v1`)
+  : '/api/v1';
 
 /**
  * Checks server backend health and MySQL database connectivity.

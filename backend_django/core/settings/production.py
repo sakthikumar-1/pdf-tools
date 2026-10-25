@@ -16,9 +16,30 @@ ALLOWED_HOSTS = [
     if host.strip()
 ]
 
+# Auto-detect Render hosting hostname
+RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
+if RENDER_EXTERNAL_HOSTNAME:
+    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
+    ALLOWED_HOSTS.append('.onrender.com')
+
 # Ensure at least localhost / 127.0.0.1 for local health checks if not configured
 if not ALLOWED_HOSTS:
-    ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
+    ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '.onrender.com']
+
+# CSRF Trusted Origins for Render and custom domains
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv('CSRF_TRUSTED_ORIGINS', '').split(',')
+    if origin.strip()
+]
+if RENDER_EXTERNAL_HOSTNAME:
+    CSRF_TRUSTED_ORIGINS.extend([
+        f'https://{RENDER_EXTERNAL_HOSTNAME}',
+        'https://*.onrender.com',
+    ])
+
+# Whitenoise Static Files Storage
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Security Headers & Cookie Flags
 SECURE_SSL_REDIRECT = os.getenv('DJANGO_SECURE_SSL_REDIRECT', 'True').lower() in ('true', '1', 'yes')

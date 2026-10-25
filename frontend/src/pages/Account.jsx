@@ -10,21 +10,16 @@ import {
   faMoon, 
   faSun, 
   faCheck,
-  faTriangleExclamation,
-  faArrowLeft
+  faRightFromBracket
 } from '@fortawesome/free-solid-svg-icons';
+import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import './Account.css';
 
 export default function Account() {
-  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
+  const { user, isAuthenticated, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const [saveMetadata, setSaveMetadata] = useState(true);
-
-  const toggleTheme = () => {
-    const next = theme === 'dark' ? 'light' : 'dark';
-    setTheme(next);
-    document.documentElement.setAttribute('data-theme', next);
-    localStorage.setItem('theme', next);
-  };
 
   return (
     <div className="account-page-container container">
@@ -55,20 +50,53 @@ export default function Account() {
             <h3>Session Status</h3>
           </div>
           <div className="account-card-body">
-            <div className="session-status-row">
-              <span className="status-indicator-dot guest"></span>
-              <div>
-                <strong>Anonymous Guest Access</strong>
-                <p>You have full access to all 18 standard client &amp; server PDF utilities.</p>
-              </div>
-            </div>
-            <div className="session-action-box">
-              <p>Sign in with your Google account to record metadata-only conversion logs.</p>
-              <Link to="/login" className="btn btn-primary btn-sm">
-                <span>Sign in with Google</span>
-                <FontAwesomeIcon icon={faArrowRight} />
-              </Link>
-            </div>
+            {isAuthenticated ? (
+              <>
+                <div className="session-status-row">
+                  <span className="status-indicator-dot" style={{ background: 'var(--color-success)', boxShadow: '0 0 0 3px rgba(22, 133, 104, 0.2)' }}></span>
+                  <div>
+                    <strong>{user?.full_name || 'Signed In with Google'}</strong>
+                    <p style={{ color: 'var(--color-primary)', fontWeight: 600 }}>{user?.email}</p>
+                  </div>
+                </div>
+                <div className="session-action-box">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', color: 'var(--color-text-secondary)' }}>
+                    <span>Account Tier:</span>
+                    <strong style={{ color: 'var(--color-heading)', textTransform: 'capitalize' }}>{user?.role || 'Verified User'}</strong>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', color: 'var(--color-text-secondary)' }}>
+                    <span>Email Verification:</span>
+                    <strong style={{ color: 'var(--color-success)' }}>Verified</strong>
+                  </div>
+                  <button 
+                    type="button" 
+                    className="btn btn-secondary btn-sm"
+                    style={{ marginTop: '0.5rem', width: '100%' }}
+                    onClick={logout}
+                  >
+                    <FontAwesomeIcon icon={faRightFromBracket} />
+                    <span>Sign Out</span>
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="session-status-row">
+                  <span className="status-indicator-dot guest"></span>
+                  <div>
+                    <strong>Anonymous Guest Access</strong>
+                    <p>You have full access to all 18 standard client &amp; server PDF utilities.</p>
+                  </div>
+                </div>
+                <div className="session-action-box">
+                  <p>Sign in with your Google account to record metadata-only conversion logs.</p>
+                  <Link to="/login" className="btn btn-primary btn-sm">
+                    <span>Sign in with Google</span>
+                    <FontAwesomeIcon icon={faArrowRight} />
+                  </Link>
+                </div>
+              </>
+            )}
           </div>
         </div>
 

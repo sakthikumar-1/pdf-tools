@@ -13,12 +13,17 @@ pdf2docx>=0.5.8
 python-docx>=1.1.0
 python-pptx>=1.0.0
 
-# Production Application Server
+# Production Application Server & Network
 gunicorn>=22.0.0
 uvicorn[standard]>=0.30.0
 requests>=2.31.0
+whitenoise>=6.6.0
 
-# AI Document Intelligence
+# Database Support (MySQL, PostgreSQL for Render, SQLite fallback)
+dj-database-url>=2.1.0
+psycopg2-binary>=2.9.9
+
+# AI Document Intelligence (Google Gemini)
 google-genai>=1.0.0
 
 # Testing

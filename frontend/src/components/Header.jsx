@@ -1,8 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faMagnifyingGlass,
   faChevronDown,
   faSun,
   faMoon,
@@ -12,39 +11,36 @@ import {
   faFilePdf,
   faUser,
   faCircleQuestion,
-  faLayerGroup
+  faLayerGroup,
+  faRightFromBracket,
+  faClockRotateLeft,
+  faGear
 } from '@fortawesome/free-solid-svg-icons';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
 import { TOOLS_DATA, TOOL_CATEGORIES } from '../utils/toolsData';
-import QuickSearchModal from './QuickSearchModal';
 import './Header.css';
 
 export default function Header({ onOpenAuth }) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [searchModalOpen, setSearchModalOpen] = useState(false);
 
   const { theme, toggleTheme } = useTheme();
+  const { user, isAuthenticated, logout } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const dropdownRef = useRef(null);
-
-  // Keyboard shortcut Ctrl+K or Cmd+K
-  useEffect(() => {
-    function handleKeyDown(e) {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-        e.preventDefault();
-        setSearchModalOpen(true);
-      }
-    }
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  const userMenuRef = useRef(null);
 
   // Close menus on click outside
   useEffect(() => {
     function handleClickOutside(event) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setDropdownOpen(false);
+      }
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
+        setUserMenuOpen(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
@@ -54,6 +50,7 @@ export default function Header({ onOpenAuth }) {
   // Close menus on route change
   useEffect(() => {
     setDropdownOpen(false);
+    setUserMenuOpen(false);
     setMobileMenuOpen(false);
   }, [location.pathname]);
 
@@ -138,18 +135,6 @@ export default function Header({ onOpenAuth }) {
 
           {/* Header Actions */}
           <div className="header-actions">
-            {/* Quick Search Button */}
-            <button
-              type="button"
-              className="action-search-btn"
-              onClick={() => setSearchModalOpen(true)}
-              aria-label="Search PDF tools (Ctrl+K)"
-            >
-              <FontAwesomeIcon icon={faMagnifyingGlass} />
-              <span className="search-hint-text">Search tools...</span>
-              <kbd className="search-shortcut">⌘K</kbd>
-            </button>
-
             {/* Theme Toggle */}
             <button
               type="button"
@@ -161,15 +146,69 @@ export default function Header({ onOpenAuth }) {
               <FontAwesomeIcon icon={theme === 'dark' ? faSun : faMoon} />
             </button>
 
-            {/* Sign in button */}
-            <button
-              type="button"
-              className="btn btn-sm btn-secondary sign-in-btn"
-              onClick={onOpenAuth}
-            >
-              <FontAwesomeIcon icon={faUser} />
-              <span>Sign in</span>
-            </button>
+            {/* Auth / Account Controls */}
+            {isAuthenticated ? (
+              <div className="nav-dropdown-anchor" ref={userMenuRef}>
+                <button
+                  type="button"
+                  className="user-profile-btn"
+                  onClick={() => setUserMenuOpen(!userMenuOpen)}
+                  aria-expanded={userMenuOpen}
+                >
+                  <span className="user-avatar-initial">
+                    {user?.full_name ? user.full_name.charAt(0).toUpperCase() : (user?.email?.charAt(0).toUpperCase() || 'U')}
+                  </span>
+                  <span className="user-email-display">{user?.email || 'Account'}</span>
+                  <FontAwesomeIcon icon={faChevronDown} className={`chevron-fa ${userMenuOpen ? 'rotated' : ''}`} />
+                </button>
+
+                {userMenuOpen && (
+                  <div className="user-dropdown-menu">
+                    <div className="user-dropdown-header">
+                      <strong>{user?.full_name || 'Signed In User'}</strong>
+                      <span>{user?.email}</span>
+                    </div>
+                    <ul className="user-dropdown-links">
+                      <li>
+                        <Link to="/account" className="user-dropdown-item">
+                          <FontAwesomeIcon icon={faGear} />
+                          <span>Account Settings</span>
+                        </Link>
+                      </li>
+                      <li>
+                        <Link to="/history" className="user-dropdown-item">
+                          <FontAwesomeIcon icon={faClockRotateLeft} />
+                          <span>Processing History</span>
+                        </Link>
+                      </li>
+                      <li className="menu-divider"></li>
+                      <li>
+                        <button
+                          type="button"
+                          className="user-dropdown-item logout-item"
+                          onClick={() => {
+                            logout();
+                            setUserMenuOpen(false);
+                          }}
+                        >
+                          <FontAwesomeIcon icon={faRightFromBracket} />
+                          <span>Sign Out</span>
+                        </button>
+                      </li>
+                    </ul>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <button
+                type="button"
+                className="btn btn-sm btn-secondary sign-in-btn"
+                onClick={onOpenAuth}
+              >
+                <FontAwesomeIcon icon={faUser} />
+                <span>Sign in</span>
+              </button>
+            )}
 
             {/* Mobile Menu Trigger */}
             <button
@@ -186,7 +225,7 @@ export default function Header({ onOpenAuth }) {
 
       {/* Mobile Navigation Drawer */}
       {mobileMenuOpen && (
-        <div className="mobile-drawer-backdrop" onClick={() => setMobileMenuOpen(false)}>
+        <div className="mobile-drawer-overlay" onClick={() => setMobileMenuOpen(false)}>
           <div className="mobile-drawer" onClick={(e) => e.stopPropagation()}>
             <div className="mobile-drawer-header">
               <span className="brand-text">Simatrix <span className="brand-sub">PDF</span></span>
@@ -201,18 +240,6 @@ export default function Header({ onOpenAuth }) {
             </div>
 
             <div className="mobile-drawer-body">
-              <button
-                type="button"
-                className="mobile-search-btn"
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  setSearchModalOpen(true);
-                }}
-              >
-                <FontAwesomeIcon icon={faMagnifyingGlass} />
-                <span>Search 19 tools...</span>
-              </button>
-
               <div className="mobile-nav-group">
                 <Link to="/" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
                   <FontAwesomeIcon icon={faLayerGroup} />
@@ -224,8 +251,20 @@ export default function Header({ onOpenAuth }) {
                 </Link>
                 <a href="/#faq-section" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
                   <FontAwesomeIcon icon={faCircleQuestion} />
-                  <span>Help & FAQ</span>
+                  <span>Help &amp; FAQ</span>
                 </a>
+                {isAuthenticated && (
+                  <>
+                    <Link to="/account" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
+                      <FontAwesomeIcon icon={faGear} />
+                      <span>Account Settings</span>
+                    </Link>
+                    <Link to="/history" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
+                      <FontAwesomeIcon icon={faClockRotateLeft} />
+                      <span>Processing History</span>
+                    </Link>
+                  </>
+                )}
               </div>
 
               <div className="mobile-tools-accordion">
@@ -247,28 +286,37 @@ export default function Header({ onOpenAuth }) {
             </div>
 
             <div className="mobile-drawer-footer">
-              <button
-                type="button"
-                className="btn btn-primary"
-                style={{ width: '100%' }}
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  if (onOpenAuth) onOpenAuth();
-                }}
-              >
-                <FontAwesomeIcon icon={faUser} />
-                <span>Sign in with Google</span>
-              </button>
+              {isAuthenticated ? (
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  style={{ width: '100%' }}
+                  onClick={() => {
+                    logout();
+                    setMobileMenuOpen(false);
+                  }}
+                >
+                  <FontAwesomeIcon icon={faRightFromBracket} />
+                  <span>Sign Out ({user?.email})</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  style={{ width: '100%' }}
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    if (onOpenAuth) onOpenAuth();
+                  }}
+                >
+                  <FontAwesomeIcon icon={faUser} />
+                  <span>Sign in with Google</span>
+                </button>
+              )}
             </div>
           </div>
         </div>
       )}
-
-      {/* Quick Search Modal */}
-      <QuickSearchModal
-        isOpen={searchModalOpen}
-        onClose={() => setSearchModalOpen(false)}
-      />
     </>
   );
 }

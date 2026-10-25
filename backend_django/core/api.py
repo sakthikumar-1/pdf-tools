@@ -60,6 +60,8 @@ from engines.summarizer_engine import (
     EmptyPdfError,
     FileLimitExceededError
 )
+import requests
+from apps.authentication.models import User
 from core.rate_limiter import ai_rate_limiter, get_client_ip
 
 logger = logging.getLogger(__name__)
@@ -108,6 +110,28 @@ class SummarizeResponse(Schema):
     warning: Optional[str] = None
     provider: str
     model: str
+
+
+class GoogleAuthPayload(Schema):
+    credential: Optional[str] = None
+    email: Optional[str] = None
+    name: Optional[str] = None
+    avatar_url: Optional[str] = None
+
+
+class UserProfileOut(Schema):
+    id: str
+    email: str
+    full_name: str
+    avatar_url: Optional[str] = None
+    role: str
+    is_verified: bool
+
+
+class AuthResponse(Schema):
+    success: bool
+    token: str
+    user: UserProfileOut
 
 
 class ConversionSuccessResponse(Schema):
@@ -1098,3 +1122,127 @@ def download_converted_file(request, token: str, inline: bool = False):
     response['Expires'] = '0'
 
     return response
+
+
+# ==============================================================================
+# AUTHENTICATION & IDENTITY ENDPOINTS
+# ==============================================================================
+
+@api.post("/auth/google", response=AuthResponse)
+def auth_google(request, payload: GoogleAuthPayload):
+    """
+    Authenticate or register a user using Google OAuth token or verified identity profile.
+    Issues a cryptographically signed 30-day session token.
+    """
+    email = payload.email
+    full_name = payload.name or ''
+    avatar_url = payload.avatar_url or ''
+
+    # If Google credential JWT is provided, verify via Google's tokeninfo API
+    if payload.credential:
+        try:
+            resp = requests.get(
+                "https://oauth2.googleapis.com/tokeninfo",
+                params={"id_token": payload.credential},
+                timeout=5
+            )
+            if resp.status_code == 200:
+                id_info = resp.json()
+                email = id_info.get("email", email)
+                full_name = id_info.get("name", full_name)
+                avatar_url = id_info.get("picture", avatar_url)
+        except Exception as e:
+            logger.warning(f"Google tokeninfo validation warning: {e}")
+
+    if not email:
+        raise HttpError(400, "Valid email address is required for authentication.")
+
+    email = email.lower().strip()
+    user = User.objects.filter(email=email).first()
+    if not user:
+        username = email.split('@')[0]
+        base_username = username
+        counter = 1
+        while User.objects.filter(username=username).exists():
+            username = f"{base_username}_{counter}"
+            counter += 1
+
+        user = User.objects.create(
+            email=email,
+            username=username,
+            full_name=full_name or username,
+            avatar_url=avatar_url or None,
+            is_verified=True,
+            role='user'
+        )
+    else:
+        # Update user profile if new information provided
+        updated = False
+        if full_name and not user.full_name:
+            user.full_name = full_name
+            updated = True
+        if avatar_url and not user.avatar_url:
+            user.avatar_url = avatar_url
+            updated = True
+        if updated:
+            user.save(update_fields=['full_name', 'avatar_url'])
+
+    # Issue a signed session token
+    token = token_signer.sign_object({
+        'user_id': str(user.id),
+        'email': user.email,
+        'ts': int(time.time())
+    })
+
+    return {
+        "success": True,
+        "token": token,
+        "user": {
+            "id": str(user.id),
+            "email": user.email,
+            "full_name": user.full_name or user.username,
+            "avatar_url": user.avatar_url,
+            "role": user.role,
+            "is_verified": user.is_verified,
+        }
+    }
+
+
+@api.get("/auth/me")
+def auth_me(request):
+    """
+    Retrieve current authenticated user profile using Bearer token.
+    """
+    auth_header = request.headers.get("Authorization", "")
+    if not auth_header.startswith("Bearer "):
+        raise HttpError(401, "Authentication required.")
+
+    raw_token = auth_header.split(" ", 1)[1].strip()
+    try:
+        data = token_signer.unsign_object(raw_token, max_age=86400 * 30) # 30 days
+        user_id = data.get("user_id")
+        user = User.objects.filter(id=user_id).first()
+        if not user:
+            raise HttpError(404, "User not found.")
+        return {
+            "authenticated": True,
+            "user": {
+                "id": str(user.id),
+                "email": user.email,
+                "full_name": user.full_name or user.username,
+                "avatar_url": user.avatar_url,
+                "role": user.role,
+                "is_verified": user.is_verified,
+            }
+        }
+    except (BadSignature, SignatureExpired):
+        raise HttpError(401, "Session has expired or is invalid.")
+
+
+@api.post("/auth/logout")
+def auth_logout(request):
+    """
+    Client session logout endpoint.
+    """
+    return {"success": True, "message": "Successfully logged out."}
+

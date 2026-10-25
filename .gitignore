@@ -40,3 +40,6 @@ storage/
 scratch/
 fixtures/
 frontend/scratch_*.mjs
+frontend/export_*.mjs
+frontend/test_*.mjs
+test_*_e2e.py
