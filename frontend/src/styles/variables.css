@@ -1,116 +1,142 @@
 :root {
-  /* Brand Identity - Simatrix Academy */
+  /* Brand Typography */
   --font-family-primary: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-family-mono: 'JetBrains Mono', monospace;
+  --font-family-mono: 'JetBrains Mono', 'Fira Code', monospace;
 
-  /* Shared Brand Accents */
-  --color-primary: #6366F1;
-  --color-primary-hover: #4F46E5;
-  --color-primary-active: #4338CA;
-  
-  --color-secondary: #06B6D4;
-  --color-secondary-hover: #0891B2;
-
-  --color-accent-gradient: linear-gradient(135deg, #6366F1 0%, #8B5CF6 50%, #06B6D4 100%);
-  --color-logo-glow: rgba(99, 102, 241, 0.35);
+  /* Universal Brand Identity Colors */
+  --color-gold: #FFC247;
+  --color-gold-hover: #E8AA26;
+  --color-gold-active: #D4981C;
+  --color-gold-muted: rgba(255, 194, 71, 0.15);
+  --color-gold-border: rgba(255, 194, 71, 0.35);
 
   /* Status Colors */
-  --color-success: #10B981;
-  --color-success-bg: rgba(16, 185, 129, 0.12);
-  --color-warning: #F59E0B;
-  --color-warning-bg: rgba(245, 158, 11, 0.12);
-  --color-error: #EF4444;
-  --color-error-bg: rgba(239, 68, 68, 0.12);
+  --color-success: #168568;
+  --color-success-bg: rgba(22, 133, 104, 0.12);
+  --color-success-border: rgba(22, 133, 104, 0.3);
+  
+  --color-error: #D94B4B;
+  --color-error-bg: rgba(217, 75, 75, 0.12);
+  --color-error-border: rgba(217, 75, 75, 0.3);
 
-  /* Layout & Spacing */
-  --container-max-width: 1240px;
-  --header-height: 84px;
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 16px;
+  --color-warning: #E5A11F;
+  --color-warning-bg: rgba(229, 161, 31, 0.12);
+  --color-warning-border: rgba(229, 161, 31, 0.3);
+
+  /* Layout & Geometry Scale */
+  --container-max-width: 1200px;
+  --header-height: 72px;
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
   --radius-xl: 24px;
   --radius-full: 9999px;
 
-  /* Transitions */
+  /* Standard Transitions */
   --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 220ms cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-slow: 350ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* DARK THEME (DEFAULT) */
+/* ==============================================================================
+   DARK THEME (Default Experience)
+   Midnight Black, Deep Charcoal, Secondary Dark Surface, Champagne Gold
+   ============================================================================== */
 [data-theme="dark"], :root:not([data-theme="light"]) {
   color-scheme: dark;
 
-  --color-bg: #090D16;
-  --color-bg-alt: #0F172A;
-  --color-header-bg: rgba(9, 13, 22, 0.88);
-  --color-surface: #161F30;
-  --color-surface-hover: #1E2B42;
-  --color-surface-active: #293754;
-  --color-surface-card: #141C2B;
-  
-  --color-border: #232F45;
-  --color-border-subtle: #141D2B;
-  --color-border-focus: #818CF8;
+  /* Backgrounds & Surfaces */
+  --color-bg: #071116;               /* Midnight Black */
+  --color-bg-alt: #101B21;           /* Deep Charcoal */
+  --color-header-bg: rgba(7, 17, 22, 0.88);
+  --color-surface: #101B21;          /* Deep Charcoal */
+  --color-surface-hover: #17252C;    /* Secondary Dark Surface */
+  --color-surface-active: #1D2E37;
+  --color-surface-card: #101B21;     /* Deep Charcoal */
+  --color-surface-card-hover: #17252C;
+  --color-surface-inset: #071116;
 
-  --color-primary-light: rgba(99, 102, 241, 0.16);
-  --color-primary-border: rgba(99, 102, 241, 0.35);
+  /* Borders */
+  --color-border: #1E2D34;
+  --color-border-subtle: #152228;
+  --color-border-hover: #2B3E48;
+  --color-border-focus: #FFC247;
 
-  --color-card-gradient: linear-gradient(180deg, #141C2B 0%, #0F172A 100%);
-  --color-hero-bg: radial-gradient(circle at 75% 20%, rgba(99, 102, 241, 0.2) 0%, rgba(139, 92, 246, 0.1) 35%, rgba(9, 13, 22, 0) 70%);
+  /* Primary Brand Action (Gold) */
+  --color-primary: #FFC247;
+  --color-primary-hover: #E8AA26;
+  --color-primary-active: #D4981C;
+  --color-primary-text: #071116;     /* Midnight black text on gold buttons */
+  --color-primary-light: rgba(255, 194, 71, 0.12);
+  --color-primary-border: rgba(255, 194, 71, 0.28);
 
-  /* Text Colors */
-  --color-text: #F8FAFC;
-  --color-text-secondary: #CBD5E1;
-  --color-text-muted: #94A3B8;
-  --color-text-inverse: #0F172A;
-  --color-heading: #FFFFFF;
+  /* Typography */
+  --color-heading: #F5F0E7;          /* Warm Ivory */
+  --color-text: #E5E1D8;             /* Soft Ivory */
+  --color-text-secondary: #A3AFB7;   /* Secondary muted */
+  --color-text-muted: #647078;       /* Muted Text */
+  --color-text-inverse: #071116;
 
   /* Elevation Shadows */
-  --shadow-sm: 0 2px 4px 0 rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 6px 16px -2px rgba(0, 0, 0, 0.45), 0 2px 6px -1px rgba(0, 0, 0, 0.25);
-  --shadow-lg: 0 16px 36px -6px rgba(0, 0, 0, 0.6), 0 8px 12px -6px rgba(0, 0, 0, 0.4);
-  --shadow-glow: 0 0 35px rgba(99, 102, 241, 0.35);
-  --shadow-dropdown: 0 20px 40px -10px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.1);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 6px 18px -2px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 16px 36px -6px rgba(0, 0, 0, 0.65);
+  --shadow-dropdown: 0 20px 40px -10px rgba(0, 0, 0, 0.8), 0 0 0 1px #1E2D34;
 
-  --logo-bg: #FFFFFF;
+  /* Focus Indicator */
+  --focus-ring: 0 0 0 2px rgba(255, 194, 71, 0.6);
+  --logo-text: #F5F0E7;
+  --logo-accent: #FFC247;
 }
 
-/* LIGHT THEME */
+/* ==============================================================================
+   LIGHT THEME
+   Warm Ivory, Card Ivory, Dark Text, Champagne Gold
+   ============================================================================== */
 [data-theme="light"] {
   color-scheme: light;
 
-  --color-bg: #F8FAFC;
-  --color-bg-alt: #F1F5F9;
-  --color-header-bg: rgba(255, 255, 255, 0.92);
-  --color-surface: #FFFFFF;
-  --color-surface-hover: #F8FAFC;
-  --color-surface-active: #F1F5F9;
-  --color-surface-card: #FFFFFF;
-  
-  --color-border: #E2E8F0;
-  --color-border-subtle: #CBD5E1;
-  --color-border-focus: #6366F1;
+  /* Backgrounds & Surfaces */
+  --color-bg: #F5F0E7;               /* Warm Ivory */
+  --color-bg-alt: #EFE9DE;
+  --color-header-bg: rgba(245, 240, 231, 0.92);
+  --color-surface: #FFFCF6;          /* Card Ivory */
+  --color-surface-hover: #F8F4EC;
+  --color-surface-active: #F0ECE4;
+  --color-surface-card: #FFFCF6;     /* Card Ivory */
+  --color-surface-card-hover: #FFFFFF;
+  --color-surface-inset: #EDE7DC;
 
-  --color-primary-light: rgba(79, 70, 229, 0.08);
-  --color-primary-border: rgba(79, 70, 229, 0.25);
+  /* Borders */
+  --color-border: #DDD8CC;           /* Ivory Border */
+  --color-border-subtle: #E8E3D7;
+  --color-border-hover: #C5BFB1;
+  --color-border-focus: #E8AA26;
 
-  --color-card-gradient: linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%);
-  --color-hero-bg: radial-gradient(circle at 75% 20%, rgba(99, 102, 241, 0.12) 0%, rgba(6, 182, 212, 0.08) 35%, rgba(248, 250, 252, 0) 70%);
+  /* Primary Brand Action (Gold) */
+  --color-primary: #FFC247;
+  --color-primary-hover: #E8AA26;
+  --color-primary-active: #D4981C;
+  --color-primary-text: #182329;     /* Dark Text */
+  --color-primary-light: rgba(255, 194, 71, 0.18);
+  --color-primary-border: rgba(232, 170, 38, 0.4);
 
-  /* Text Colors */
-  --color-text: #0F172A;
-  --color-text-secondary: #334155;
-  --color-text-muted: #64748B;
-  --color-text-inverse: #F8FAFC;
-  --color-heading: #020617;
+  /* Typography */
+  --color-heading: #182329;          /* Dark Text */
+  --color-text: #223038;             /* Dark Slate */
+  --color-text-secondary: #485863;
+  --color-text-muted: #647078;       /* Muted Text */
+  --color-text-inverse: #F5F0E7;
 
   /* Elevation Shadows */
-  --shadow-sm: 0 1px 3px 0 rgba(15, 23, 42, 0.08);
-  --shadow-md: 0 6px 18px -2px rgba(15, 23, 42, 0.08), 0 2px 6px -1px rgba(15, 23, 42, 0.04);
-  --shadow-lg: 0 16px 36px -5px rgba(15, 23, 42, 0.12), 0 8px 12px -6px rgba(15, 23, 42, 0.06);
-  --shadow-glow: 0 0 25px rgba(79, 70, 229, 0.2);
-  --shadow-dropdown: 0 20px 40px -10px rgba(15, 23, 42, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.06);
+  --shadow-sm: 0 1px 3px rgba(24, 35, 41, 0.06);
+  --shadow-md: 0 6px 18px -2px rgba(24, 35, 41, 0.08);
+  --shadow-lg: 0 16px 36px -6px rgba(24, 35, 41, 0.12);
+  --shadow-dropdown: 0 20px 40px -10px rgba(24, 35, 41, 0.15), 0 0 0 1px #DDD8CC;
 
-  --logo-bg: #FFFFFF;
+  /* Focus Indicator */
+  --focus-ring: 0 0 0 2px rgba(232, 170, 38, 0.6);
+  --logo-text: #182329;
+  --logo-accent: #E8AA26;
 }

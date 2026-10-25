@@ -1,5 +1,10 @@
 import React, { useRef } from 'react';
-import { Upload, FileText, AlertCircle, Shield } from 'lucide-react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import {
+  faCloudArrowUp,
+  faTriangleExclamation,
+  faShieldHalved
+} from '@fortawesome/free-solid-svg-icons';
 import './UploadBox.css';
 
 export default function UploadBox({
@@ -12,7 +17,7 @@ export default function UploadBox({
   acceptedTypes = '.pdf',
   maxSizeText = '50 MB',
   title = 'Select PDF file',
-  subtitle = 'or drop PDF here',
+  subtitle = 'or drag and drop your document here',
   multiple = false,
 }) {
   const fileInputRef = useRef(null);
@@ -62,35 +67,30 @@ export default function UploadBox({
         />
 
         <div className="upload-icon-circle">
-          <Upload size={26} className="upload-icon" />
+          <FontAwesomeIcon icon={faCloudArrowUp} className="upload-icon-fa" />
         </div>
 
         <div className="upload-box-content">
           <h3 className="upload-main-title">{title}</h3>
           <p className="upload-subtitle">{subtitle}</p>
+        </div>
 
-          <button type="button" className="btn btn-primary upload-btn" onClick={(e) => {
-            e.stopPropagation();
-            handleClick();
-          }}>
-            <FileText size={18} /> {multiple ? 'Choose PDF Files' : 'Choose PDF File'}
-          </button>
-
-          <div className="upload-info-row">
-            <span>Max file size: <strong>{maxSizeText}</strong></span>
-            <span className="info-dot">•</span>
-            <span className="secure-tag"><Shield size={13} /> Encrypted & Private</span>
-          </div>
+        <div className="upload-meta-strip">
+          <span className="upload-limit">Max size {maxSizeText}</span>
+          <span className="meta-sep">&bull;</span>
+          <span className="upload-private">
+            <FontAwesomeIcon icon={faShieldHalved} className="shield-mini-fa" />
+            <span>Client &amp; Private Sandbox</span>
+          </span>
         </div>
       </div>
 
       {error && (
         <div className="upload-error-alert" role="alert">
-          <AlertCircle size={18} className="error-icon" />
+          <FontAwesomeIcon icon={faTriangleExclamation} />
           <span>{error}</span>
         </div>
       )}
     </div>
   );
 }
-

@@ -1,0 +1,251 @@
+.account-page-container {
+  padding-top: 1rem;
+  padding-bottom: 3.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.account-hero {
+  text-align: center;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.account-avatar-badge {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--color-primary-light);
+  border: 1px solid var(--color-primary-border);
+  color: var(--color-primary);
+  font-size: 1.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1rem;
+}
+
+.account-title {
+  font-size: 1.85rem;
+  font-weight: 850;
+  color: var(--color-heading);
+  letter-spacing: -0.02em;
+  margin-bottom: 0.4rem;
+}
+
+.account-subtitle {
+  font-size: 0.95rem;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+.account-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+  max-width: 900px;
+  margin: 0.75rem auto 0;
+  width: 100%;
+}
+
+.account-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.account-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.card-header-icon {
+  color: var(--color-primary);
+  font-size: 1.1rem;
+}
+
+.account-card-header h3 {
+  font-size: 1.05rem;
+  font-weight: 750;
+  color: var(--color-heading);
+  margin: 0;
+}
+
+.account-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  font-size: 0.9rem;
+}
+
+.session-status-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.status-indicator-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-top: 5px;
+  flex-shrink: 0;
+}
+
+.status-indicator-dot.guest {
+  background: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-light);
+}
+
+.session-status-row strong {
+  display: block;
+  font-size: 0.92rem;
+  color: var(--color-heading);
+  margin-bottom: 0.15rem;
+}
+
+.session-status-row p {
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+  line-height: 1.4;
+  margin: 0;
+}
+
+.session-action-box {
+  background: var(--color-surface-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.session-action-box p {
+  font-size: 0.82rem;
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+  margin: 0;
+}
+
+.security-features-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.security-features-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 0.84rem;
+  color: var(--color-text-secondary);
+}
+
+.check-icon {
+  color: var(--color-success);
+  font-size: 0.85rem;
+}
+
+.privacy-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.privacy-toggle-row strong {
+  display: block;
+  font-size: 0.88rem;
+  color: var(--color-heading);
+}
+
+.privacy-toggle-row p {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+  margin: 0.1rem 0 0;
+}
+
+.switch-toggle-btn {
+  width: 44px;
+  height: 24px;
+  background: var(--color-bg-alt);
+  border: 1px solid var(--color-border);
+  border-radius: 9999px;
+  cursor: pointer;
+  position: relative;
+  transition: all var(--transition-fast);
+  padding: 2px;
+  flex-shrink: 0;
+}
+
+.switch-toggle-btn.active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.switch-thumb {
+  display: block;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #ffffff;
+  transition: transform var(--transition-fast);
+}
+
+.switch-toggle-btn.active .switch-thumb {
+  transform: translateX(20px);
+  background: #071116;
+}
+
+.theme-preference-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.theme-preference-row strong {
+  display: block;
+  font-size: 0.88rem;
+  color: var(--color-heading);
+}
+
+.theme-preference-row p {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+  margin: 0.1rem 0 0;
+}
+
+.card-body-text {
+  font-size: 0.86rem;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.view-history-btn {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+@media (max-width: 768px) {
+  .account-grid {
+    grid-template-columns: 1fr;
+  }
+}

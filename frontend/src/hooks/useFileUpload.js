@@ -79,7 +79,7 @@ export function useFileUpload() {
     });
   }, []);
 
-  const handleDrop = useCallback((e, isMultiple = false) => {
+  const handleDrop = useCallback((e, isMultiple = false, acceptType = '.pdf') => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
@@ -87,9 +87,9 @@ export function useFileUpload() {
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       const droppedFiles = Array.from(e.dataTransfer.files);
       if (isMultiple) {
-        selectMultipleFiles(droppedFiles);
+        selectMultipleFiles(droppedFiles, acceptType);
       } else {
-        selectFile(droppedFiles[0]);
+        selectFile(droppedFiles[0], acceptType);
       }
     }
   }, [selectFile, selectMultipleFiles]);

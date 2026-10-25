@@ -28,6 +28,39 @@ from engines.image_engine import (
     convert_pdf_to_jpg,
     ImageEngineException
 )
+from engines.powerpoint_engine import (
+    convert_pdf_to_pptx,
+    PowerPointEngineException,
+    InvalidPdfError as PptxInvalidPdfError,
+    PasswordProtectedPdfError as PptxPasswordProtectedPdfError
+)
+from engines.utilities_engine import (
+    add_page_numbers_py,
+    watermark_pdf_py,
+    crop_pdf_py,
+    edit_metadata_py,
+    reorder_pages_py,
+    UtilitiesEngineException
+)
+from ai.factory import get_ai_status_info
+from ai.provider_base import (
+    AIProviderException,
+    AIProviderNotConfiguredError,
+    AIProviderAuthenticationError,
+    AIProviderRateLimitError,
+    AIProviderTimeoutError,
+    AIProviderContextLengthError,
+)
+from engines.summarizer_engine import (
+    summarize_pdf,
+    SummarizerEngineException,
+    InvalidPdfError as SummarizerInvalidPdfError,
+    PasswordProtectedPdfError as SummarizerPasswordProtectedPdfError,
+    ScannedPdfError,
+    EmptyPdfError,
+    FileLimitExceededError
+)
+from core.rate_limiter import ai_rate_limiter, get_client_ip
 
 logger = logging.getLogger(__name__)
 
@@ -59,6 +92,22 @@ class CapabilitiesResponse(Schema):
     status: str
     engines: Dict[str, Any]
     tools: Dict[str, Any]
+    ai: Optional[Dict[str, Any]] = None
+
+
+class SummarizeResponse(Schema):
+    success: bool
+    mode: str
+    summary: str
+    page_count: int
+    char_count: int
+    word_count: int
+    estimated_reading_time_minutes: int
+    processing_time_ms: int
+    is_chunked: bool
+    warning: Optional[str] = None
+    provider: str
+    model: str
 
 
 class ConversionSuccessResponse(Schema):
@@ -148,17 +197,21 @@ def get_capabilities(request):
     Reports available server-side document engines and tool statuses.
     Replaces obsolete PHP capabilities endpoint.
     """
+    ai_status = get_ai_status_info()
     return {
         "status": "ok",
         "engines": {
             "pymupdf": True,
             "pdf2docx": True,
+            "python_pptx": True,
             "aes256_encryption": True,
             "image_rasterizer": True,
-            "client_vector_engine": True
+            "client_vector_engine": True,
+            "ai_engine": ai_status.get("configured", False)
         },
         "tools": {
             "pdf-to-word": {"available": True, "engine": "Python pdf2docx Engine", "status": "AVAILABLE"},
+            "pdf-to-powerpoint": {"available": True, "engine": "PyMuPDF + python-pptx Engine", "status": "AVAILABLE"},
             "protect-pdf": {"available": True, "engine": "PyMuPDF 256-bit AES Engine", "status": "AVAILABLE"},
             "pdf-to-jpg": {"available": True, "engine": "PyMuPDF High-DPI Engine", "status": "AVAILABLE"},
             "merge-pdf": {"available": True, "engine": "Client WebWorker Engine", "status": "AVAILABLE"},
@@ -170,8 +223,19 @@ def get_capabilities(request):
             "pdf-to-png": {"available": True, "engine": "Client WebWorker Engine", "status": "AVAILABLE"},
             "pdf-to-text": {"available": True, "engine": "Client WebWorker Engine", "status": "AVAILABLE"},
             "pdf-to-excel": {"available": True, "engine": "Tabular Extraction Engine", "status": "AVAILABLE"},
-            "pdf-to-ppt": {"available": True, "engine": "OpenXML Slide Engine", "status": "AVAILABLE"}
-        }
+            "pdf-to-ppt": {"available": True, "engine": "OpenXML Slide Engine", "status": "AVAILABLE"},
+            "add-page-numbers": {"available": True, "engine": "PyMuPDF Page Numbering Engine", "status": "AVAILABLE"},
+            "watermark-pdf": {"available": True, "engine": "PyMuPDF Watermark Engine", "status": "AVAILABLE"},
+            "crop-pdf": {"available": True, "engine": "PyMuPDF Crop Engine", "status": "AVAILABLE"},
+            "edit-metadata": {"available": True, "engine": "PyMuPDF Metadata Engine", "status": "AVAILABLE"},
+            "reorder-pdf": {"available": True, "engine": "PyMuPDF Page Sequence Engine", "status": "AVAILABLE"},
+            "ai-summarizer": {
+                "available": ai_status.get("configured", False),
+                "engine": f"AI Engine ({ai_status.get('provider', 'AI')})",
+                "status": ai_status.get("status", "AVAILABLE")
+            }
+        },
+        "ai": ai_status
     }
 
 
@@ -207,6 +271,23 @@ def trigger_storage_cleanup(request, max_age_seconds: int = 900):
         "freed_bytes": freed_bytes,
         "duration_ms": duration
     }
+
+
+def safe_unlink(path: Path) -> None:
+    """Safely unlink a temporary file on Windows without raising PermissionError."""
+    if not path:
+        return
+    for attempt in range(5):
+        try:
+            if path.exists():
+                path.unlink(missing_ok=True)
+            return
+        except PermissionError:
+            import gc
+            gc.collect()
+            time.sleep(0.05 * (attempt + 1))
+        except Exception:
+            break
 
 
 # ==============================================================================
@@ -245,17 +326,14 @@ def convert_pdf_to_word_endpoint(request, file: UploadedFile = File(...)):
         result = convert_pdf_to_docx(str(input_path), str(output_path))
 
     except (InvalidPdfError, PasswordProtectedPdfError) as client_err:
-        input_path.unlink(missing_ok=True)
         raise HttpError(400, str(client_err))
     except WordEngineException as engine_err:
-        input_path.unlink(missing_ok=True)
         raise HttpError(500, f"Conversion failed: {str(engine_err)}")
     except Exception as exc:
         logger.error(f"Unexpected conversion failure: {exc}", exc_info=True)
-        input_path.unlink(missing_ok=True)
         raise HttpError(500, f"Internal conversion error: {str(exc)}")
     finally:
-        input_path.unlink(missing_ok=True)
+        safe_unlink(input_path)
 
     base_name = Path(orig_name).stem
     download_filename = f"{base_name}_converted.docx"
@@ -277,6 +355,71 @@ def convert_pdf_to_word_endpoint(request, file: UploadedFile = File(...)):
         "size_bytes": result["size_bytes"],
         "is_scanned": result["is_scanned"],
         "execution_time_ms": result["execution_time_ms"]
+    }
+
+
+@api.post(
+    "/convert/pdf-to-powerpoint",
+    response={200: ConversionSuccessResponse, 400: ErrorResponse, 500: ErrorResponse},
+    tags=["Conversions"]
+)
+def convert_pdf_to_powerpoint_endpoint(request, file: UploadedFile = File(...), mode: str = Form("editable")):
+    """
+    Converts a PDF document to Microsoft PowerPoint (.pptx) format using PyMuPDF + python-pptx.
+    Supports 'editable' and 'visual' modes.
+    """
+    max_size = 50 * 1024 * 1024
+    if file.size > max_size:
+        raise HttpError(400, f"File size exceeds maximum allowed limit of 50MB ({file.size} bytes uploaded).")
+
+    orig_name = file.name or "presentation.pdf"
+    if not orig_name.lower().endswith('.pdf'):
+        raise HttpError(400, "Only PDF files are supported for PowerPoint conversion.")
+
+    job_uuid = uuid.uuid4().hex
+    input_filename = f"{job_uuid}.pdf"
+    output_filename = f"{job_uuid}.pptx"
+
+    input_path = settings.UPLOADS_DIR / input_filename
+    output_path = settings.OUTPUTS_DIR / output_filename
+
+    try:
+        with open(input_path, 'wb') as dest:
+            for chunk in file.chunks():
+                dest.write(chunk)
+
+        result = convert_pdf_to_pptx(str(input_path), str(output_path), mode=mode)
+
+    except (PptxInvalidPdfError, PptxPasswordProtectedPdfError) as client_err:
+        raise HttpError(400, str(client_err))
+    except PowerPointEngineException as engine_err:
+        raise HttpError(500, f"PowerPoint conversion failed: {str(engine_err)}")
+    except Exception as exc:
+        logger.error(f"Unexpected PowerPoint conversion failure: {exc}", exc_info=True)
+        raise HttpError(500, f"Internal conversion error: {str(exc)}")
+    finally:
+        safe_unlink(input_path)
+
+    base_name = Path(orig_name).stem
+    download_filename = f"{base_name}_presentation.pptx"
+
+    signed_token = token_signer.sign_object({
+        "file": output_filename,
+        "name": download_filename,
+        "t": int(time.time())
+    })
+
+    download_url = f"/api/v1/download/{signed_token}"
+
+    return 200, {
+        "success": True,
+        "filename": download_filename,
+        "download_url": download_url,
+        "download_token": signed_token,
+        "page_count": result["page_count"],
+        "size_bytes": result["file_size"],
+        "is_scanned": result["is_scanned"],
+        "execution_time_ms": int(result["elapsed_seconds"] * 1000)
     }
 
 
@@ -319,14 +462,12 @@ def protect_pdf_endpoint(
         result = protect_pdf_document(str(input_path), str(output_path), password.strip())
 
     except (InvalidPdfError, PasswordProtectedPdfError, ProtectEngineException) as client_err:
-        input_path.unlink(missing_ok=True)
         raise HttpError(400, str(client_err))
     except Exception as exc:
         logger.error(f"Unexpected protection error: {exc}", exc_info=True)
-        input_path.unlink(missing_ok=True)
         raise HttpError(500, f"Protection failed: {str(exc)}")
     finally:
-        input_path.unlink(missing_ok=True)
+        safe_unlink(input_path)
 
     base_name = Path(orig_name).stem
     download_filename = f"{base_name}_protected.pdf"
@@ -391,14 +532,12 @@ def convert_pdf_to_jpg_endpoint(
             dpi=dpi_val
         )
     except (InvalidPdfError, PasswordProtectedPdfError, ImageEngineException) as client_err:
-        input_path.unlink(missing_ok=True)
         raise HttpError(400, str(client_err))
     except Exception as exc:
         logger.error(f"Unexpected image conversion error: {exc}", exc_info=True)
-        input_path.unlink(missing_ok=True)
         raise HttpError(500, f"Image conversion failed: {str(exc)}")
     finally:
-        input_path.unlink(missing_ok=True)
+        safe_unlink(input_path)
 
     base_name = Path(orig_name).stem
     primary_file_on_disk = result["output_file"]
@@ -438,14 +577,473 @@ def convert_pdf_to_jpg_endpoint(
 
 
 # ==============================================================================
+# PHASE 2A PDF UTILITIES ENDPOINTS
+# ==============================================================================
+
+@api.post(
+    "/tools/add-page-numbers",
+    response={200: ProtectSuccessResponse, 400: ErrorResponse, 500: ErrorResponse},
+    tags=["PDF Utilities"]
+)
+def add_page_numbers_endpoint(
+    request,
+    file: UploadedFile = File(...),
+    start_number: int = Form(1),
+    format: str = Form("Page {n}"),
+    position: str = Form("bottom-right"),
+    font_size: float = Form(11.0),
+    font_color: str = Form("#334155"),
+    margin_pt: float = Form(36.0),
+    page_range: str = Form("all")
+):
+    """Adds customized page numbers to PDF document."""
+    max_size = 50 * 1024 * 1024
+    if file.size > max_size:
+        raise HttpError(400, f"File size exceeds maximum allowed limit of 50MB ({file.size} bytes uploaded).")
+
+    orig_name = file.name or "document.pdf"
+    if not orig_name.lower().endswith('.pdf'):
+        raise HttpError(400, "Only PDF files are supported.")
+
+    job_uuid = uuid.uuid4().hex
+    input_filename = f"{job_uuid}.pdf"
+    output_filename = f"{job_uuid}_numbered.pdf"
+    input_path = settings.UPLOADS_DIR / input_filename
+    output_path = settings.OUTPUTS_DIR / output_filename
+
+    start_time = time.time()
+    try:
+        with open(input_path, 'wb') as dest:
+            for chunk in file.chunks():
+                dest.write(chunk)
+
+        result = add_page_numbers_py(str(input_path), str(output_path), {
+            'startNumber': start_number,
+            'format': format,
+            'position': position,
+            'fontSize': font_size,
+            'fontColor': font_color,
+            'marginPt': margin_pt,
+            'pageRange': page_range
+        })
+    except UtilitiesEngineException as err:
+        raise HttpError(400, str(err))
+    except Exception as exc:
+        logger.error(f"Page numbering failure: {exc}", exc_info=True)
+        raise HttpError(500, f"Failed to add page numbers: {str(exc)}")
+    finally:
+        safe_unlink(input_path)
+
+    base_name = Path(orig_name).stem
+    download_filename = f"{base_name}_numbered.pdf"
+    signed_token = token_signer.sign_object({
+        "file": output_filename,
+        "name": download_filename,
+        "t": int(time.time())
+    })
+
+    return 200, {
+        "success": True,
+        "filename": download_filename,
+        "download_url": f"/api/v1/download/{signed_token}",
+        "download_token": signed_token,
+        "page_count": result["page_count"],
+        "size_bytes": result["size_bytes"],
+        "execution_time_ms": int((time.time() - start_time) * 1000)
+    }
+
+
+@api.post(
+    "/tools/watermark",
+    response={200: ProtectSuccessResponse, 400: ErrorResponse, 500: ErrorResponse},
+    tags=["PDF Utilities"]
+)
+def watermark_endpoint(
+    request,
+    file: UploadedFile = File(...),
+    text: str = Form("CONFIDENTIAL"),
+    opacity: float = Form(0.35),
+    rotation: float = Form(45.0),
+    font_size: float = Form(48.0),
+    color: str = Form("#EF4444"),
+    position: str = Form("center"),
+    page_range: str = Form("all")
+):
+    """Applies customizable watermark to PDF document."""
+    max_size = 50 * 1024 * 1024
+    if file.size > max_size:
+        raise HttpError(400, f"File size exceeds maximum allowed limit of 50MB ({file.size} bytes uploaded).")
+
+    orig_name = file.name or "document.pdf"
+    if not orig_name.lower().endswith('.pdf'):
+        raise HttpError(400, "Only PDF files are supported.")
+
+    job_uuid = uuid.uuid4().hex
+    input_filename = f"{job_uuid}.pdf"
+    output_filename = f"{job_uuid}_watermarked.pdf"
+    input_path = settings.UPLOADS_DIR / input_filename
+    output_path = settings.OUTPUTS_DIR / output_filename
+
+    start_time = time.time()
+    try:
+        with open(input_path, 'wb') as dest:
+            for chunk in file.chunks():
+                dest.write(chunk)
+
+        result = watermark_pdf_py(str(input_path), str(output_path), {
+            'text': text,
+            'opacity': opacity,
+            'rotation': rotation,
+            'fontSize': font_size,
+            'color': color,
+            'position': position,
+            'pageRange': page_range
+        })
+    except UtilitiesEngineException as err:
+        raise HttpError(400, str(err))
+    except Exception as exc:
+        logger.error(f"Watermark failure: {exc}", exc_info=True)
+        raise HttpError(500, f"Failed to apply watermark: {str(exc)}")
+    finally:
+        safe_unlink(input_path)
+
+    base_name = Path(orig_name).stem
+    download_filename = f"{base_name}_watermarked.pdf"
+    signed_token = token_signer.sign_object({
+        "file": output_filename,
+        "name": download_filename,
+        "t": int(time.time())
+    })
+
+    return 200, {
+        "success": True,
+        "filename": download_filename,
+        "download_url": f"/api/v1/download/{signed_token}",
+        "download_token": signed_token,
+        "page_count": result["page_count"],
+        "size_bytes": result["size_bytes"],
+        "execution_time_ms": int((time.time() - start_time) * 1000)
+    }
+
+
+@api.post(
+    "/tools/crop",
+    response={200: ProtectSuccessResponse, 400: ErrorResponse, 500: ErrorResponse},
+    tags=["PDF Utilities"]
+)
+def crop_endpoint(
+    request,
+    file: UploadedFile = File(...),
+    top: float = Form(36.0),
+    bottom: float = Form(36.0),
+    left: float = Form(36.0),
+    right: float = Form(36.0),
+    page_range: str = Form("all")
+):
+    """Crops PDF pages based on margins."""
+    max_size = 50 * 1024 * 1024
+    if file.size > max_size:
+        raise HttpError(400, f"File size exceeds maximum allowed limit of 50MB ({file.size} bytes uploaded).")
+
+    orig_name = file.name or "document.pdf"
+    if not orig_name.lower().endswith('.pdf'):
+        raise HttpError(400, "Only PDF files are supported.")
+
+    job_uuid = uuid.uuid4().hex
+    input_filename = f"{job_uuid}.pdf"
+    output_filename = f"{job_uuid}_cropped.pdf"
+    input_path = settings.UPLOADS_DIR / input_filename
+    output_path = settings.OUTPUTS_DIR / output_filename
+
+    start_time = time.time()
+    try:
+        with open(input_path, 'wb') as dest:
+            for chunk in file.chunks():
+                dest.write(chunk)
+
+        result = crop_pdf_py(str(input_path), str(output_path), {
+            'cropMargins': {'top': top, 'bottom': bottom, 'left': left, 'right': right},
+            'pageRange': page_range
+        })
+    except UtilitiesEngineException as err:
+        raise HttpError(400, str(err))
+    except Exception as exc:
+        logger.error(f"Crop failure: {exc}", exc_info=True)
+        raise HttpError(500, f"Failed to crop PDF: {str(exc)}")
+    finally:
+        safe_unlink(input_path)
+
+    base_name = Path(orig_name).stem
+    download_filename = f"{base_name}_cropped.pdf"
+    signed_token = token_signer.sign_object({
+        "file": output_filename,
+        "name": download_filename,
+        "t": int(time.time())
+    })
+
+    return 200, {
+        "success": True,
+        "filename": download_filename,
+        "download_url": f"/api/v1/download/{signed_token}",
+        "download_token": signed_token,
+        "page_count": result["page_count"],
+        "size_bytes": result["size_bytes"],
+        "execution_time_ms": int((time.time() - start_time) * 1000)
+    }
+
+
+@api.post(
+    "/tools/metadata",
+    response={200: ProtectSuccessResponse, 400: ErrorResponse, 500: ErrorResponse},
+    tags=["PDF Utilities"]
+)
+def metadata_endpoint(
+    request,
+    file: UploadedFile = File(...),
+    title: Optional[str] = Form(None),
+    author: Optional[str] = Form(None),
+    subject: Optional[str] = Form(None),
+    keywords: Optional[str] = Form(None),
+    creator: Optional[str] = Form(None)
+):
+    """Updates PDF document metadata while keeping all pages intact."""
+    max_size = 50 * 1024 * 1024
+    if file.size > max_size:
+        raise HttpError(400, f"File size exceeds maximum allowed limit of 50MB ({file.size} bytes uploaded).")
+
+    orig_name = file.name or "document.pdf"
+    if not orig_name.lower().endswith('.pdf'):
+        raise HttpError(400, "Only PDF files are supported.")
+
+    job_uuid = uuid.uuid4().hex
+    input_filename = f"{job_uuid}.pdf"
+    output_filename = f"{job_uuid}_meta.pdf"
+    input_path = settings.UPLOADS_DIR / input_filename
+    output_path = settings.OUTPUTS_DIR / output_filename
+
+    start_time = time.time()
+    try:
+        with open(input_path, 'wb') as dest:
+            for chunk in file.chunks():
+                dest.write(chunk)
+
+        result = edit_metadata_py(str(input_path), str(output_path), {
+            'title': title,
+            'author': author,
+            'subject': subject,
+            'keywords': keywords,
+            'creator': creator
+        })
+    except UtilitiesEngineException as err:
+        raise HttpError(400, str(err))
+    except Exception as exc:
+        logger.error(f"Metadata update failure: {exc}", exc_info=True)
+        raise HttpError(500, f"Failed to edit metadata: {str(exc)}")
+    finally:
+        safe_unlink(input_path)
+
+    base_name = Path(orig_name).stem
+    download_filename = f"{base_name}_updated.pdf"
+    signed_token = token_signer.sign_object({
+        "file": output_filename,
+        "name": download_filename,
+        "t": int(time.time())
+    })
+
+    return 200, {
+        "success": True,
+        "filename": download_filename,
+        "download_url": f"/api/v1/download/{signed_token}",
+        "download_token": signed_token,
+        "page_count": result["page_count"],
+        "size_bytes": result["size_bytes"],
+        "execution_time_ms": int((time.time() - start_time) * 1000)
+    }
+
+
+@api.post(
+    "/tools/reorder",
+    response={200: ProtectSuccessResponse, 400: ErrorResponse, 500: ErrorResponse},
+    tags=["PDF Utilities"]
+)
+def reorder_endpoint(
+    request,
+    file: UploadedFile = File(...),
+    page_order: Optional[str] = Form(None),
+    order: Optional[str] = Form(None)
+):
+    """Reorders PDF pages according to comma-separated list or JSON array of page numbers."""
+    max_size = 50 * 1024 * 1024
+    if file.size > max_size:
+        raise HttpError(400, f"File size exceeds maximum allowed limit of 50MB ({file.size} bytes uploaded).")
+
+    orig_name = file.name or "document.pdf"
+    if not orig_name.lower().endswith('.pdf'):
+        raise HttpError(400, "Only PDF files are supported.")
+
+    target_order_str = page_order or order
+    if not target_order_str:
+        raise HttpError(400, "Page order parameter ('page_order' or 'order') is required.")
+
+    import json
+    order_list = []
+    try:
+        trimmed = target_order_str.strip()
+        if trimmed.startswith('['):
+            order_list = [int(x) for x in json.loads(trimmed)]
+        else:
+            order_list = [int(x.strip()) for x in trimmed.split(',') if x.strip()]
+    except Exception:
+        raise HttpError(400, "Invalid page order format. Expected a comma-separated list or JSON array of numbers.")
+
+    if not order_list:
+        raise HttpError(400, "Page order list cannot be empty.")
+
+    job_uuid = uuid.uuid4().hex
+    input_filename = f"{job_uuid}.pdf"
+    output_filename = f"{job_uuid}_reordered.pdf"
+    input_path = settings.UPLOADS_DIR / input_filename
+    output_path = settings.OUTPUTS_DIR / output_filename
+
+    start_time = time.time()
+    try:
+        with open(input_path, 'wb') as dest:
+            for chunk in file.chunks():
+                dest.write(chunk)
+
+        result = reorder_pages_py(str(input_path), str(output_path), order_list)
+    except UtilitiesEngineException as err:
+        raise HttpError(400, str(err))
+    except Exception as exc:
+        logger.error(f"Reorder failure: {exc}", exc_info=True)
+        raise HttpError(500, f"Failed to reorder PDF pages: {str(exc)}")
+    finally:
+        safe_unlink(input_path)
+
+    base_name = Path(orig_name).stem
+    download_filename = f"{base_name}_reordered.pdf"
+    signed_token = token_signer.sign_object({
+        "file": output_filename,
+        "name": download_filename,
+        "t": int(time.time())
+    })
+
+    return 200, {
+        "success": True,
+        "filename": download_filename,
+        "download_url": f"/api/v1/download/{signed_token}",
+        "download_token": signed_token,
+        "page_count": result["page_count"],
+        "size_bytes": result["size_bytes"],
+        "execution_time_ms": int((time.time() - start_time) * 1000)
+    }
+
+
+# ==============================================================================
+# AI DOCUMENT INTELLIGENCE ENDPOINTS
+# ==============================================================================
+
+@api.post(
+    "/ai/summarize",
+    response={
+        200: SummarizeResponse,
+        400: ErrorResponse,
+        413: ErrorResponse,
+        429: ErrorResponse,
+        502: ErrorResponse,
+        503: ErrorResponse,
+        504: ErrorResponse,
+        500: ErrorResponse
+    },
+    tags=["AI Intelligence"]
+)
+def summarize_document_endpoint(
+    request,
+    file: UploadedFile = File(...),
+    mode: str = Form("quick")
+):
+    """
+    Analyzes and summarizes an uploaded PDF document using the configured hosted AI provider.
+    Supports 4 modes: 'quick', 'detailed', 'key_points', 'section_by_section'.
+    Handles input validation, scanned PDF detection, chunking for long documents,
+    and anonymous rate limiting (15 requests/hour).
+    """
+    client_ip = get_client_ip(request)
+    is_allowed, remaining, retry_after = ai_rate_limiter.check(client_ip)
+    if not is_allowed:
+        raise HttpError(
+            429,
+            f"Rate limit exceeded. You can make at most 15 AI requests per hour. Please try again in {retry_after} seconds."
+        )
+
+    orig_name = file.name or "document.pdf"
+    if not orig_name.lower().endswith('.pdf'):
+        raise HttpError(400, "Invalid file format. Please upload a standard PDF document (.pdf).")
+
+    # Enforce file size limit before writing to disk
+    max_size = 25 * 1024 * 1024  # 25 MB
+    if file.size > max_size:
+        raise HttpError(400, f"File size ({file.size} bytes) exceeds the maximum allowed limit of 25MB.")
+
+    valid_modes = ('quick', 'detailed', 'key_points', 'section_by_section')
+    clean_mode = (mode or 'quick').lower().strip()
+    if clean_mode not in valid_modes:
+        raise HttpError(
+            400,
+            f"Invalid summary mode '{clean_mode}'. Supported modes are: {', '.join(valid_modes)}."
+        )
+
+    job_uuid = uuid.uuid4().hex
+    input_filename = f"{job_uuid}_summarize.pdf"
+    input_path = settings.UPLOADS_DIR / input_filename
+
+    try:
+        with open(input_path, 'wb') as dest:
+            for chunk in file.chunks():
+                dest.write(chunk)
+
+        result = summarize_pdf(str(input_path), mode=clean_mode)
+        # Record successful usage against rate limiter
+        ai_rate_limiter.record(client_ip)
+        return 200, result
+
+    except ScannedPdfError as err:
+        raise HttpError(400, str(err))
+    except SummarizerPasswordProtectedPdfError as err:
+        raise HttpError(400, str(err))
+    except (EmptyPdfError, FileLimitExceededError, SummarizerInvalidPdfError) as err:
+        raise HttpError(400, str(err))
+    except SummarizerEngineException as err:
+        raise HttpError(400, str(err))
+    except AIProviderNotConfiguredError as err:
+        raise HttpError(503, str(err))
+    except AIProviderAuthenticationError as err:
+        raise HttpError(502, f"AI provider authentication failed: {str(err)}")
+    except AIProviderRateLimitError as err:
+        raise HttpError(429, f"Upstream AI provider rate limit reached: {str(err)}")
+    except AIProviderTimeoutError as err:
+        raise HttpError(504, f"AI provider timed out: {str(err)}")
+    except AIProviderContextLengthError as err:
+        raise HttpError(413, f"Document context length exceeded: {str(err)}")
+    except AIProviderException as err:
+        raise HttpError(502, f"AI provider error: {str(err)}")
+    except Exception as exc:
+        logger.error(f"Summarizer error: {exc}", exc_info=True)
+        raise HttpError(500, f"Failed to generate summary: {str(exc)}")
+    finally:
+        safe_unlink(input_path)
+
+
+# ==============================================================================
 # SECURE DOWNLOAD STREAMING ENDPOINT
 # ==============================================================================
 
 @api.get("/download/{token}", tags=["Downloads"])
-def download_converted_file(request, token: str):
+def download_converted_file(request, token: str, inline: bool = False):
     """
     Streams a generated document using a short-lived cryptographic token.
     Detects MIME types dynamically and sets secure anti-sniff headers.
+    Supports inline preview mode when inline=True (e.g. for rendered page images).
     Never exposes internal storage directories or file paths.
     """
     try:
@@ -490,7 +1088,7 @@ def download_converted_file(request, token: str):
 
     response = FileResponse(
         open(target_file, 'rb'),
-        as_attachment=True,
+        as_attachment=not inline,
         filename=download_as_name
     )
     response['Content-Type'] = content_type

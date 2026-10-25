@@ -1,40 +1,34 @@
 .upload-box-wrapper {
   width: 100%;
-  max-width: 600px;
-  margin: 0 auto;
 }
 
 .upload-box {
-  background: var(--color-surface);
+  width: 100%;
   border: 2px dashed var(--color-border);
   border-radius: var(--radius-lg);
-  padding: 1.75rem 1.5rem;
-  text-align: center;
-  cursor: pointer;
-  transition: all var(--transition-normal);
-  position: relative;
+  background-color: var(--color-surface-card);
+  padding: 3.5rem 2rem;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-}
-
-.upload-box:hover, .upload-box:focus-visible {
-  border-color: var(--color-primary);
-  background: var(--color-surface-hover);
-  box-shadow: 0 0 25px rgba(99, 102, 241, 0.15);
+  text-align: center;
+  cursor: pointer;
   outline: none;
+  transition: all var(--transition-fast);
 }
 
+.upload-box:hover,
 .upload-box.dragging {
-  border-color: var(--color-primary);
-  background: rgba(99, 102, 241, 0.1);
-  transform: scale(1.01);
-  border-style: solid;
+  border-color: var(--color-gold);
+  background-color: var(--color-surface-card-hover);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }
 
 .upload-box.has-error {
   border-color: var(--color-error);
+  background-color: var(--color-error-bg);
 }
 
 .file-input-hidden {
@@ -42,96 +36,79 @@
 }
 
 .upload-icon-circle {
-  width: 52px;
-  height: 52px;
+  width: 58px;
+  height: 58px;
   border-radius: 50%;
-  background: var(--color-primary-light);
-  border: 1px solid var(--color-primary-border);
+  background-color: var(--color-surface-inset);
+  border: 1px solid var(--color-border);
+  color: var(--color-gold);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--color-primary);
-  margin-bottom: 0.85rem;
-  transition: transform var(--transition-fast);
+  font-size: 1.5rem;
+  margin-bottom: 1.25rem;
+  transition: transform var(--transition-fast), border-color var(--transition-fast);
 }
 
-.upload-box:hover .upload-icon-circle {
-  transform: translateY(-2px) scale(1.05);
+.upload-box:hover .upload-icon-circle,
+.upload-box.dragging .upload-icon-circle {
+  transform: scale(1.08);
+  border-color: var(--color-gold);
+}
+
+.upload-icon-fa {
+  width: 1.5rem;
+  height: 1.5rem;
 }
 
 .upload-box-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.45rem;
+  margin-bottom: 1.25rem;
 }
 
 .upload-main-title {
   font-size: 1.25rem;
   font-weight: 700;
-  color: var(--color-text);
+  color: var(--color-heading);
+  margin-bottom: 0.35rem;
 }
 
 .upload-subtitle {
-  font-size: 0.88rem;
+  font-size: 0.9rem;
   color: var(--color-text-secondary);
-  margin-bottom: 0.4rem;
 }
 
-.upload-btn {
-  margin-bottom: 0.35rem;
-  padding: 0.75rem 1.75rem;
-}
-
-.upload-info-row {
+.upload-meta-strip {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
-  font-size: 0.825rem;
+  gap: 0.65rem;
+  font-size: 0.8rem;
   color: var(--color-text-muted);
-  margin-top: 0.5rem;
 }
 
-.info-dot {
+.meta-sep {
   color: var(--color-border);
 }
 
-.secure-tag {
+.upload-private {
   display: inline-flex;
   align-items: center;
-  gap: 0.25rem;
-  color: var(--color-success);
+  gap: 0.35rem;
+}
+
+.shield-mini-fa {
+  color: var(--color-gold);
+  font-size: 0.75rem;
 }
 
 .upload-error-alert {
   margin-top: 1rem;
-  background: var(--color-error-bg);
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-error-bg);
+  border: 1px solid var(--color-error-border);
   color: var(--color-error);
-  padding: 0.85rem 1.25rem;
-  border-radius: var(--radius-md);
+  font-size: 0.875rem;
   display: flex;
   align-items: center;
-  gap: 0.6rem;
-  font-size: 0.9rem;
-  font-weight: 500;
-  animation: fadeIn 0.2s ease-in-out;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-4px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@media (max-width: 600px) {
-  .upload-box {
-    padding: 2.5rem 1.25rem;
-  }
-  .upload-info-row {
-    flex-direction: column;
-    gap: 0.25rem;
-  }
-  .info-dot {
-    display: none;
-  }
+  gap: 0.65rem;
 }

@@ -60,6 +60,8 @@ def protect_pdf_document(
     try:
         doc = fitz.open(input_pdf_path)
     except Exception as err:
+        import gc
+        gc.collect()
         raise InvalidPdfError(f"Unable to parse PDF document: {str(err)}")
 
     if doc.is_encrypted and doc.needs_pass:

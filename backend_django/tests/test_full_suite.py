@@ -171,3 +171,22 @@ class FullPythonSuiteTests(TestCase):
         data = res.json()
         self.assertTrue(data['success'])
         self.assertIn('deleted_files_count', data)
+
+    def test_download_inline_mode(self):
+        pdf_bytes = create_test_pdf(1, "Inline Test")
+        uploaded = SimpleUploadedFile("single.pdf", pdf_bytes, content_type="application/pdf")
+        res = self.client.post('/api/v1/convert/pdf-to-jpg', {'file': uploaded})
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        token = data['download_token']
+
+        # Normal download (attachment)
+        res_attach = self.client.get(f'/api/v1/download/{token}')
+        self.assertEqual(res_attach.status_code, 200)
+        self.assertIn('attachment;', res_attach.headers.get('Content-Disposition', ''))
+
+        # Inline download (for browser image previews)
+        res_inline = self.client.get(f'/api/v1/download/{token}?inline=true')
+        self.assertEqual(res_inline.status_code, 200)
+        self.assertNotIn('attachment;', res_inline.headers.get('Content-Disposition', ''))
+        self.assertEqual(res_inline.headers.get('Content-Type'), 'image/jpeg')

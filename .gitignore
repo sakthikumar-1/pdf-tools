@@ -37,3 +37,6 @@ backend_django/storage/*
 
 # Storage & Temporary Files
 storage/
+scratch/
+fixtures/
+frontend/scratch_*.mjs

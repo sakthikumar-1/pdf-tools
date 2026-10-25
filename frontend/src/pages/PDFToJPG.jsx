@@ -1,29 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
-  FileImage, 
-  Settings, 
-  Sparkles, 
-  ArrowLeft, 
-  ShieldCheck, 
-  Check, 
-  HelpCircle,
-  FileCheck
-} from 'lucide-react';
-import * as pdfjsLib from 'pdfjs-dist';
+  faFileImage, 
+  faGear, 
+  faRotateRight, 
+  faCheck, 
+  faCircleQuestion,
+  faShieldHalved,
+  faWandMagicSparkles
+} from '@fortawesome/free-solid-svg-icons';
+import * as pdfjsDist from 'pdfjs-dist';
+const pdfjsLib = pdfjsDist.default || pdfjsDist;
 import JSZip from 'jszip';
 import UploadBox from '../components/UploadBox';
 import FileUploader from '../components/FileUploader';
 import ProgressBar from '../components/ProgressBar';
+import DownloadButton from '../components/DownloadButton';
 import { useFileUpload } from '../hooks/useFileUpload';
 import { convertPdfToJpgPython } from '../services/api';
 import { downloadFile } from '../utils/fileUtils';
 import './PDFToJPG.css';
 
 // Set up PDF.js worker source
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+if (pdfjsLib.GlobalWorkerOptions) {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version || '4.0.379'}/pdf.worker.min.js`;
+}
 
-export default function PDFToJPG() {
+function PDFToJPGInner() {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
@@ -47,6 +51,7 @@ export default function PDFToJPG() {
   // Settings options
   const [qualityDpi, setQualityDpi] = useState(150); // 150 DPI standard, 300 DPI high resolution
   const [convertedImages, setConvertedImages] = useState([]);
+  const [backendZipUrl, setBackendZipUrl] = useState(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [isZipping, setIsZipping] = useState(false);
@@ -58,6 +63,7 @@ export default function PDFToJPG() {
     setStatus('processing');
     setProgress(5);
     setConvertedImages([]);
+    setBackendZipUrl(null);
     setError(null);
 
     try {
@@ -68,13 +74,20 @@ export default function PDFToJPG() {
           setProgress(Math.min(90, Math.round(percent * 0.5)));
         });
         if (result && result.success && result.images && result.images.length > 0) {
+          if (result.isZip && result.downloadUrl) {
+            setBackendZipUrl(result.downloadUrl);
+          } else {
+            setBackendZipUrl(null);
+          }
           const formatted = result.images.map((img) => ({
             pageNumber: img.page,
             fileName: img.filename,
             url: img.download_url,
+            previewUrl: img.download_url ? `${img.download_url}?inline=1` : img.download_url,
             size: img.size_bytes,
           }));
           setConvertedImages(formatted);
+          setTotalPages(result.pageCount || result.images.length);
           setStatus('success');
           setProgress(100);
           useClientRendering = false;
@@ -143,15 +156,28 @@ export default function PDFToJPG() {
     setIsZipping(true);
 
     try {
-      const zip = new JSZip();
       const folderName = file ? file.name.replace(/\.[^/.]+$/, "") : "pdf_images";
+
+      // If Python backend created a native ZIP package, download it directly
+      if (backendZipUrl) {
+        downloadFile(backendZipUrl, `${folderName}.zip`);
+        return;
+      }
+
+      const zip = new JSZip();
       const folder = zip.folder(folderName);
 
-      convertedImages.forEach((img, idx) => {
-        // Remove base64 prefix
-        const base64Data = img.dataUrl.replace(/^data:image\/jpeg;base64,/, "");
-        folder.file(`page_${idx + 1}.jpg`, base64Data, { base64: true });
-      });
+      for (let idx = 0; idx < convertedImages.length; idx++) {
+        const img = convertedImages[idx];
+        if (img.dataUrl) {
+          const base64Data = img.dataUrl.replace(/^data:image\/jpeg;base64,/, "");
+          folder.file(`page_${idx + 1}.jpg`, base64Data, { base64: true });
+        } else if (img.url) {
+          const res = await fetch(img.url);
+          const blob = await res.blob();
+          folder.file(`page_${idx + 1}.jpg`, blob);
+        }
+      }
 
       const content = await zip.generateAsync({ type: 'blob' });
       downloadFile(content, `${folderName}_images.zip`);
@@ -164,17 +190,23 @@ export default function PDFToJPG() {
 
   return (
     <div className="tool-page-wrapper container">
-      {/* Top Breadcrumb / Back Link */}
-      <div className="tool-breadcrumb">
-        <Link to="/#tools-catalog" className="breadcrumb-link">
-          <ArrowLeft size={16} /> Back to All PDF Tools
+      {/* Top Breadcrumb / Navigation */}
+      <nav className="tool-breadcrumb" aria-label="Breadcrumb">
+        <Link to="/" className="breadcrumb-link">
+          Home
         </Link>
-      </div>
+        <span className="breadcrumb-separator">/</span>
+        <a href="/#tools-catalog" className="breadcrumb-link">
+          PDF Tools
+        </a>
+        <span className="breadcrumb-separator">/</span>
+        <span className="breadcrumb-current">PDF to JPG</span>
+      </nav>
 
       {/* Tool Title Header */}
       <div className="tool-header">
         <div className="tool-header-icon-badge">
-          <FileImage size={32} />
+          <FontAwesomeIcon icon={faFileImage} size="2x" />
         </div>
         <h1 className="tool-header-title">PDF to JPG Converter</h1>
         <p className="tool-header-subtitle">
@@ -211,7 +243,7 @@ export default function PDFToJPG() {
             {/* Conversion Quality Options */}
             <div className="options-panel">
               <div className="options-header">
-                <Settings size={18} className="options-icon" />
+                <FontAwesomeIcon icon={faGear} className="options-icon" />
                 <h3 className="options-title">Image Quality Options</h3>
               </div>
 
@@ -221,7 +253,7 @@ export default function PDFToJPG() {
                   onClick={() => setQualityDpi(150)}
                 >
                   <div className="quality-radio">
-                    {qualityDpi === 150 && <Check size={14} />}
+                    {qualityDpi === 150 && <FontAwesomeIcon icon={faCheck} />}
                   </div>
                   <div className="quality-text">
                     <span className="quality-name">Standard Quality (150 DPI)</span>
@@ -234,7 +266,7 @@ export default function PDFToJPG() {
                   onClick={() => setQualityDpi(300)}
                 >
                   <div className="quality-radio">
-                    {qualityDpi === 300 && <Check size={14} />}
+                    {qualityDpi === 300 && <FontAwesomeIcon icon={faCheck} />}
                   </div>
                   <div className="quality-text">
                     <span className="quality-name">High Quality (300 DPI) <span className="pill-badge">PRO</span></span>
@@ -262,23 +294,46 @@ export default function PDFToJPG() {
           <DownloadButton
             convertedImages={convertedImages}
             originalFileName={file ? file.name : 'document.pdf'}
-            onConvertAnother={reset}
+            onConvertAnother={() => {
+              setBackendZipUrl(null);
+              setConvertedImages([]);
+              reset();
+            }}
             onDownloadZip={handleDownloadZip}
             isZipping={isZipping}
           />
         )}
 
-        {/* STEP 5: Error State */}
+        {/* STEP 5: Error State with In-Place Actionable Retry */}
         {status === 'error' && (
-          <div className="tool-error-card">
-            <UploadBox
-              onFileSelect={selectFile}
-              isDragging={isDragging}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-              error={error}
-            />
+          <div className="tool-error-card" style={{ maxWidth: '640px', margin: '2rem auto', textAlign: 'center', padding: '2.5rem 2rem', background: 'var(--color-bg-surface)', borderRadius: '1rem', border: '1px solid var(--color-border-subtle)', boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
+            <div style={{ color: 'var(--color-danger, #ef4444)', marginBottom: '1rem', display: 'flex', justifyContent: 'center' }}>
+              <FontAwesomeIcon icon={faCircleQuestion} size="3x" />
+            </div>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--color-text-primary)', marginBottom: '0.75rem' }}>
+              Conversion Error
+            </h3>
+            <p style={{ color: 'var(--color-text-secondary)', marginBottom: '1.75rem', lineHeight: 1.6 }}>
+              {error || 'An unexpected error occurred while converting your PDF. Please ensure the document is not password-protected and try again.'}
+            </p>
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+              {file && (
+                <button
+                  type="button"
+                  className="btn btn-primary btn-lg"
+                  onClick={processPdfToJpg}
+                >
+                  <FontAwesomeIcon icon={faRotateRight} /> Retry Conversion
+                </button>
+              )}
+              <button
+                type="button"
+                className="btn btn-secondary btn-lg"
+                onClick={() => reset()}
+              >
+                Choose Another PDF
+              </button>
+            </div>
           </div>
         )}
       </div>
@@ -315,14 +370,14 @@ export default function PDFToJPG() {
 
         <div className="seo-faq-grid">
           <div className="faq-card">
-            <h4 className="faq-question"><ShieldCheck size={18} /> Is my PDF file secure?</h4>
+            <h4 className="faq-question"><FontAwesomeIcon icon={faShieldHalved} /> Is my PDF file secure?</h4>
             <p className="faq-answer">
               Yes, absolutely. Your document privacy is completely protected. Conversion occurs securely without saving permanent copies.
             </p>
           </div>
 
           <div className="faq-card">
-            <h4 className="faq-question"><Sparkles size={18} /> Will my image quality degrade?</h4>
+            <h4 className="faq-question"><FontAwesomeIcon icon={faWandMagicSparkles} /> Will my image quality degrade?</h4>
             <p className="faq-answer">
               No. Our rendering engine preserves text sharpness, vector shapes, fonts, and original image colors accurately.
             </p>
@@ -330,5 +385,54 @@ export default function PDFToJPG() {
         </div>
       </section>
     </div>
+  );
+}
+
+// React Error Boundary to prevent any unhandled child exceptions from causing a blank white page
+class PDFToJPGErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error, info) {
+    console.error('[PDFToJPGErrorBoundary caught error]:', error, info);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="tool-page-wrapper container" style={{ padding: '4rem 1rem', textAlign: 'center' }}>
+          <div style={{ maxWidth: '580px', margin: '0 auto', padding: '2.5rem', background: 'var(--color-bg-surface)', borderRadius: '1rem', border: '1px solid var(--color-border-subtle)', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
+            <h2 style={{ fontSize: '1.35rem', fontWeight: 600, color: 'var(--color-danger, #ef4444)', marginBottom: '0.75rem' }}>
+              Something went wrong
+            </h2>
+            <p style={{ color: 'var(--color-text-secondary)', marginBottom: '1.75rem', lineHeight: 1.5 }}>
+              The PDF to JPG converter encountered an unexpected view error. You can reset and try again.
+            </p>
+            <button
+              type="button"
+              className="btn btn-primary btn-lg"
+              onClick={() => {
+                this.setState({ hasError: false, error: null });
+                window.location.reload();
+              }}
+            >
+              Reload Converter
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+export default function PDFToJPG(props) {
+  return (
+    <PDFToJPGErrorBoundary>
+      <PDFToJPGInner {...props} />
+    </PDFToJPGErrorBoundary>
   );
 }

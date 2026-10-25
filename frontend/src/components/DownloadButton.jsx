@@ -1,7 +1,13 @@
 import React from 'react';
-import { Download, Archive, RefreshCw, CheckCircle2, Eye, FileImage } from 'lucide-react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { 
+  faDownload, 
+  faFileZipper, 
+  faRotateRight, 
+  faCircleCheck, 
+  faFileImage 
+} from '@fortawesome/free-solid-svg-icons';
 import confetti from 'canvas-confetti';
-import { formatFileSize } from '../utils/formatFileSize';
 import { downloadFile } from '../utils/fileUtils';
 import './DownloadButton.css';
 
@@ -37,10 +43,10 @@ export default function DownloadButton({
       {/* Banner */}
       <div className="success-banner">
         <div className="success-icon-badge">
-          <CheckCircle2 size={32} />
+          <FontAwesomeIcon icon={faCircleCheck} size="2x" />
         </div>
         <div className="success-banner-text">
-          <h2 className="success-title">Conversion Complete!</h2>
+          <h2 className="success-title">Conversion Complete</h2>
           <p className="success-subtitle">
             Successfully converted <strong>{totalImages} {totalImages === 1 ? 'page' : 'pages'}</strong> into high-quality JPG image{totalImages > 1 ? 's' : ''}.
           </p>
@@ -52,7 +58,7 @@ export default function DownloadButton({
         {isMultiPage ? (
           <button
             type="button"
-            className="btn btn-primary btn-lg main-download-btn pulse-glow"
+            className="btn btn-primary btn-lg main-download-btn"
             onClick={() => {
               triggerConfetti();
               onDownloadZip();
@@ -63,20 +69,22 @@ export default function DownloadButton({
               <>Creating ZIP Archive...</>
             ) : (
               <>
-                <Archive size={24} /> Download All as ZIP ({totalImages} Pages)
+                <FontAwesomeIcon icon={faFileZipper} />
+                <span>Download All as ZIP ({totalImages} Pages)</span>
               </>
             )}
           </button>
         ) : (
           <button
             type="button"
-            className="btn btn-primary btn-lg main-download-btn pulse-glow"
+            className="btn btn-primary btn-lg main-download-btn"
             onClick={() => {
               triggerConfetti();
               handleSingleDownload(convertedImages[0], 0);
             }}
           >
-            <Download size={24} /> DOWNLOAD JPG IMAGE
+            <FontAwesomeIcon icon={faDownload} />
+            <span>Download JPG Image</span>
           </button>
         )}
 
@@ -85,7 +93,8 @@ export default function DownloadButton({
           className="btn btn-secondary btn-lg convert-another-btn"
           onClick={onConvertAnother}
         >
-          <RefreshCw size={18} /> Convert Another PDF
+          <FontAwesomeIcon icon={faRotateRight} />
+          <span>Convert Another PDF</span>
         </button>
       </div>
 
@@ -93,7 +102,8 @@ export default function DownloadButton({
       <div className="converted-preview-section">
         <div className="preview-header">
           <h3 className="preview-title">
-            <FileImage size={18} /> Generated Images ({totalImages})
+            <FontAwesomeIcon icon={faFileImage} className="preview-title-icon" />
+            <span>Generated Images ({totalImages})</span>
           </h3>
           {isMultiPage && (
             <button
@@ -102,7 +112,8 @@ export default function DownloadButton({
               onClick={onDownloadZip}
               disabled={isZipping}
             >
-              <Archive size={14} /> Download ZIP
+              <FontAwesomeIcon icon={faFileZipper} />
+              <span>Download ZIP</span>
             </button>
           )}
         </div>
@@ -124,7 +135,8 @@ export default function DownloadButton({
                     onClick={() => handleSingleDownload(img, idx)}
                     title={`Download Page ${idx + 1}`}
                   >
-                    <Download size={18} /> Download Page {idx + 1}
+                    <FontAwesomeIcon icon={faDownload} />
+                    <span>Download Page {idx + 1}</span>
                   </button>
                 </div>
               </div>
@@ -136,8 +148,9 @@ export default function DownloadButton({
                   className="page-download-icon-btn"
                   onClick={() => handleSingleDownload(img, idx)}
                   title="Download image"
+                  aria-label={`Download Page ${idx + 1}`}
                 >
-                  <Download size={15} />
+                  <FontAwesomeIcon icon={faDownload} />
                 </button>
               </div>
             </div>

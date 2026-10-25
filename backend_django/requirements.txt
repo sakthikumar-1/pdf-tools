@@ -11,11 +11,15 @@ cryptography>=42.0.0
 pymupdf>=1.24.0
 pdf2docx>=0.5.8
 python-docx>=1.1.0
+python-pptx>=1.0.0
 
 # Production Application Server
 gunicorn>=22.0.0
 uvicorn[standard]>=0.30.0
 requests>=2.31.0
+
+# AI Document Intelligence
+google-genai>=1.0.0
 
 # Testing
 pytest>=8.0.0

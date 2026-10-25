@@ -57,6 +57,19 @@ export async function fetchServerCapabilities() {
 export function getToolCapability(toolTitle, capabilitiesMap) {
   const titleLower = toolTitle.toLowerCase();
 
+  if (titleLower.includes('summar') || titleLower.includes('ai')) {
+    const aiConfigured = capabilitiesMap?.ai?.configured ?? true;
+    const provider = capabilitiesMap?.ai?.provider || 'AI';
+    return {
+      available: aiConfigured,
+      status: aiConfigured ? 'AVAILABLE' : 'NOT_CONFIGURED',
+      engine: `Hosted AI Engine (${provider})`,
+      reason: aiConfigured 
+        ? 'AI-powered document intelligence and structured summarization active.'
+        : 'AI provider is not yet configured in server environment.',
+    };
+  }
+
   if (titleLower.includes('protect')) {
     return {
       available: true,
@@ -93,12 +106,57 @@ export function getToolCapability(toolTitle, capabilitiesMap) {
     };
   }
 
-  if (titleLower.includes('powerpoint') || titleLower.includes('ppt')) {
+    if (titleLower.includes('powerpoint') || titleLower.includes('ppt')) {
     return {
       available: true,
       status: 'AVAILABLE',
-      engine: 'OpenXML Slide AST',
+      engine: 'PyMuPDF + python-pptx Engine',
       reason: 'Slide text shape generator active.',
+    };
+  }
+
+  if (titleLower.includes('number') || titleLower.includes('page-number')) {
+    return {
+      available: true,
+      status: 'AVAILABLE',
+      engine: 'PyMuPDF + pdf-lib Engine',
+      reason: 'Rotation-aware page numbering active.',
+    };
+  }
+
+  if (titleLower.includes('watermark')) {
+    return {
+      available: true,
+      status: 'AVAILABLE',
+      engine: 'PyMuPDF + pdf-lib Engine',
+      reason: 'Vector and text watermark engine active.',
+    };
+  }
+
+  if (titleLower.includes('crop')) {
+    return {
+      available: true,
+      status: 'AVAILABLE',
+      engine: 'PyMuPDF + pdf-lib Engine',
+      reason: 'Lossless margin trimming active.',
+    };
+  }
+
+  if (titleLower.includes('metadata')) {
+    return {
+      available: true,
+      status: 'AVAILABLE',
+      engine: 'PyMuPDF + pdf-lib Engine',
+      reason: 'PDF dictionary metadata editing active.',
+    };
+  }
+
+  if (titleLower.includes('reorder') || titleLower.includes('organize')) {
+    return {
+      available: true,
+      status: 'AVAILABLE',
+      engine: 'PyMuPDF + pdf-lib Engine',
+      reason: 'Visual page sequence reordering active.',
     };
   }
 

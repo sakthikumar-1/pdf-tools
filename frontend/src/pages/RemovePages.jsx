@@ -1,17 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
-  ArrowLeft, 
-  Trash2, 
-  Sparkles, 
-  Check, 
-  Download, 
-  X, 
-  Info, 
-  RotateCcw, 
-  FileText 
-} from 'lucide-react';
-import * as pdfjsLib from 'pdfjs-dist';
+  faArrowLeft, 
+  faTrashCan, 
+  faWandMagicSparkles, 
+  faCheck, 
+  faDownload, 
+  faXmark, 
+  faCircleInfo, 
+  faArrowRotateLeft, 
+  faFileLines 
+} from '@fortawesome/free-solid-svg-icons';
+import * as pdfjsDist from 'pdfjs-dist';
+const pdfjsLib = pdfjsDist.default || pdfjsDist;
 import UploadBox from '../components/UploadBox';
 import FileUploader from '../components/FileUploader';
 import ProgressBar from '../components/ProgressBar';
@@ -24,7 +26,9 @@ import {
 } from '../utils/pdfProcessor';
 import './RemovePages.css';
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+if (pdfjsLib.GlobalWorkerOptions) {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version || '4.0.379'}/pdf.worker.min.js`;
+}
 
 export default function RemovePages() {
   const {
@@ -190,19 +194,25 @@ export default function RemovePages() {
   return (
     <div className="remove-pages-container container">
       {/* Top Breadcrumb Link */}
-      <div className="tool-breadcrumb">
-        <Link to="/#tools-catalog" className="breadcrumb-link">
-          <ArrowLeft size={16} /> Back to All PDF Tools
+      <nav className="tool-breadcrumb" aria-label="Breadcrumb">
+        <Link to="/" className="breadcrumb-link">
+          Home
         </Link>
-      </div>
+        <span className="breadcrumb-separator">/</span>
+        <a href="/#tools-catalog" className="breadcrumb-link">
+          PDF Tools
+        </a>
+        <span className="breadcrumb-separator">/</span>
+        <span className="breadcrumb-current">Remove Pages</span>
+      </nav>
 
       {/* Tool Header */}
       <div className="remove-pages-hero">
         <div className="remove-pages-icon">
-          <Trash2 size={32} />
+          <FontAwesomeIcon icon={faTrashCan} size="2x" />
         </div>
         <div className="capability-chip">
-          <Sparkles size={12} /> AVAILABLE: Client WebWorker Engine
+          <FontAwesomeIcon icon={faWandMagicSparkles} /> AVAILABLE: Client WebWorker Engine
         </div>
         <h1 className="remove-pages-title">Remove PDF Pages</h1>
         <p className="remove-pages-desc">
@@ -253,7 +263,7 @@ export default function RemovePages() {
                           />
                           {isRemoved && (
                             <div className="remove-overlay-badge">
-                              <X size={48} className="remove-x-icon" />
+                              <FontAwesomeIcon icon={faXmark} size="3x" className="remove-x-icon" />
                             </div>
                           )}
                         </div>
@@ -273,7 +283,7 @@ export default function RemovePages() {
 
               {/* Info Box Callout (Matches Screenshot 2) */}
               <div className="info-callout-box">
-                <Info size={18} className="info-icon" />
+                <FontAwesomeIcon icon={faCircleInfo} className="info-icon" />
                 <span>
                   Click on pages to remove from document. You can use &quot;shift&quot; key to set ranges.
                 </span>
@@ -307,7 +317,7 @@ export default function RemovePages() {
                 onClick={handleProcess}
                 disabled={removedPages.size === 0 || removedPages.size >= totalPages}
               >
-                <Trash2 size={18} /> Remove Pages Now ({removedPages.size} selected)
+                <FontAwesomeIcon icon={faTrashCan} /> Remove Pages Now ({removedPages.size} selected)
               </button>
             </div>
           </div>
@@ -320,16 +330,16 @@ export default function RemovePages() {
         {status === 'success' && processedResult && (
           <div className="success-result-card">
             <div className="success-icon-badge">
-              <Check size={36} />
+              <FontAwesomeIcon icon={faCheck} size="2x" />
             </div>
             <h2>PDF Pages Removed Successfully!</h2>
             <p>Your modified PDF is ready for download.</p>
             <div className="success-actions">
               <button onClick={handleDownload} className="btn btn-primary btn-lg">
-                <Download size={20} /> Download Modified PDF
+                <FontAwesomeIcon icon={faDownload} /> Download Modified PDF
               </button>
               <button onClick={handleResetAll} className="btn btn-secondary btn-lg">
-                <RotateCcw size={18} /> Remove Pages from Another PDF
+                <FontAwesomeIcon icon={faArrowRotateLeft} /> Remove Pages from Another PDF
               </button>
             </div>
           </div>

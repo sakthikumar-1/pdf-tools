@@ -1,323 +1,321 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { 
-  FileImage, 
-  FileText, 
-  FileSpreadsheet, 
-  Layers, 
-  Scissors, 
-  Minimize2, 
-  RotateCw, 
-  Lock, 
-  Type, 
-  Presentation, 
-  Images, 
-  ShieldCheck, 
-  Zap, 
-  CheckCircle,
-  FileCheck,
-  Sparkles,
-  Trash2
-} from 'lucide-react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import {
+  faMagnifyingGlass,
+  faXmark,
+  faWandMagicSparkles,
+  faArrowRight,
+  faFilePdf,
+  faLayerGroup,
+  faShieldHalved,
+  faBolt,
+  faFilterCircleXmark
+} from '@fortawesome/free-solid-svg-icons';
 import ToolCard from '../components/ToolCard';
-import { useTheme } from '../context/ThemeContext';
+import { TOOLS_DATA, TOOL_CATEGORIES, filterTools } from '../utils/toolsData';
 import './Home.css';
 
 export default function Home() {
+  const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
-  const { theme } = useTheme();
+  const searchInputRef = useRef(null);
 
-  const toolsList = [
-    {
-      title: 'PDF to JPG',
-      description: 'Convert PDF pages into crisp, high-resolution JPG images instantly.',
-      icon: FileImage,
-      path: '/pdf-to-jpg',
-      badge: 'V1 READY',
-      badgeType: 'success',
-      popular: true,
-      category: 'convert',
-    },
-    {
-      title: 'PDF to Word',
-      description: 'Convert PDF documents into editable Microsoft Word (.docx) files.',
-      icon: FileText,
-      path: '/pdf-to-word',
-      badge: 'POPULAR',
-      badgeType: 'primary',
-      popular: true,
-      category: 'convert',
-    },
-    {
-      title: 'Merge PDF',
-      description: 'Combine multiple PDF files into one single organized document.',
-      icon: Layers,
-      path: '/merge-pdf',
-      badge: 'POPULAR',
-      badgeType: 'primary',
-      popular: true,
-      category: 'organize',
-    },
-    {
-      title: 'Compress PDF',
-      description: 'Reduce PDF file size significantly while preserving document quality.',
-      icon: Minimize2,
-      path: '/compress-pdf',
-      badge: 'FAST',
-      badgeType: 'primary',
-      popular: true,
-      category: 'organize',
-    },
-    {
-      title: 'Split PDF',
-      description: 'Separate one PDF document into individual pages or page ranges.',
-      icon: Scissors,
-      path: '/split-pdf',
-      badge: 'UTILITY',
-      badgeType: 'muted',
-      category: 'organize',
-    },
-    {
-      title: 'PDF to Excel',
-      description: 'Extract PDF table data directly into Microsoft Excel spreadsheets.',
-      icon: FileSpreadsheet,
-      path: '/pdf-to-excel',
-      badge: 'DATA',
-      badgeType: 'muted',
-      category: 'convert',
-    },
-    {
-      title: 'PDF to PNG',
-      description: 'Extract PDF pages into transparent, lossless PNG images.',
-      icon: Images,
-      path: '/pdf-to-png',
-      badge: 'CONVERT',
-      badgeType: 'muted',
-      category: 'convert',
-    },
-    {
-      title: 'PDF to Text',
-      description: 'Extract raw text contents from any PDF document quickly.',
-      icon: Type,
-      path: '/pdf-to-text',
-      badge: 'UTILITY',
-      badgeType: 'muted',
-      category: 'convert',
-    },
-    {
-      title: 'PDF to PowerPoint',
-      description: 'Turn your PDF slides into editable PPTX presentations.',
-      icon: Presentation,
-      path: '/pdf-to-ppt',
-      badge: 'SLIDES',
-      badgeType: 'muted',
-      category: 'convert',
-    },
-    {
-      title: 'Rotate PDF',
-      description: 'Rotate PDF pages clockwise or counter-clockwise permanently.',
-      icon: RotateCw,
-      path: '/rotate-pdf',
-      badge: 'ORGANIZE',
-      badgeType: 'muted',
-      category: 'organize',
-    },
-    {
-      title: 'Protect PDF',
-      description: 'Encrypt your PDF with strong password protection.',
-      icon: Lock,
-      path: '/protect-pdf',
-      badge: 'SECURITY',
-      badgeType: 'muted',
-      category: 'security',
-    },
-    {
-      title: 'Images to PDF',
-      description: 'Convert JPG, PNG, or WebP photos into a single clean PDF.',
-      icon: FileCheck,
-      path: '/images-to-pdf',
-      badge: 'CREATE',
-      badgeType: 'muted',
-      category: 'convert',
-    },
-    {
-      title: 'Remove Pages',
-      description: 'Visually select and delete unwanted pages from your PDF document.',
-      icon: Trash2,
-      path: '/remove-pages',
-      badge: 'NEW',
-      badgeType: 'success',
-      category: 'organize',
-    },
-  ];
+  // Filtered tools based on search and selected category
+  const filteredTools = useMemo(() => {
+    return filterTools(searchQuery, activeCategory);
+  }, [searchQuery, activeCategory]);
 
-  const displayedTools = activeCategory === 'all' 
-    ? toolsList 
-    : toolsList.filter(tool => tool.category === activeCategory);
+  const handleClearSearch = () => {
+    setSearchQuery('');
+    searchInputRef.current?.focus();
+  };
+
+  const scrollToTools = () => {
+    const el = document.getElementById('tools-catalog');
+    if (el) el.scrollIntoView({ behavior: 'smooth' });
+  };
 
   return (
-    <div className="homepage-container">
-      {/* HERO SECTION */}
+    <div className="home-page">
+      {/* 1. HERO SECTION */}
       <section className="hero-section">
-        <div className="container hero-grid">
+        <div className="container hero-layout">
           <div className="hero-content">
-            <div className="hero-badge-pill">
-              <Zap size={14} className="hero-pill-icon" />
-              <span>Simatrix Academy PDF Tools Suite</span>
-            </div>
+            <span className="hero-kicker">
+              <FontAwesomeIcon icon={faShieldHalved} className="kicker-icon" />
+              <span>100% Free &amp; Private Document Processing</span>
+            </span>
 
             <h1 className="hero-title">
-              Simple PDF tools. <br />
-              <span className="hero-title-gradient">Fast results.</span>
+              Powerful PDF Tools <br />
+              <span className="hero-title-accent">for Everyone</span>
             </h1>
 
-            <p className="hero-subtitle">
-              Convert, merge, split, compress, and manage your PDF files quickly, securely, and without quality loss. 100% free with zero file tracking.
+            <p className="hero-description">
+              Fast, privacy-first PDF utility suite. Convert, merge, compress, protect, and analyze your documents instantly with client-side privacy and dedicated high-speed engines.
             </p>
 
-            <div className="hero-cta-row">
-              <Link to="/pdf-to-jpg" className="btn btn-primary btn-lg hero-cta-btn">
-                <FileImage size={22} /> Convert PDF to JPG Now
+            {/* Prominent Search Bar */}
+            <div className="hero-search-container" id="home-search">
+              <div className="hero-search-bar">
+                <FontAwesomeIcon icon={faMagnifyingGlass} className="search-icon" />
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  className="search-input"
+                  placeholder="Search 19 PDF tools (e.g. Word, Compress, Merge, JPG, Protect)..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  aria-label="Search PDF tools"
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    className="search-clear"
+                    onClick={handleClearSearch}
+                    aria-label="Clear search query"
+                  >
+                    <FontAwesomeIcon icon={faXmark} />
+                  </button>
+                )}
+              </div>
+
+              {/* Quick Keywords */}
+              <div className="search-tags">
+                <span className="tags-label">Quick filter:</span>
+                {['Word', 'JPG', 'Merge', 'Compress', 'Excel', 'Protect', 'Summarizer'].map((kw) => (
+                  <button
+                    key={kw}
+                    type="button"
+                    className={`tag-chip ${searchQuery.toLowerCase() === kw.toLowerCase() ? 'active' : ''}`}
+                    onClick={() => setSearchQuery(kw)}
+                  >
+                    {kw}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Primary & Secondary CTAs */}
+            <div className="hero-actions">
+              <button
+                type="button"
+                className="btn btn-primary btn-lg"
+                onClick={scrollToTools}
+              >
+                <span>Explore Tools</span>
+                <FontAwesomeIcon icon={faArrowRight} />
+              </button>
+
+              <Link to="/ai-summarizer" className="btn btn-secondary btn-lg">
+                <FontAwesomeIcon icon={faWandMagicSparkles} style={{ color: 'var(--color-gold)' }} />
+                <span>Try AI Summarizer</span>
               </Link>
-              <a href="#tools-catalog" className="btn btn-secondary btn-lg">
-                Explore All Tools
-              </a>
-            </div>
-
-            <div className="hero-features-strip">
-              <div className="strip-item"><CheckCircle size={16} /> No Registration</div>
-              <div className="strip-item"><ShieldCheck size={16} /> Automatic File Erasure</div>
-              <div className="strip-item"><Zap size={16} /> Lightning Speed</div>
             </div>
           </div>
 
-          <div className="hero-media">
-            <div className="hero-advisor-card">
-              <div className="hero-glow-backdrop"></div>
-              
-              <div className="advisor-header">
-                <div className="advisor-title-group">
-                  <div className="advisor-badge-icon">
-                    <Sparkles size={20} />
-                  </div>
-                  <div>
-                    <h3 className="advisor-main-title">Simatrix Academy</h3>
-                    <p className="advisor-main-sub">Smart PDF Processing Suite</p>
-                  </div>
+          {/* Restrained Visual Illustration */}
+          <div className="hero-graphic" aria-hidden="true">
+            <div className="graphic-card">
+              <div className="graphic-card-header">
+                <div className="graphic-doc-badge">
+                  <FontAwesomeIcon icon={faFilePdf} />
+                  <span>PDF Suite</span>
                 </div>
-                <div className="advisor-status-chip">
-                  <span className="live-pulse"></span> Active Engine
+                <div className="graphic-dots">
+                  <span></span><span></span><span></span>
                 </div>
               </div>
-
-              <div className="advisor-card-content">
-                <div className="advisor-doc-preview">
-                  <div className="preview-top">
-                    <FileImage size={22} className="doc-icon" />
-                    <div className="doc-info">
-                      <span className="doc-filename">Document_Conversion.pdf</span>
-                      <span className="doc-detail">12 Pages • High-Res Rendering</span>
-                    </div>
-                    <span className="doc-badge">Ready</span>
+              <div className="graphic-card-body">
+                <div className="graphic-metric-row">
+                  <span className="metric-label">19 Document Utilities</span>
+                  <span className="metric-value">Active</span>
+                </div>
+                <div className="graphic-bar-track">
+                  <div className="graphic-bar-fill" style={{ width: '100%' }}></div>
+                </div>
+                <div className="graphic-features-list">
+                  <div className="graphic-feature-pill">
+                    <FontAwesomeIcon icon={faBolt} /> Zero Sign-Up Required
                   </div>
-
-                  <div className="preview-bar-track">
-                    <div className="preview-bar-fill"></div>
+                  <div className="graphic-feature-pill">
+                    <FontAwesomeIcon icon={faShieldHalved} /> Client-Side Privacy
                   </div>
-
-                  <div className="advisor-highlights">
-                    <div className="highlight-chip"><Zap size={14} /> High Speed</div>
-                    <div className="highlight-chip"><ShieldCheck size={14} /> 100% Secure</div>
-                    <div className="highlight-chip"><CheckCircle size={14} /> No Loss</div>
+                  <div className="graphic-feature-pill">
+                    <FontAwesomeIcon icon={faWandMagicSparkles} /> Gemini AI Summaries
                   </div>
                 </div>
-              </div>
-
-              <div className="hero-image-tagline">
-                <span className="tagline-dot"></span>
-                SIMATRIX ACADEMY • SMART DOCUMENT SUITE
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* SINGLE UNIFIED TOOLS CATALOG */}
-      <section className="tools-section container" id="tools-catalog">
-        <div className="section-header">
-          <div>
-            <h2 className="section-title">PDF Tools Catalog</h2>
-            <p className="section-subtitle">Select a tool to start processing your document</p>
-          </div>
-
-          {/* Category Tabs */}
-          <div className="category-tabs-bar">
-            <button 
-              className={`category-tab ${activeCategory === 'all' ? 'active' : ''}`}
-              onClick={() => setActiveCategory('all')}
-            >
-              All Tools
-            </button>
-            <button 
-              className={`category-tab ${activeCategory === 'convert' ? 'active' : ''}`}
-              onClick={() => setActiveCategory('convert')}
-            >
-              Convert PDF
-            </button>
-            <button 
-              className={`category-tab ${activeCategory === 'organize' ? 'active' : ''}`}
-              onClick={() => setActiveCategory('organize')}
-            >
-              Organize & Edit
-            </button>
-            <button 
-              className={`category-tab ${activeCategory === 'security' ? 'active' : ''}`}
-              onClick={() => setActiveCategory('security')}
-            >
-              Security
-            </button>
-          </div>
-        </div>
-
-        {/* Tools Catalog Grid */}
-        <div className="tools-grid">
-          {displayedTools.map((tool, idx) => (
-            <ToolCard key={idx} {...tool} />
-          ))}
-        </div>
-      </section>
-
-      {/* HOW IT WORKS */}
-      <section className="how-it-works-section" id="how-it-works">
+      {/* 2. PDF TOOLS CATALOG SECTION */}
+      <section className="catalog-section" id="tools-catalog">
         <div className="container">
-          <div className="section-header center">
-            <h2 className="section-title">How It Works</h2>
-            <p className="section-subtitle">Four simple steps to process your PDF files</p>
+          <div className="catalog-header">
+            <div className="catalog-heading-box">
+              <h2 className="catalog-title">
+                {searchQuery ? `Search Results (${filteredTools.length})` : 'All PDF Utilities'}
+              </h2>
+              <p className="catalog-subtitle">
+                {searchQuery
+                  ? `Showing PDF tools matching "${searchQuery}"`
+                  : 'Select any tool to process your document immediately'}
+              </p>
+            </div>
+
+            {/* Compact Category Tabs Filter */}
+            <div className="category-tabs" role="tablist">
+              {TOOL_CATEGORIES.map((cat) => {
+                const count = cat.id === 'all'
+                  ? TOOLS_DATA.length
+                  : TOOLS_DATA.filter((t) => t.category === cat.id).length;
+
+                return (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={activeCategory === cat.id}
+                    className={`category-tab-btn ${activeCategory === cat.id ? 'active' : ''}`}
+                    onClick={() => setActiveCategory(cat.id)}
+                  >
+                    {cat.icon && <FontAwesomeIcon icon={cat.icon} className="tab-fa-icon" />}
+                    <span>{cat.label}</span>
+                    <span className="tab-count">{count}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
-          <div className="steps-grid">
-            <div className="step-card">
-              <div className="step-number">01</div>
-              <h3 className="step-title">Choose a Tool</h3>
-              <p className="step-desc">Select the PDF utility you need from our catalog.</p>
+          {/* Tools Grid or Empty State */}
+          {filteredTools.length > 0 ? (
+            <div className="tools-grid">
+              {filteredTools.map((tool) => (
+                <ToolCard
+                  key={tool.id}
+                  title={tool.title}
+                  description={tool.description}
+                  icon={tool.icon}
+                  path={tool.path}
+                  badge={tool.badge}
+                  badgeType={tool.badgeType}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="empty-results-box">
+              <div className="empty-icon-wrapper">
+                <FontAwesomeIcon icon={faFilterCircleXmark} />
+              </div>
+              <h3 className="empty-title">No PDF utilities found</h3>
+              <p className="empty-desc">
+                No tools match &ldquo;<strong>{searchQuery}</strong>&rdquo; in the selected category.
+              </p>
+              <div className="empty-actions">
+                <button
+                  type="button"
+                  className="btn btn-primary btn-sm"
+                  onClick={handleClearSearch}
+                >
+                  Clear search and show all tools
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* 3. AI SUMMARIZER PROMOTION SECTION */}
+      <section className="ai-promo-section">
+        <div className="container">
+          <div className="ai-promo-card">
+            <div className="ai-promo-content">
+              <span className="ai-promo-kicker">
+                <FontAwesomeIcon icon={faWandMagicSparkles} />
+                <span>Next-Generation Document Intelligence</span>
+              </span>
+              <h2 className="ai-promo-title">
+                Summarize 100+ Page Reports in Seconds
+              </h2>
+              <p className="ai-promo-description">
+                Harness Google Gemini intelligence to extract executive overviews, key takeaways, and section-by-section summaries from lengthy PDFs with complete accuracy.
+              </p>
+              <div className="ai-promo-actions">
+                <Link to="/ai-summarizer" className="btn btn-primary btn-lg">
+                  <FontAwesomeIcon icon={faWandMagicSparkles} />
+                  <span>Summarize a PDF Now</span>
+                </Link>
+              </div>
             </div>
 
-            <div className="step-card">
-              <div className="step-number">02</div>
-              <h3 className="step-title">Upload File</h3>
-              <p className="step-desc">Drag and drop your document into the upload box.</p>
+            <div className="ai-promo-badge-box">
+              <div className="ai-stat-chip">
+                <span className="stat-number">4 Modes</span>
+                <span className="stat-sub">Quick • Detailed • Key Points • Sections</span>
+              </div>
+              <div className="ai-stat-chip">
+                <span className="stat-number">Map-Reduce</span>
+                <span className="stat-sub">Multi-chunk synthesis for long PDFs</span>
+              </div>
             </div>
+          </div>
+        </div>
+      </section>
 
-            <div className="step-card">
-              <div className="step-number">03</div>
-              <h3 className="step-title">Process</h3>
-              <p className="step-desc">Our high-speed engine converts or modifies your file.</p>
+      {/* 4. SECURITY & PRIVACY SECTION (Anchor for Footer link) */}
+      <section className="security-section" id="security-section">
+        <div className="container">
+          <div className="security-banner-card">
+            <div className="security-badge-icon">
+              <FontAwesomeIcon icon={faShieldHalved} />
             </div>
+            <div className="security-banner-text">
+              <h3 className="security-banner-title">Zero File Storage &amp; 15-Minute Auto-Erasure</h3>
+              <p className="security-banner-desc">
+                Your privacy is guaranteed. In-browser utilities (Merge, Compress, Split, Rotate, Remove Pages, and Images to PDF) execute locally on your machine. Server conversions (Word, PowerPoint, and Page Numbering) run in isolated temporary containers that are permanently purged after 15 minutes.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
 
-            <div className="step-card">
-              <div className="step-number">04</div>
-              <h3 className="step-title">Download</h3>
-              <p className="step-desc">Save your processed file or ZIP archive instantly.</p>
+      {/* 5. FAQ SECTION (Anchor for Header & Footer Help links) */}
+      <section className="faq-section" id="faq-section">
+        <div className="container">
+          <div className="faq-header">
+            <h2 className="faq-title">Frequently Asked Questions</h2>
+            <p className="faq-subtitle">Everything you need to know about Simatrix PDF Tools</p>
+          </div>
+
+          <div className="faq-grid">
+            <div className="faq-card">
+              <h3 className="faq-question">Are the PDF utilities completely free?</h3>
+              <p className="faq-answer">
+                Yes. All 18 conversion and manipulation utilities, as well as the AI Summarizer, are free to use without requiring a subscription or sign-up.
+              </p>
+            </div>
+            <div className="faq-card">
+              <h3 className="faq-question">Is my document data private?</h3>
+              <p className="faq-answer">
+                Absolutely. We do not harvest, index, sell, or retain your files. Files processed on the server are purged automatically after 15 minutes.
+              </p>
+            </div>
+            <div className="faq-card">
+              <h3 className="faq-question">What is the maximum file size?</h3>
+              <p className="faq-answer">
+                You can upload documents up to 50MB for standard PDF conversions and up to 25MB (up to 100 pages) for the AI PDF Summarizer.
+              </p>
+            </div>
+            <div className="faq-card">
+              <h3 className="faq-question">How does the AI PDF Summarizer work?</h3>
+              <p className="faq-answer">
+                The summarizer extracts the clean digital text layer of your PDF, validates page structures, and synthesizes summaries via Google Gemini models using single-pass or Map-Reduce chunking.
+              </p>
             </div>
           </div>
         </div>

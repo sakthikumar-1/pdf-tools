@@ -10,7 +10,6 @@
 html {
   font-family: var(--font-family-primary);
   font-size: 16px;
-  color-scheme: dark;
   scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -24,6 +23,7 @@ body {
   flex-direction: column;
   line-height: 1.6;
   overflow-x: hidden;
+  transition: background-color var(--transition-normal), color var(--transition-normal);
 }
 
 #root {
@@ -34,7 +34,7 @@ body {
 
 /* Typography Defaults */
 h1, h2, h3, h4, h5, h6 {
-  color: var(--color-text);
+  color: var(--color-heading);
   font-weight: 700;
   line-height: 1.25;
   letter-spacing: -0.02em;
@@ -62,9 +62,15 @@ a:hover {
 button, input, select, textarea {
   font-family: inherit;
   font-size: inherit;
+  color: inherit;
 }
 
-/* Layout Utilities */
+:focus-visible {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 2px;
+  box-shadow: var(--focus-ring);
+}
+
 .container {
   width: 100%;
   max-width: var(--container-max-width);
@@ -74,125 +80,211 @@ button, input, select, textarea {
   padding-right: 1.5rem;
 }
 
-/* Buttons */
+/* Breadcrumbs */
+.tool-breadcrumb {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  margin-bottom: 1.5rem;
+}
+
+.breadcrumb-link {
+  color: var(--color-text-secondary);
+  font-weight: 500;
+  text-decoration: none;
+  transition: color var(--transition-fast);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.breadcrumb-link:hover {
+  color: var(--color-gold);
+}
+
+.breadcrumb-separator {
+  margin: 0 0.35rem;
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  user-select: none;
+}
+
+.breadcrumb-current {
+  color: var(--color-heading);
+  font-weight: 600;
+}
+
+/* ==============================================================================
+   BUTTON SYSTEM (Refined SaaS Buttons — Solid Gold & Subtle Dark/Ivory Borders)
+   ============================================================================== */
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.55rem;
-  padding: 0.75rem 1.5rem;
-  font-weight: 700;
-  border-radius: var(--radius-md);
+  padding: 0.75rem 1.4rem;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  border-radius: var(--radius-sm);
   border: 1px solid transparent;
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: background-color var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
   user-select: none;
   text-decoration: none;
-  line-height: 1.2;
+  line-height: 1.25;
 }
 
+/* Primary Button: Champagne Gold with dark high-contrast text */
 .btn-primary,
 a.btn-primary,
 button.btn-primary {
-  background: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%) !important;
-  color: #FFFFFF !important;
-  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
+  background-color: var(--color-gold) !important;
+  color: #071116 !important;
+  font-weight: 700;
+  border: 1px solid var(--color-gold-hover);
+  box-shadow: 0 2px 8px rgba(255, 194, 71, 0.25);
 }
 
 .btn-primary *,
 a.btn-primary *,
 button.btn-primary * {
-  color: #FFFFFF !important;
+  color: #071116 !important;
 }
 
 .btn-primary:hover:not(:disabled),
-a.btn-primary:hover:not(:disabled) {
-  background: linear-gradient(135deg, #4F46E5 0%, #4338CA 100%) !important;
-  color: #FFFFFF !important;
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(99, 102, 241, 0.5);
+a.btn-primary:hover:not(:disabled),
+button.btn-primary:hover:not(:disabled) {
+  background-color: var(--color-gold-hover) !important;
+  color: #071116 !important;
+  border-color: var(--color-gold-active);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(232, 170, 38, 0.35);
 }
 
+/* Secondary Button: Clean bordered surface button */
 .btn-secondary,
 a.btn-secondary,
 button.btn-secondary {
-  background: var(--color-surface);
-  color: var(--color-text) !important;
-  border: 1.5px solid var(--color-border);
+  background-color: var(--color-surface);
+  color: var(--color-heading) !important;
+  border: 1px solid var(--color-border);
   box-shadow: var(--shadow-sm);
 }
 
 .btn-secondary *,
 a.btn-secondary *,
 button.btn-secondary * {
-  color: var(--color-text) !important;
+  color: var(--color-heading) !important;
 }
 
 .btn-secondary:hover:not(:disabled),
-a.btn-secondary:hover:not(:disabled) {
-  background: var(--color-surface-hover);
-  color: var(--color-primary) !important;
-  border-color: var(--color-primary-border);
+a.btn-secondary:hover:not(:disabled),
+button.btn-secondary:hover:not(:disabled) {
+  background-color: var(--color-surface-hover);
+  color: var(--color-gold) !important;
+  border-color: var(--color-border-hover);
   transform: translateY(-1px);
 }
 
 .btn-secondary:hover:not(:disabled) *,
-a.btn-secondary:hover:not(:disabled) * {
-  color: var(--color-primary) !important;
+a.btn-secondary:hover:not(:disabled) *,
+button.btn-secondary:hover:not(:disabled) * {
+  color: var(--color-gold) !important;
+}
+
+/* Outline / Ghost Buttons */
+.btn-outline {
+  background: transparent;
+  color: var(--color-heading) !important;
+  border: 1px solid var(--color-border);
+}
+
+.btn-outline:hover:not(:disabled) {
+  border-color: var(--color-gold);
+  color: var(--color-gold) !important;
+  background-color: var(--color-gold-muted);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--color-text-secondary);
+  border: 1px solid transparent;
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background-color: var(--color-surface-hover);
+  color: var(--color-heading);
 }
 
 .btn-lg {
-  padding: 0.95rem 2rem;
+  padding: 0.95rem 1.85rem;
   font-size: 1.05rem;
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-md);
 }
 
 .btn-sm {
-  padding: 0.45rem 0.95rem;
-  font-size: 0.875rem;
-  border-radius: var(--radius-sm);
+  padding: 0.45rem 0.85rem;
+  font-size: 0.8125rem;
+  border-radius: var(--radius-xs);
 }
 
 .btn:disabled {
-  opacity: 0.55;
+  opacity: 0.45;
   cursor: not-allowed;
   transform: none !important;
+  box-shadow: none !important;
 }
 
 /* Badges & Tags */
 .badge {
   display: inline-flex;
   align-items: center;
-  padding: 0.25rem 0.65rem;
+  gap: 0.35rem;
+  padding: 0.2rem 0.55rem;
   font-size: 0.75rem;
-  font-weight: 700;
+  font-weight: 600;
   border-radius: var(--radius-full);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.02em;
 }
 
 .badge-primary {
-  background: var(--color-primary-light);
-  color: var(--color-primary);
-  border: 1px solid var(--color-primary-border);
+  background: var(--color-gold-muted);
+  color: var(--color-gold);
+  border: 1px solid var(--color-gold-border);
+}
+
+[data-theme="light"] .badge-primary {
+  color: #B47B00;
 }
 
 .badge-success {
   background: var(--color-success-bg);
   color: var(--color-success);
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  border: 1px solid var(--color-success-border);
 }
 
 .badge-muted {
-  background: rgba(148, 163, 184, 0.1);
+  background: rgba(100, 112, 120, 0.12);
   color: var(--color-text-muted);
-  border: 1px solid rgba(148, 163, 184, 0.2);
+  border: 1px solid var(--color-border);
+}
+
+/* Cards & Surface Containers */
+.card {
+  background-color: var(--color-surface-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  transition: border-color var(--transition-fast), background-color var(--transition-fast), transform var(--transition-fast);
 }
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -200,8 +292,8 @@ a.btn-secondary:hover:not(:disabled) * {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--color-surface-active);
-  border-radius: 4px;
+  background: var(--color-border-hover);
+  border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {

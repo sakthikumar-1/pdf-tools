@@ -1,12 +1,14 @@
-import { PDFDocument, PDFHexString, degrees } from 'pdf-lib';
-import * as pdfjsLib from 'pdfjs-dist';
+import { PDFDocument, PDFHexString, degrees, rgb, StandardFonts } from 'pdf-lib';
+import * as pdfjsDist from 'pdfjs-dist';
 import JSZip from 'jszip';
 import * as XLSX from 'xlsx';
-import createQPDF from '@neslinesli93/qpdf-wasm';
-import qpdfWasmUrl from '@neslinesli93/qpdf-wasm/dist/qpdf.wasm?url';
+
+const pdfjsLib = pdfjsDist.default || pdfjsDist;
 
 // Configure PDF.js worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+if (pdfjsLib.GlobalWorkerOptions && typeof window !== 'undefined') {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version || '4.0.379'}/pdf.worker.min.js`;
+}
 
 /**
  * Extract clean text content from all pages of a PDF file
@@ -100,9 +102,14 @@ export async function renderPdfToPngs(file, onProgress) {
  * Real PDF Merge engine: combines multiple PDF files into one single PDF document
  */
 export async function mergePdfs(files, onProgress) {
-  const mergedPdf = await PDFDocument.create();
-  const fileList = Array.isArray(files) ? files : [files];
+  const fileList = Array.isArray(files) ? files : (files ? [files] : []);
   const totalFiles = fileList.length;
+
+  if (totalFiles < 2) {
+    throw new Error('Please select at least 2 PDF files to merge together.');
+  }
+
+  const mergedPdf = await PDFDocument.create();
 
   for (let i = 0; i < totalFiles; i++) {
     const file = fileList[i];
@@ -382,9 +389,23 @@ export async function rotatePdf(file, rotationAngle = 90, onProgress) {
  * Real Images to PDF compiler
  */
 export async function imagesToPdf(files, onProgress) {
-  const pdfDoc = await PDFDocument.create();
   const fileList = Array.isArray(files) ? files : [files];
   const totalFiles = fileList.length;
+
+  if (totalFiles === 0) {
+    throw new Error('Please select at least one image file.');
+  }
+
+  // Strictly enforce that all inputs are image files, reject any PDF files
+  for (let idx = 0; idx < totalFiles; idx++) {
+    const f = fileList[idx];
+    const nameLower = f.name ? f.name.toLowerCase() : '';
+    if (nameLower.endsWith('.pdf') || f.type === 'application/pdf') {
+      throw new Error(`'${f.name || 'Selected document'}' is a PDF file. Images to PDF accepts only image files (JPG, PNG, WebP), not PDF documents.`);
+    }
+  }
+
+  const pdfDoc = await PDFDocument.create();
 
   for (let i = 0; i < totalFiles; i++) {
     const file = fileList[i];
@@ -392,9 +413,39 @@ export async function imagesToPdf(files, onProgress) {
     let embeddedImage;
 
     try {
-      if (file.type === 'image/png' || file.name.toLowerCase().endsWith('.png')) {
+      const isPng = file.type === 'image/png' || (file.name && file.name.toLowerCase().endsWith('.png'));
+      const isJpg = file.type === 'image/jpeg' || file.type === 'image/jpg' || (file.name && (file.name.toLowerCase().endsWith('.jpg') || file.name.toLowerCase().endsWith('.jpeg')));
+
+      if (isPng) {
         embeddedImage = await pdfDoc.embedPng(arrayBuffer);
-      } else {
+      } else if (isJpg) {
+        try {
+          embeddedImage = await pdfDoc.embedJpg(arrayBuffer);
+        } catch (embedErr) {
+          // Fallback to canvas re-encode if non-standard JPEG (e.g. CMYK)
+          if (typeof document !== 'undefined') {
+            const blobUrl = URL.createObjectURL(file);
+            const img = new Image();
+            await new Promise((res, rej) => {
+              img.onload = res;
+              img.onerror = rej;
+              img.src = blobUrl;
+            });
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+            const jpegUrl = canvas.toDataURL('image/jpeg', 0.95);
+            const jpegBytes = await fetch(jpegUrl).then(r => r.arrayBuffer());
+            embeddedImage = await pdfDoc.embedJpg(jpegBytes);
+            URL.revokeObjectURL(blobUrl);
+          } else {
+            throw embedErr;
+          }
+        }
+      } else if (typeof document !== 'undefined') {
+        // Handle other browser-supported image formats like WebP or BMP
         const blobUrl = URL.createObjectURL(file);
         const img = new Image();
         await new Promise((res, rej) => {
@@ -407,7 +458,7 @@ export async function imagesToPdf(files, onProgress) {
         canvas.height = img.height;
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0);
-        const jpegUrl = canvas.toDataURL('image/jpeg', 0.90);
+        const jpegUrl = canvas.toDataURL('image/jpeg', 0.95);
         const jpegBytes = await fetch(jpegUrl).then(r => r.arrayBuffer());
         embeddedImage = await pdfDoc.embedJpg(jpegBytes);
         URL.revokeObjectURL(blobUrl);
@@ -477,6 +528,14 @@ export async function protectPdf(file, password, onProgress) {
   const inputBytes = new Uint8Array(arrayBuffer);
 
   if (onProgress) onProgress(60);
+  const { default: createQPDF } = await import('@neslinesli93/qpdf-wasm');
+  let qpdfWasmUrl = '/qpdf.wasm';
+  try {
+    const wasmImport = await import('@neslinesli93/qpdf-wasm/dist/qpdf.wasm?url');
+    qpdfWasmUrl = wasmImport.default || qpdfWasmUrl;
+  } catch (err) {
+    // Dynamic import fallback for non-Vite environments
+  }
   const qpdfModule = await createQPDF({
     locateFile: (path) => {
       if (path.endsWith('.wasm')) {
@@ -660,6 +719,9 @@ export async function extractStructuredPdfPages(fileOrBuffer, onProgress) {
 
   for (let pageNum = 1; pageNum <= numPages; pageNum++) {
     const page = await doc.getPage(pageNum);
+    const viewport = page.getViewport({ scale: 1.0 });
+    const pageWidth = viewport ? viewport.width : 595.28;
+    const pageHeight = viewport ? viewport.height : 841.89;
     const tc = await page.getTextContent();
 
     const rawItems = [];
@@ -737,6 +799,7 @@ export async function extractStructuredPdfPages(fileOrBuffer, onProgress) {
       if (l.cells.length === 1 && colAnchors.length >= 2) {
         gridRows.push({
           type: 'heading',
+          y: l.y,
           text: l.cells[0].text,
           fontSize: l.cells[0].fontSize,
           isBold: l.cells[0].isBold,
@@ -759,6 +822,7 @@ export async function extractStructuredPdfPages(fileOrBuffer, onProgress) {
         const isHeader = l.cells.some(c => c.isBold) || gridRows.length === 0 || (gridRows.length === 1 && gridRows[0].type === 'heading');
         gridRows.push({
           type: 'table_row',
+          y: l.y,
           isHeader,
           rowCells: row
         });
@@ -770,6 +834,7 @@ export async function extractStructuredPdfPages(fileOrBuffer, onProgress) {
 
         gridRows.push({
           type: isHeading ? 'heading' : 'paragraph',
+          y: l.y,
           text: lineText,
           fontSize: fSize,
           isBold: isB,
@@ -780,6 +845,10 @@ export async function extractStructuredPdfPages(fileOrBuffer, onProgress) {
 
     pages.push({
       pageNum,
+      pageWidth,
+      pageHeight,
+      hasText: rawItems.length > 0,
+      totalTextItems: rawItems.length,
       hasTable: colAnchors.length >= 2,
       colCount: Math.max(1, colAnchors.length),
       colAnchors,
@@ -993,11 +1062,13 @@ export async function pdfToDocx(file, onProgress) {
     if (onProgress) onProgress(Math.round(p * 0.7));
   });
 
-  const blob = await generateDocxDocument(structured, file?.name || 'Document');
+  const blob = await createDocxFile(structured, file?.name || 'Document');
   if (onProgress) onProgress(100);
 
   return {
     blob,
+    filename: `${file?.name?.replace(/\.[^/.]+$/, '') || 'document'}_converted.docx`,
+    isScanned: structured.isScannedOnly,
     isScannedOnly: structured.isScannedOnly,
     pageCount: structured.numPages,
     tableDetected: structured.pages.some(p => p.hasTable)
@@ -1008,11 +1079,21 @@ export async function pdfToDocx(file, onProgress) {
  * Generate a valid Microsoft Word (.docx) file containing extracted text or structured content
  */
 export async function createDocxFile(input, documentTitle = 'Document') {
+  let text = '';
   if (input && typeof input === 'object' && input.pages) {
-    return await generateDocxDocument(input, documentTitle);
+    text = input.pages.map(p => {
+      const lines = [];
+      if (p.gridRows && p.gridRows.length > 0) {
+        p.gridRows.forEach(r => lines.push(r.rowCells ? r.rowCells.join('  \t  ') : ''));
+      } else if (p.blocks && p.blocks.length > 0) {
+        p.blocks.forEach(b => lines.push(b.text || ''));
+      }
+      return lines.join('\n');
+    }).join('\n\n--- Page Break ---\n\n');
+  } else {
+    text = String(input || '');
   }
 
-  const text = String(input || '');
   const paragraphs = text.split('\n');
   const paragraphsXml = paragraphs.map(p => {
     const trimmed = p.trim();
@@ -1057,6 +1138,7 @@ export async function createDocxFile(input, documentTitle = 'Document') {
   });
 }
 
+
 /**
  * Generate a valid Microsoft PowerPoint (.pptx) file containing presentation slides
  */
@@ -1090,31 +1172,36 @@ export async function createPptxFile(inputOrTexts = [], pageImages = [], documen
   let slideWidth = 12192000;
   let slideHeight = 6858000;
 
-  if (isStructured && inputOrTexts.pages[0]) {
+  if (isStructured && inputOrTexts.pages && inputOrTexts.pages[0]) {
     const p = inputOrTexts.pages[0];
-    slideWidth = Math.round(p.pageWidth * 12700);
-    slideHeight = Math.round(p.pageHeight * 12700);
+    const pw = (typeof p.pageWidth === 'number' && !isNaN(p.pageWidth) && p.pageWidth > 0) ? p.pageWidth : 595.28;
+    const ph = (typeof p.pageHeight === 'number' && !isNaN(p.pageHeight) && p.pageHeight > 0) ? p.pageHeight : 841.89;
+    slideWidth = Math.round(pw * 12700);
+    slideHeight = Math.round(ph * 12700);
   } else if (pageImages && pageImages.length > 0 && pageImages[0]) {
-    const firstImg = pageImages.find(img => img && img.dataUrl);
+    const firstImg = pageImages.find(img => img && (img.dataUrl || img.url));
     const isPortrait = firstImg ? (firstImg.height > firstImg.width) : true;
     slideWidth = isPortrait ? 7920000 : 12192000;
     slideHeight = isPortrait ? 10252800 : 6858000;
   }
+  if (!slideWidth || isNaN(slideWidth) || slideWidth <= 0) slideWidth = 12192000;
+  if (!slideHeight || isNaN(slideHeight) || slideHeight <= 0) slideHeight = 6858000;
 
-  // Standard OpenXML group shape transform definition required by PowerPoint schema
+  // Standard OpenXML group shape transform definition required by PowerPoint schema (ECMA-376 CT_GroupShape)
   const groupTransformXml = `
       <p:nvGrpSpPr>
         <p:cNvPr id="1" name=""/>
         <p:cNvGrpSpPr/>
-        <p:grpSpPr>
-          <a:xfrm>
-            <a:off x="0" y="0"/>
-            <a:ext cx="0" cy="0"/>
-            <a:chOff x="0" y="0"/>
-            <a:chExt cx="0" cy="0"/>
-          </a:xfrm>
-        </p:grpSpPr>
-      </p:nvGrpSpPr>`;
+        <p:nvPr/>
+      </p:nvGrpSpPr>
+      <p:grpSpPr>
+        <a:xfrm>
+          <a:off x="0" y="0"/>
+          <a:ext cx="0" cy="0"/>
+          <a:chOff x="0" y="0"/>
+          <a:chExt cx="0" cy="0"/>
+        </a:xfrm>
+      </p:grpSpPr>`;
 
   for (let i = 1; i <= numSlides; i++) {
     slideOverrides.push(`<Override PartName="/ppt/slides/slide${i}.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>`);
@@ -1129,10 +1216,12 @@ export async function createPptxFile(inputOrTexts = [], pageImages = [], documen
 
     if ((mode === 'visual' || !isStructured) && imgObj && imgObj.dataUrl) {
       // 1. High-Fidelity Visual Mode: Full-bleed slide image
-      const base64Data = imgObj.dataUrl.replace(/^data:image\/(png|jpeg);base64,/, '');
-      zip.folder('ppt/media').file(`image${i}.png`, base64Data, { base64: true });
+      const isJpg = imgObj.dataUrl.startsWith('data:image/jpeg') || imgObj.dataUrl.startsWith('data:image/jpg');
+      const ext = isJpg ? 'jpg' : 'png';
+      const base64Data = imgObj.dataUrl.replace(/^data:image\/(png|jpeg|jpg);base64,/, '');
+      zip.folder('ppt/media').file(`image${i}.${ext}`, base64Data, { base64: true });
 
-      imageRelXml = `<Relationship Id="rIdImg${i}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/image${i}.png"/>`;
+      imageRelXml = `<Relationship Id="rIdImg${i}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/image${i}.${ext}"/>`;
 
       slideShapesXml = `
       <p:pic>
@@ -1155,8 +1244,33 @@ export async function createPptxFile(inputOrTexts = [], pageImages = [], documen
       const page = inputOrTexts.pages[i - 1];
 
       if (!page || !page.hasText) {
-        // Scanned / Image-only slide notice
-        slideShapesXml = `
+        if (imgObj && imgObj.dataUrl) {
+          const isJpg = imgObj.dataUrl.startsWith('data:image/jpeg') || imgObj.dataUrl.startsWith('data:image/jpg');
+          const ext = isJpg ? 'jpg' : 'png';
+          const base64Data = imgObj.dataUrl.replace(/^data:image\/(png|jpeg|jpg);base64,/, '');
+          zip.folder('ppt/media').file(`image${i}.${ext}`, base64Data, { base64: true });
+
+          imageRelXml = `<Relationship Id="rIdImg${i}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/image${i}.${ext}"/>`;
+
+          slideShapesXml = `
+          <p:pic>
+            <p:nvPicPr>
+              <p:cNvPr id="${shapeId++}" name="Scanned Slide Image ${i}"/>
+              <p:cNvPicPr><a:picLocks noChangeAspect="1"/></p:cNvPicPr>
+              <p:nvPr/>
+            </p:nvPicPr>
+            <p:blipFill>
+              <a:blip r:embed="rIdImg${i}"/>
+              <a:stretch><a:fillRect/></a:stretch>
+            </p:blipFill>
+            <p:spPr>
+              <a:xfrm><a:off x="0" y="0"/><a:ext cx="${slideWidth}" cy="${slideHeight}"/></a:xfrm>
+              <a:prstGeom prst="rect"><a:avLst/></a:prstGeom>
+            </p:spPr>
+          </p:pic>`;
+        } else {
+          // Scanned / Image-only slide notice
+          slideShapesXml = `
           <p:sp>
             <p:nvSpPr>
               <p:cNvPr id="${shapeId++}" name="Scanned Notice"/>
@@ -1193,6 +1307,7 @@ export async function createPptxFile(inputOrTexts = [], pageImages = [], documen
             </p:txBody>
           </p:sp>
         `;
+        }
       } else if (page.hasTable) {
         // Native DrawingML Table Slide
         const titleRows = page.gridRows.filter(r => r.type === 'heading');
@@ -1372,9 +1487,17 @@ export async function createPptxFile(inputOrTexts = [], pageImages = [], documen
           const colorHex = isHeading ? '0F172A' : '334155';
           const isB = blk.isBold || isHeading;
 
-          const topEmu = Math.max(0, Math.round((page.pageHeight - blk.topY - (blk.fontSize || 12)) * 12700));
-          const heightEmu = Math.max(450000, Math.round(((blk.topY - blk.bottomY) + (blk.fontSize || 12) + 12) * 12700));
-          const widthEmu = slideWidth - 1270000;
+          const pHeight = (typeof page.pageHeight === 'number' && !isNaN(page.pageHeight) && page.pageHeight > 0) ? page.pageHeight : 841.89;
+          const topY = (typeof blk.topY === 'number' && !isNaN(blk.topY)) ? blk.topY : (pHeight - (bIdx * 50 + 60));
+          const bottomY = (typeof blk.bottomY === 'number' && !isNaN(blk.bottomY)) ? blk.bottomY : topY;
+
+          let topEmu = Math.max(0, Math.round((pHeight - topY - (blk.fontSize || 12)) * 12700));
+          let heightEmu = Math.max(450000, Math.round(((topY - bottomY) + (blk.fontSize || 12) + 12) * 12700));
+          let widthEmu = slideWidth - 1270000;
+
+          if (isNaN(topEmu) || topEmu < 0) topEmu = Math.round((bIdx * 50 + 50) * 12700);
+          if (isNaN(heightEmu) || heightEmu <= 0) heightEmu = 500000;
+          if (isNaN(widthEmu) || widthEmu <= 0) widthEmu = 6500000;
 
           const pXml = blk.lines.map(line => `
             <a:p>
@@ -1439,6 +1562,7 @@ export async function createPptxFile(inputOrTexts = [], pageImages = [], documen
       ${slideShapesXml}
     </p:spTree>
   </p:cSld>
+  <p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr>
 </p:sld>`;
 
     const slideRelsXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -1458,6 +1582,7 @@ export async function createPptxFile(inputOrTexts = [], pageImages = [], documen
   <Default Extension="xml" ContentType="application/xml"/>
   <Default Extension="png" ContentType="image/png"/>
   <Default Extension="jpeg" ContentType="image/jpeg"/>
+  <Default Extension="jpg" ContentType="image/jpeg"/>
   <Override PartName="/ppt/presentation.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml"/>
   <Override PartName="/ppt/slideMasters/slideMaster1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideMaster+xml"/>
   <Override PartName="/ppt/slideLayouts/slideLayout1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml"/>
@@ -1528,6 +1653,11 @@ export async function createPptxFile(inputOrTexts = [], pageImages = [], documen
   <p:sldLayoutIdLst>
     <p:sldLayoutId id="2147483649" r:id="rId1"/>
   </p:sldLayoutIdLst>
+  <p:txStyles>
+    <p:titleStyle/>
+    <p:bodyStyle/>
+    <p:otherStyle/>
+  </p:txStyles>
 </p:sldMaster>`;
 
   const slideMasterRelsXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -1541,6 +1671,7 @@ export async function createPptxFile(inputOrTexts = [], pageImages = [], documen
   <p:cSld name="Blank">
     <p:spTree>${groupTransformXml}</p:spTree>
   </p:cSld>
+  <p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr>
 </p:sldLayout>`;
 
   const slideLayoutRelsXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -1632,9 +1763,11 @@ export async function pdfToPptx(file, conversionMode = 'editable', onProgress) {
 
   let images = null;
   let hasScanned = structured.isScannedOnly;
+  const hasTextlessPages = structured.pages.some(p => !p.hasText);
 
-  // If document has no extractable text layer (scanned/image-only), render visual images so no content is lost!
-  if (structured.isScannedOnly) {
+  // If document has no extractable text layer (scanned/image-only) OR contains pages without text layer,
+  // render visual images so no page/slide is EVER left blank!
+  if (structured.isScannedOnly || hasTextlessPages) {
     try {
       images = await renderPdfToPngs(file, (p) => {
         if (onProgress) onProgress(70 + Math.round(p * 0.2));
@@ -1785,3 +1918,534 @@ export async function createZipFromImages(images, baseName = 'images') {
 
   return await zip.generateAsync({ type: 'blob' });
 }
+
+/**
+ * Helper: converts hex color string (e.g. #334155) to pdf-lib rgb()
+ */
+export function hexToRgb(hex = '#000000') {
+  let clean = hex.replace('#', '').trim();
+  if (clean.length === 3) {
+    clean = clean.split('').map(c => c + c).join('');
+  }
+  const r = parseInt(clean.substring(0, 2), 16) / 255;
+  const g = parseInt(clean.substring(2, 4), 16) / 255;
+  const b = parseInt(clean.substring(4, 6), 16) / 255;
+  return rgb(isNaN(r) ? 0 : r, isNaN(g) ? 0 : g, isNaN(b) ? 0 : b);
+}
+
+/**
+ * Helper: computes text placement on PDF page taking rotation (0, 90, 180, 270) into account
+ */
+export function getPageTextCoords(page, textWidth, textHeight, position = 'bottom-right', marginPt = 36) {
+  const rotation = page.getRotation().angle || 0;
+  const width = page.getWidth();
+  const height = page.getHeight();
+  const m = marginPt;
+
+  let x = 0;
+  let y = 0;
+  let rotAngle = 0;
+
+  if (rotation === 0) {
+    rotAngle = 0;
+    if (position === 'bottom-left') {
+      x = m;
+      y = m;
+    } else if (position === 'bottom-center') {
+      x = (width - textWidth) / 2;
+      y = m;
+    } else if (position === 'bottom-right') {
+      x = width - m - textWidth;
+      y = m;
+    } else if (position === 'top-left') {
+      x = m;
+      y = height - m - textHeight;
+    } else if (position === 'top-center') {
+      x = (width - textWidth) / 2;
+      y = height - m - textHeight;
+    } else if (position === 'top-right') {
+      x = width - m - textWidth;
+      y = height - m - textHeight;
+    }
+  } else if (rotation === 90) {
+    rotAngle = 90;
+    if (position === 'bottom-right') {
+      x = width - m;
+      y = m;
+    } else if (position === 'bottom-center') {
+      x = width - m;
+      y = (height - textWidth) / 2;
+    } else if (position === 'bottom-left') {
+      x = width - m;
+      y = height - m - textWidth;
+    } else if (position === 'top-right') {
+      x = m + textHeight;
+      y = m;
+    } else if (position === 'top-center') {
+      x = m + textHeight;
+      y = (height - textWidth) / 2;
+    } else if (position === 'top-left') {
+      x = m + textHeight;
+      y = height - m - textWidth;
+    }
+  } else if (rotation === 180) {
+    rotAngle = 180;
+    if (position === 'bottom-right') {
+      x = m + textWidth;
+      y = height - m;
+    } else if (position === 'bottom-center') {
+      x = (width + textWidth) / 2;
+      y = height - m;
+    } else if (position === 'bottom-left') {
+      x = width - m;
+      y = height - m;
+    } else if (position === 'top-right') {
+      x = m + textWidth;
+      y = m + textHeight;
+    } else if (position === 'top-center') {
+      x = (width + textWidth) / 2;
+      y = m + textHeight;
+    } else if (position === 'top-left') {
+      x = width - m;
+      y = m + textHeight;
+    }
+  } else if (rotation === 270) {
+    rotAngle = 270;
+    if (position === 'bottom-right') {
+      x = m;
+      y = height - m;
+    } else if (position === 'bottom-center') {
+      x = m;
+      y = (height + textWidth) / 2;
+    } else if (position === 'bottom-left') {
+      x = m;
+      y = m + textWidth;
+    } else if (position === 'top-right') {
+      x = width - m - textHeight;
+      y = height - m;
+    } else if (position === 'top-center') {
+      x = width - m - textHeight;
+      y = (height + textWidth) / 2;
+    } else if (position === 'top-left') {
+      x = width - m - textHeight;
+      y = m + textWidth;
+    }
+  }
+
+  return { x, y, rotAngle };
+}
+
+/**
+ * 1. Add Page Numbers to PDF
+ */
+export async function addPageNumbersToPdf(file, options = {}, onProgress) {
+  if (!file || file.size === 0) {
+    throw new Error('Please select a valid PDF file.');
+  }
+
+  const {
+    startNumber = 1,
+    format = 'Page {n}',
+    position = 'bottom-right',
+    fontSize = 11,
+    fontColor = '#334155',
+    marginPt = 36,
+    pageRange = 'all'
+  } = options;
+
+  const arrayBuffer = await file.arrayBuffer();
+  const pdfDoc = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
+  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const color = hexToRgb(fontColor);
+
+  const totalPages = pdfDoc.getPageCount();
+  if (totalPages === 0) {
+    throw new Error('This PDF document contains no pages.');
+  }
+
+  const targetPages = (pageRange && pageRange !== 'all')
+    ? parsePageRanges(pageRange, totalPages)
+    : Array.from({ length: totalPages }, (_, i) => i + 1);
+
+  if (targetPages.length === 0) {
+    throw new Error('No valid pages found in the specified page range.');
+  }
+
+  if (onProgress) onProgress(20);
+
+  const targetSet = new Set(targetPages);
+  let numberedCount = 0;
+
+  for (let i = 0; i < totalPages; i++) {
+    const pageNum = i + 1;
+    if (targetSet.has(pageNum)) {
+      const page = pdfDoc.getPage(i);
+      const currentNumber = startNumber + numberedCount;
+
+      const pageText = format
+        .replace(/\{n\}/g, String(currentNumber))
+        .replace(/\{total\}/g, String(totalPages));
+
+      const textWidth = font.widthOfTextAtSize(pageText, fontSize);
+      const textHeight = fontSize;
+
+      const { x, y, rotAngle } = getPageTextCoords(page, textWidth, textHeight, position, marginPt);
+
+      page.drawText(pageText, {
+        x,
+        y,
+        size: fontSize,
+        font,
+        color,
+        rotate: degrees(rotAngle)
+      });
+
+      numberedCount++;
+    }
+
+    if (onProgress) {
+      onProgress(20 + Math.round(((i + 1) / totalPages) * 70));
+    }
+  }
+
+  const pdfBytes = await pdfDoc.save();
+  if (onProgress) onProgress(100);
+
+  return new Blob([pdfBytes], { type: 'application/pdf' });
+}
+
+/**
+ * 2. Watermark PDF
+ */
+export async function watermarkPdf(file, options = {}, onProgress) {
+  if (!file || file.size === 0) {
+    throw new Error('Please select a valid PDF file.');
+  }
+
+  const {
+    watermarkType = 'text',
+    text = 'CONFIDENTIAL',
+    opacity = 0.35,
+    rotation = 45,
+    fontSize = 48,
+    color = '#EF4444',
+    position = 'center',
+    pageRange = 'all',
+    imageFile = null
+  } = options;
+
+  const arrayBuffer = await file.arrayBuffer();
+  const pdfDoc = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
+  const totalPages = pdfDoc.getPageCount();
+
+  if (totalPages === 0) {
+    throw new Error('This PDF document contains no pages.');
+  }
+
+  const targetPages = (pageRange && pageRange !== 'all')
+    ? parsePageRanges(pageRange, totalPages)
+    : Array.from({ length: totalPages }, (_, i) => i + 1);
+
+  if (targetPages.length === 0) {
+    throw new Error('No valid pages found in the specified page range.');
+  }
+
+  if (onProgress) onProgress(20);
+
+  const targetSet = new Set(targetPages);
+
+  if (watermarkType === 'image' && imageFile) {
+    let embeddedImg;
+    const imgBuf = await imageFile.arrayBuffer();
+    const isPng = imageFile.type === 'image/png' || imageFile.name?.toLowerCase().endsWith('.png');
+    if (isPng) {
+      embeddedImg = await pdfDoc.embedPng(imgBuf);
+    } else {
+      embeddedImg = await pdfDoc.embedJpg(imgBuf);
+    }
+
+    const imgDims = embeddedImg.scale(options.scale || 0.5);
+
+    for (let i = 0; i < totalPages; i++) {
+      if (targetSet.has(i + 1)) {
+        const page = pdfDoc.getPage(i);
+        const { width, height } = page.getSize();
+        let x = (width - imgDims.width) / 2;
+        let y = (height - imgDims.height) / 2;
+
+        if (position === 'top-left') {
+          x = 36;
+          y = height - imgDims.height - 36;
+        } else if (position === 'top-right') {
+          x = width - imgDims.width - 36;
+          y = height - imgDims.height - 36;
+        } else if (position === 'bottom-left') {
+          x = 36;
+          y = 36;
+        } else if (position === 'bottom-right') {
+          x = width - imgDims.width - 36;
+          y = 36;
+        }
+
+        page.drawImage(embeddedImg, {
+          x,
+          y,
+          width: imgDims.width,
+          height: imgDims.height,
+          opacity: Math.max(0.05, Math.min(1.0, opacity))
+        });
+      }
+      if (onProgress) onProgress(20 + Math.round(((i + 1) / totalPages) * 70));
+    }
+  } else {
+    // Text watermark
+    const font = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+    const textStr = String(text || 'CONFIDENTIAL').trim();
+    if (!textStr) throw new Error('Watermark text cannot be empty.');
+
+    const rgbColor = hexToRgb(color);
+    const textWidth = font.widthOfTextAtSize(textStr, fontSize);
+    const textHeight = fontSize;
+    const rad = (rotation * Math.PI) / 180;
+
+    for (let i = 0; i < totalPages; i++) {
+      if (targetSet.has(i + 1)) {
+        const page = pdfDoc.getPage(i);
+        const { width, height } = page.getSize();
+        const pageRot = page.getRotation().angle || 0;
+
+        let x = 0;
+        let y = 0;
+
+        if (position === 'center' || position === 'diagonal') {
+          x = (width / 2) - ((textWidth / 2) * Math.cos(rad)) + ((textHeight / 4) * Math.sin(rad));
+          y = (height / 2) - ((textWidth / 2) * Math.sin(rad)) - ((textHeight / 4) * Math.cos(rad));
+        } else if (position === 'top-left') {
+          x = 36;
+          y = height - 72;
+        } else if (position === 'top-right') {
+          x = width - textWidth - 36;
+          y = height - 72;
+        } else if (position === 'bottom-left') {
+          x = 36;
+          y = 36;
+        } else if (position === 'bottom-right') {
+          x = width - textWidth - 36;
+          y = 36;
+        }
+
+        page.drawText(textStr, {
+          x,
+          y,
+          size: fontSize,
+          font,
+          color: rgbColor,
+          opacity: Math.max(0.05, Math.min(1.0, opacity)),
+          rotate: degrees(rotation + pageRot)
+        });
+      }
+      if (onProgress) onProgress(20 + Math.round(((i + 1) / totalPages) * 70));
+    }
+  }
+
+  const pdfBytes = await pdfDoc.save();
+  if (onProgress) onProgress(100);
+
+  return new Blob([pdfBytes], { type: 'application/pdf' });
+}
+
+/**
+ * 3. Crop PDF Pages
+ */
+export async function cropPdf(file, options = {}, onProgress) {
+  if (!file || file.size === 0) {
+    throw new Error('Please select a valid PDF file.');
+  }
+
+  const {
+    cropMargins = { top: 36, bottom: 36, left: 36, right: 36 },
+    pageRange = 'all'
+  } = options;
+
+  const top = Number(cropMargins.top) || 0;
+  const bottom = Number(cropMargins.bottom) || 0;
+  const left = Number(cropMargins.left) || 0;
+  const right = Number(cropMargins.right) || 0;
+
+  if (top < 0 || bottom < 0 || left < 0 || right < 0) {
+    throw new Error('Crop margins must be non-negative values.');
+  }
+
+  const arrayBuffer = await file.arrayBuffer();
+  const pdfDoc = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
+  const totalPages = pdfDoc.getPageCount();
+
+  if (totalPages === 0) {
+    throw new Error('This PDF document contains no pages.');
+  }
+
+  const targetPages = (pageRange && pageRange !== 'all')
+    ? parsePageRanges(pageRange, totalPages)
+    : Array.from({ length: totalPages }, (_, i) => i + 1);
+
+  if (targetPages.length === 0) {
+    throw new Error('No valid pages found in the specified page range.');
+  }
+
+  const targetSet = new Set(targetPages);
+
+  for (let i = 0; i < totalPages; i++) {
+    if (targetSet.has(i + 1)) {
+      const page = pdfDoc.getPage(i);
+      const mediaBox = page.getMediaBox();
+      const currentBox = page.getCropBox() || mediaBox;
+
+      const newX = currentBox.x + left;
+      const newY = currentBox.y + bottom;
+      const newW = currentBox.width - left - right;
+      const newH = currentBox.height - top - bottom;
+
+      if (newW <= 20 || newH <= 20) {
+        throw new Error(
+          `Crop margins too large on page ${i + 1}. Remaining width (${Math.round(newW)}pt) or height (${Math.round(newH)}pt) must be at least 20pt.`
+        );
+      }
+
+      page.setCropBox(newX, newY, newW, newH);
+    }
+    if (onProgress) onProgress(20 + Math.round(((i + 1) / totalPages) * 70));
+  }
+
+  const pdfBytes = await pdfDoc.save();
+  if (onProgress) onProgress(100);
+
+  return new Blob([pdfBytes], { type: 'application/pdf' });
+}
+
+/**
+ * 4. Read PDF Document Metadata
+ */
+export async function readPdfMetadata(file) {
+  if (!file || file.size === 0) {
+    throw new Error('Please select a valid PDF file.');
+  }
+
+  const arrayBuffer = await file.arrayBuffer();
+  const pdfDoc = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
+
+  const keywords = pdfDoc.getKeywords();
+  let keywordsStr = '';
+  if (Array.isArray(keywords)) {
+    keywordsStr = keywords.join(', ');
+  } else if (typeof keywords === 'string') {
+    keywordsStr = keywords;
+  }
+
+  return {
+    title: pdfDoc.getTitle() || '',
+    author: pdfDoc.getAuthor() || '',
+    subject: pdfDoc.getSubject() || '',
+    keywords: keywordsStr,
+    producer: pdfDoc.getProducer() || '',
+    creator: pdfDoc.getCreator() || '',
+    creationDate: pdfDoc.getCreationDate() ? pdfDoc.getCreationDate().toISOString() : '',
+    modificationDate: pdfDoc.getModificationDate() ? pdfDoc.getModificationDate().toISOString() : '',
+    pageCount: pdfDoc.getPageCount()
+  };
+}
+
+/**
+ * 4. Edit PDF Document Metadata
+ */
+export async function editPdfMetadata(file, metadata = {}, onProgress) {
+  if (!file || file.size === 0) {
+    throw new Error('Please select a valid PDF file.');
+  }
+
+  const arrayBuffer = await file.arrayBuffer();
+  const pdfDoc = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
+
+  if (onProgress) onProgress(30);
+
+  if (metadata.title !== undefined) {
+    pdfDoc.setTitle(metadata.title || '');
+  }
+  if (metadata.author !== undefined) {
+    pdfDoc.setAuthor(metadata.author || '');
+  }
+  if (metadata.subject !== undefined) {
+    pdfDoc.setSubject(metadata.subject || '');
+  }
+  if (metadata.keywords !== undefined) {
+    const kwArr = String(metadata.keywords || '')
+      .split(',')
+      .map(k => k.trim())
+      .filter(Boolean);
+    pdfDoc.setKeywords(kwArr);
+  }
+  if (metadata.producer !== undefined) {
+    pdfDoc.setProducer(metadata.producer || 'Simatrix PDF Tools');
+  }
+  if (metadata.creator !== undefined) {
+    pdfDoc.setCreator(metadata.creator || 'Simatrix PDF Tools');
+  }
+
+  pdfDoc.setModificationDate(new Date());
+
+  if (onProgress) onProgress(75);
+
+  const pdfBytes = await pdfDoc.save();
+  if (onProgress) onProgress(100);
+
+  return new Blob([pdfBytes], { type: 'application/pdf' });
+}
+
+/**
+ * 5. Reorder PDF Pages
+ */
+export async function reorderPdfPages(file, pageOrderArray, rotations = {}, onProgress) {
+  if (!file || file.size === 0) {
+    throw new Error('Please select a valid PDF file.');
+  }
+
+  if (!Array.isArray(pageOrderArray) || pageOrderArray.length === 0) {
+    throw new Error('Please provide at least one page in the reordered list.');
+  }
+
+  const arrayBuffer = await file.arrayBuffer();
+  const srcDoc = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
+  const totalPages = srcDoc.getPageCount();
+
+  for (const p of pageOrderArray) {
+    if (typeof p !== 'number' || p < 1 || p > totalPages) {
+      throw new Error(`Invalid page index ${p}. Document contains pages 1 to ${totalPages}.`);
+    }
+  }
+
+  if (onProgress) onProgress(20);
+
+  const newDoc = await PDFDocument.create();
+
+  for (let i = 0; i < pageOrderArray.length; i++) {
+    const pageNum = pageOrderArray[i];
+    const [copiedPage] = await newDoc.copyPages(srcDoc, [pageNum - 1]);
+
+    const angleDelta = Number(rotations[pageNum]) || 0;
+    if (angleDelta !== 0) {
+      const currentAngle = copiedPage.getRotation().angle || 0;
+      copiedPage.setRotation(degrees((currentAngle + angleDelta) % 360));
+    }
+
+    newDoc.addPage(copiedPage);
+
+    if (onProgress) {
+      onProgress(20 + Math.round(((i + 1) / pageOrderArray.length) * 70));
+    }
+  }
+
+  const pdfBytes = await newDoc.save();
+  if (onProgress) onProgress(100);
+
+  return new Blob([pdfBytes], { type: 'application/pdf' });
+}
+

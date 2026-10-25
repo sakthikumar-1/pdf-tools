@@ -9,16 +9,34 @@ export function validatePdfFile(file, acceptType = '.pdf') {
     return { valid: false, error: 'Please select a file to upload.' };
   }
 
-  const nameLower = file.name.toLowerCase();
-  const isImageAccept = acceptType.includes('image') || acceptType.includes('.jpg') || acceptType.includes('.png');
+  const nameLower = file.name ? file.name.toLowerCase() : '';
+  const isImageAccept = acceptType.includes('image') || acceptType.includes('.jpg') || acceptType.includes('.png') || acceptType.includes('.webp');
 
   if (isImageAccept) {
-    const isImageExt = nameLower.endsWith('.jpg') || nameLower.endsWith('.jpeg') || nameLower.endsWith('.png') || nameLower.endsWith('.webp') || nameLower.endsWith('.pdf');
-    const isImageMime = file.type.startsWith('image/') || file.type === 'application/pdf' || file.type === '';
+    // Images to PDF: strictly accept ONLY images, reject PDFs!
+    if (nameLower.endsWith('.pdf') || file.type === 'application/pdf') {
+      return { 
+        valid: false, 
+        error: 'PDF files are not allowed here. Images to PDF accepts only image files (JPG, PNG, WebP).' 
+      };
+    }
+    const isImageExt = nameLower.endsWith('.jpg') || nameLower.endsWith('.jpeg') || nameLower.endsWith('.png') || nameLower.endsWith('.webp') || nameLower.endsWith('.bmp');
+    const isImageMime = file.type && file.type.startsWith('image/');
     if (!isImageExt && !isImageMime) {
-      return { valid: false, error: 'Invalid file type. Please select a valid image (JPG, PNG, WebP) file.' };
+      return { 
+        valid: false, 
+        error: 'Invalid file type. Please select a valid image (JPG, PNG, WebP) file.' 
+      };
     }
   } else {
+    // PDF tools: strictly accept ONLY PDF files, reject images!
+    const isImageFile = nameLower.endsWith('.jpg') || nameLower.endsWith('.jpeg') || nameLower.endsWith('.png') || nameLower.endsWith('.webp') || (file.type && file.type.startsWith('image/'));
+    if (isImageFile) {
+      return { 
+        valid: false, 
+        error: 'Image files are not supported for this tool. Please upload a valid PDF document (or use the Images to PDF tool).' 
+      };
+    }
     const isPdfExtension = nameLower.endsWith('.pdf');
     const isPdfMime = file.type === 'application/pdf' || file.type === '';
     if (!isPdfExtension && !isPdfMime) {
@@ -60,3 +78,19 @@ export function downloadFile(content, filename) {
     setTimeout(() => URL.revokeObjectURL(url), 120000);
   }
 }
+
+/**
+ * Formats a byte number into human-readable string (e.g. 1.2 MB).
+ * @param {number} bytes 
+ * @param {number} decimals 
+ * @returns {string}
+ */
+export function formatBytes(bytes, decimals = 1) {
+  if (!bytes || bytes === 0) return '0 B';
+  const k = 1024;
+  const dm = decimals < 0 ? 0 : decimals;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
+}
+

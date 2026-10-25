@@ -1,5 +1,13 @@
 import React, { useRef } from 'react';
-import { FileText, X, CheckCircle, RefreshCw, Plus } from 'lucide-react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import {
+  faFileLines,
+  faXmark,
+  faCheck,
+  faArrowsRotate,
+  faPlus,
+  faCircleInfo
+} from '@fortawesome/free-solid-svg-icons';
 import { formatFileSize } from '../utils/formatFileSize';
 import './FileUploader.css';
 
@@ -11,6 +19,7 @@ export default function FileUploader({
   onAddMore,
   onProcess,
   isProcessing,
+  isProcessDisabled = false,
   actionText = 'Convert File Now',
   acceptedTypes = '.pdf'
 }) {
@@ -29,20 +38,25 @@ export default function FileUploader({
 
   return (
     <div className="file-uploader-selected">
-      <div className="file-list-container" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', width: '100%' }}>
+      <div className="file-list-container">
         {fileList.map((f, idx) => (
           <div className="selected-file-card" key={idx}>
             <div className="file-icon-box">
-              <FileText size={32} className="pdf-doc-icon" />
-              <span className="file-ext-badge">{fileList.length > 1 ? `#${idx + 1}` : 'PDF'}</span>
+              <FontAwesomeIcon icon={faFileLines} className="pdf-doc-icon" />
+              <span className="file-ext-badge">
+                {fileList.length > 1 ? `#${idx + 1}` : (f.name ? f.name.split('.').pop().toUpperCase() : 'PDF')}
+              </span>
             </div>
 
             <div className="selected-file-details">
               <h4 className="selected-filename" title={f.name}>{f.name}</h4>
               <div className="selected-file-meta">
                 <span className="file-size-tag">{formatFileSize(f.size)}</span>
-                <span className="file-meta-dot">•</span>
-                <span className="file-status-tag"><CheckCircle size={13} /> Ready to process</span>
+                <span className="file-meta-dot">&bull;</span>
+                <span className="file-status-tag">
+                  <FontAwesomeIcon icon={faCheck} className="check-fa-icon" />
+                  <span>Ready to process</span>
+                </span>
               </div>
             </div>
 
@@ -60,7 +74,7 @@ export default function FileUploader({
               aria-label="Remove file"
               title="Remove file"
             >
-              <X size={20} />
+              <FontAwesomeIcon icon={faXmark} />
             </button>
           </div>
         ))}
@@ -83,7 +97,8 @@ export default function FileUploader({
             onClick={() => addMoreInputRef.current?.click()}
             disabled={isProcessing}
           >
-            <Plus size={16} /> Add More Files
+            <FontAwesomeIcon icon={faPlus} />
+            <span>Add More Files</span>
           </button>
         ) : (
           <button
@@ -92,7 +107,8 @@ export default function FileUploader({
             onClick={onRemove}
             disabled={isProcessing}
           >
-            <RefreshCw size={16} /> Choose Different File
+            <FontAwesomeIcon icon={faArrowsRotate} />
+            <span>Choose Different File</span>
           </button>
         )}
 
@@ -100,12 +116,29 @@ export default function FileUploader({
           type="button"
           className="btn btn-primary btn-lg process-action-btn"
           onClick={onProcess}
-          disabled={isProcessing}
+          disabled={isProcessing || isProcessDisabled}
+          title={
+            isProcessDisabled 
+              ? (actionText.toLowerCase().includes('merge') && fileList.length < 2 
+                  ? "Please add at least 2 PDF files to merge" 
+                  : "Complete the required settings below to proceed") 
+              : ""
+          }
         >
-          {fileList.length > 1 ? `Merge ${fileList.length} Files Now` : actionText}
+          {fileList.length > 1 && actionText.toLowerCase().includes('merge')
+            ? `Merge ${fileList.length} Files Now`
+            : (fileList.length > 1 && actionText.toLowerCase().includes('convert')
+                ? `Convert ${fileList.length} Files to PDF`
+                : actionText)}
         </button>
       </div>
+
+      {actionText.toLowerCase().includes('merge') && fileList.length < 2 && (
+        <div className="merge-single-file-hint">
+          <FontAwesomeIcon icon={faCircleInfo} />
+          <span>Please add at least 1 more PDF file to merge. Click <strong>&ldquo;Add More Files&rdquo;</strong> above.</span>
+        </div>
+      )}
     </div>
   );
 }
-

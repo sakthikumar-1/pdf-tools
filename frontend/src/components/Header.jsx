@@ -1,52 +1,46 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { 
-  FileText, 
-  FileImage, 
-  FileSpreadsheet, 
-  Images, 
-  Type, 
-  Presentation, 
-  Layers, 
-  Scissors, 
-  Minimize2, 
-  RotateCw, 
-  Lock, 
-  FileCheck,
-  ChevronDown,
-  Sun,
-  Moon,
-  Menu,
-  X,
-  Trash2
-} from 'lucide-react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import {
+  faMagnifyingGlass,
+  faChevronDown,
+  faSun,
+  faMoon,
+  faBars,
+  faXmark,
+  faWandMagicSparkles,
+  faFilePdf,
+  faUser,
+  faCircleQuestion,
+  faLayerGroup
+} from '@fortawesome/free-solid-svg-icons';
 import { useTheme } from '../context/ThemeContext';
+import { TOOLS_DATA, TOOL_CATEGORIES } from '../utils/toolsData';
+import QuickSearchModal from './QuickSearchModal';
 import './Header.css';
 
-export default function Header() {
+export default function Header({ onOpenAuth }) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [searchModalOpen, setSearchModalOpen] = useState(false);
+
   const { theme, toggleTheme } = useTheme();
   const location = useLocation();
   const dropdownRef = useRef(null);
 
-  const toolsList = [
-    { name: 'PDF to JPG', path: '/pdf-to-jpg', icon: FileImage, badge: 'V1 Ready' },
-    { name: 'PDF to Word', path: '/pdf-to-word', icon: FileText, badge: 'Popular' },
-    { name: 'Merge PDF', path: '/merge-pdf', icon: Layers, badge: 'Popular' },
-    { name: 'Compress PDF', path: '/compress-pdf', icon: Minimize2, badge: 'Fast' },
-    { name: 'Split PDF', path: '/split-pdf', icon: Scissors },
-    { name: 'PDF to Excel', path: '/pdf-to-excel', icon: FileSpreadsheet },
-    { name: 'PDF to PNG', path: '/pdf-to-png', icon: Images },
-    { name: 'PDF to Text', path: '/pdf-to-text', icon: Type },
-    { name: 'PDF to PowerPoint', path: '/pdf-to-ppt', icon: Presentation },
-    { name: 'Rotate PDF', path: '/rotate-pdf', icon: RotateCw },
-    { name: 'Protect PDF', path: '/protect-pdf', icon: Lock },
-    { name: 'Images to PDF', path: '/images-to-pdf', icon: FileCheck },
-    { name: 'Remove Pages', path: '/remove-pages', icon: Trash2, badge: 'New' },
-  ];
+  // Keyboard shortcut Ctrl+K or Cmd+K
+  useEffect(() => {
+    function handleKeyDown(e) {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        setSearchModalOpen(true);
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
-  // Close dropdown on click outside
+  // Close menus on click outside
   useEffect(() => {
     function handleClickOutside(event) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -64,120 +58,217 @@ export default function Header() {
   }, [location.pathname]);
 
   return (
-    <header className="header">
-      <div className="container header-container">
-        {/* Brand Logo */}
-        <Link to="/" className="brand-logo" title="Simatrix Academy PDF Tools">
-          <img 
-            src={theme === 'dark' ? '/hero-logo-dark.png' : '/hero-logo.png'} 
-            alt="Simatrix Academy Logo" 
-            className="brand-logo-img" 
-          />
-        </Link>
-
-        {/* Desktop Navigation */}
-        <nav className="desktop-nav">
-          <Link to="/" className={`nav-link ${location.pathname === '/' ? 'active' : ''}`}>
-            Home
+    <>
+      <header className="site-header">
+        <div className="container header-inner">
+          {/* Brand Logo */}
+          <Link to="/" className="brand-link" title="Simatrix PDF Tools">
+            <span className="brand-icon-box">
+              <FontAwesomeIcon icon={faFilePdf} className="brand-fa-icon" />
+            </span>
+            <span className="brand-text">
+              Simatrix <span className="brand-sub">PDF</span>
+            </span>
           </Link>
 
-          {/* Clean Tools Dropdown */}
-          <div className="nav-dropdown-wrapper" ref={dropdownRef}>
-            <button 
-              className={`nav-link dropdown-trigger ${dropdownOpen ? 'active' : ''}`}
-              onClick={() => setDropdownOpen(!dropdownOpen)}
+          {/* Desktop Navigation */}
+          <nav className="header-nav" aria-label="Main Navigation">
+            {/* Tools Dropdown */}
+            <div className="nav-dropdown-anchor" ref={dropdownRef}>
+              <button
+                type="button"
+                className={`nav-btn ${dropdownOpen ? 'active' : ''}`}
+                onClick={() => setDropdownOpen(!dropdownOpen)}
+                aria-expanded={dropdownOpen}
+                aria-haspopup="true"
+              >
+                <span>Tools</span>
+                <FontAwesomeIcon icon={faChevronDown} className={`chevron-fa ${dropdownOpen ? 'rotated' : ''}`} />
+              </button>
+
+              {dropdownOpen && (
+                <div className="dropdown-panel">
+                  <div className="dropdown-grid">
+                    {TOOL_CATEGORIES.filter(c => c.id !== 'all').map((cat) => {
+                      const catTools = TOOLS_DATA.filter(t => t.category === cat.id);
+                      if (catTools.length === 0) return null;
+                      return (
+                        <div key={cat.id} className="dropdown-col">
+                          <span className="dropdown-col-title">
+                            {cat.icon && <FontAwesomeIcon icon={cat.icon} className="cat-mini-icon" />}
+                            {cat.label}
+                          </span>
+                          <ul className="dropdown-list">
+                            {catTools.map((tool) => (
+                              <li key={tool.id}>
+                                <Link
+                                  to={tool.path}
+                                  className={`dropdown-item ${location.pathname === tool.path ? 'current' : ''}`}
+                                >
+                                  <FontAwesomeIcon icon={tool.icon} className="item-fa-icon" />
+                                  <span className="item-title">{tool.title}</span>
+                                  {tool.badge && <span className="item-badge">{tool.badge}</span>}
+                                </Link>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* AI Tools Link */}
+            <Link
+              to="/ai-summarizer"
+              className={`nav-link-btn ${location.pathname === '/ai-summarizer' ? 'active' : ''}`}
             >
-              <span>All Tools</span>
-              <ChevronDown size={15} className={`chevron-icon ${dropdownOpen ? 'open' : ''}`} />
+              <FontAwesomeIcon icon={faWandMagicSparkles} className="nav-gold-icon" />
+              <span>AI Tools</span>
+            </Link>
+
+            {/* Help Link */}
+            <a href="/#faq-section" className="nav-link-btn">
+              <FontAwesomeIcon icon={faCircleQuestion} />
+              <span>Help</span>
+            </a>
+          </nav>
+
+          {/* Header Actions */}
+          <div className="header-actions">
+            {/* Quick Search Button */}
+            <button
+              type="button"
+              className="action-search-btn"
+              onClick={() => setSearchModalOpen(true)}
+              aria-label="Search PDF tools (Ctrl+K)"
+            >
+              <FontAwesomeIcon icon={faMagnifyingGlass} />
+              <span className="search-hint-text">Search tools...</span>
+              <kbd className="search-shortcut">⌘K</kbd>
             </button>
 
-            {dropdownOpen && (
-              <div className="tools-dropdown-menu">
-                <div className="dropdown-grid">
-                  {toolsList.map((tool, idx) => {
-                    const IconComp = tool.icon;
-                    const isActive = location.pathname === tool.path;
-                    return (
-                      <Link 
-                        to={tool.path} 
-                        key={idx} 
-                        className={`dropdown-item ${isActive ? 'active' : ''}`}
-                      >
-                        <IconComp size={18} className="dropdown-item-icon" />
-                        <span className="dropdown-item-name">{tool.name}</span>
-                        {tool.badge && <span className="dropdown-item-badge">{tool.badge}</span>}
-                      </Link>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
+            {/* Theme Toggle */}
+            <button
+              type="button"
+              className="action-icon-btn"
+              onClick={toggleTheme}
+              aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+              title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+            >
+              <FontAwesomeIcon icon={theme === 'dark' ? faSun : faMoon} />
+            </button>
+
+            {/* Sign in button */}
+            <button
+              type="button"
+              className="btn btn-sm btn-secondary sign-in-btn"
+              onClick={onOpenAuth}
+            >
+              <FontAwesomeIcon icon={faUser} />
+              <span>Sign in</span>
+            </button>
+
+            {/* Mobile Menu Trigger */}
+            <button
+              type="button"
+              className="mobile-toggle-btn"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label="Toggle mobile menu"
+            >
+              <FontAwesomeIcon icon={mobileMenuOpen ? faXmark : faBars} />
+            </button>
           </div>
-
-          <Link to="/pdf-to-jpg" className={`nav-link ${location.pathname === '/pdf-to-jpg' ? 'active' : ''}`}>
-            PDF to JPG
-          </Link>
-          <Link to="/pdf-to-word" className={`nav-link ${location.pathname === '/pdf-to-word' ? 'active' : ''}`}>
-            PDF to Word
-          </Link>
-          <Link to="/merge-pdf" className={`nav-link ${location.pathname === '/merge-pdf' ? 'active' : ''}`}>
-            Merge PDF
-          </Link>
-          <Link to="/compress-pdf" className={`nav-link ${location.pathname === '/compress-pdf' ? 'active' : ''}`}>
-            Compress PDF
-          </Link>
-        </nav>
-
-        {/* Action Controls & Theme Toggle */}
-        <div className="header-actions">
-          <button 
-            className="theme-toggle-btn" 
-            onClick={toggleTheme} 
-            title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
-            aria-label="Toggle Color Theme"
-          >
-            {theme === 'dark' ? (
-              <Sun size={19} className="theme-icon sun-icon" />
-            ) : (
-              <Moon size={19} className="theme-icon moon-icon" />
-            )}
-          </button>
-
-          <button 
-            className="mobile-menu-btn" 
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            aria-label="Toggle Navigation Menu"
-          >
-            {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
-          </button>
         </div>
-      </div>
+      </header>
 
-      {/* Clean Mobile Menu */}
+      {/* Mobile Navigation Drawer */}
       {mobileMenuOpen && (
-        <div className="mobile-menu-overlay">
-          <div className="mobile-menu-container">
-            <div className="mobile-menu-header">
-              <span className="mobile-menu-title">PDF Tools</span>
-              <button className="theme-toggle-btn" onClick={toggleTheme}>
-                {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+        <div className="mobile-drawer-backdrop" onClick={() => setMobileMenuOpen(false)}>
+          <div className="mobile-drawer" onClick={(e) => e.stopPropagation()}>
+            <div className="mobile-drawer-header">
+              <span className="brand-text">Simatrix <span className="brand-sub">PDF</span></span>
+              <button
+                type="button"
+                className="action-icon-btn"
+                onClick={() => setMobileMenuOpen(false)}
+                aria-label="Close menu"
+              >
+                <FontAwesomeIcon icon={faXmark} />
               </button>
             </div>
 
-            <div className="mobile-tool-grid">
-              {toolsList.map((tool, idx) => {
-                const IconC = tool.icon;
-                return (
-                  <Link key={idx} to={tool.path} className="mobile-tool-card">
-                    <IconC size={18} className="mobile-tool-icon" />
-                    <span>{tool.name}</span>
-                  </Link>
-                );
-              })}
+            <div className="mobile-drawer-body">
+              <button
+                type="button"
+                className="mobile-search-btn"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  setSearchModalOpen(true);
+                }}
+              >
+                <FontAwesomeIcon icon={faMagnifyingGlass} />
+                <span>Search 19 tools...</span>
+              </button>
+
+              <div className="mobile-nav-group">
+                <Link to="/" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
+                  <FontAwesomeIcon icon={faLayerGroup} />
+                  <span>All Tools</span>
+                </Link>
+                <Link to="/ai-summarizer" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
+                  <FontAwesomeIcon icon={faWandMagicSparkles} className="nav-gold-icon" />
+                  <span>AI Summarizer</span>
+                </Link>
+                <a href="/#faq-section" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
+                  <FontAwesomeIcon icon={faCircleQuestion} />
+                  <span>Help & FAQ</span>
+                </a>
+              </div>
+
+              <div className="mobile-tools-accordion">
+                <span className="mobile-group-title">Browse PDF Utilities</span>
+                <div className="mobile-tools-grid">
+                  {TOOLS_DATA.map((tool) => (
+                    <Link
+                      key={tool.id}
+                      to={tool.path}
+                      className="mobile-tool-item"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <FontAwesomeIcon icon={tool.icon} className="mobile-tool-fa" />
+                      <span>{tool.title}</span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="mobile-drawer-footer">
+              <button
+                type="button"
+                className="btn btn-primary"
+                style={{ width: '100%' }}
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  if (onOpenAuth) onOpenAuth();
+                }}
+              >
+                <FontAwesomeIcon icon={faUser} />
+                <span>Sign in with Google</span>
+              </button>
             </div>
           </div>
         </div>
       )}
-    </header>
+
+      {/* Quick Search Modal */}
+      <QuickSearchModal
+        isOpen={searchModalOpen}
+        onClose={() => setSearchModalOpen(false)}
+      />
+    </>
   );
 }

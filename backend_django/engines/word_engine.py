@@ -45,6 +45,8 @@ def inspect_pdf_document(pdf_path: str) -> Dict[str, Any]:
     try:
         doc = fitz.open(pdf_path)
     except Exception as err:
+        import gc
+        gc.collect()
         raise InvalidPdfError(f"Unable to parse PDF document: {str(err)}")
 
     if doc.is_encrypted and doc.needs_pass:
@@ -125,13 +127,19 @@ def convert_pdf_to_docx(
         output_docx_path = str(output_dir / filename)
 
     # 3. Perform conversion via pdf2docx Converter
+    cv = None
     try:
         cv = Converter(str(input_pdf_path))
         cv.convert(str(output_docx_path))
-        cv.close()
     except Exception as err:
         logger.error(f"pdf2docx conversion error: {err}", exc_info=True)
         raise WordEngineException(f"Failed to reconstruct DOCX layout: {str(err)}")
+    finally:
+        if cv is not None:
+            try:
+                cv.close()
+            except Exception:
+                pass
 
     # 4. Clean artifacts & bullet glyphs
     clean_docx_artifacts(str(output_docx_path))
