@@ -4,7 +4,7 @@ frontend/node_modules/
 
 # Production Build Output
 dist/
-frontend/dist/
+!frontend/dist/
 build/
 
 # IDE & Editor files
