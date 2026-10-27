@@ -70,20 +70,14 @@ export default function Footer() {
           </ul>
         </div>
 
-        {/* Product & Security Information */}
+        {/* Account & Information */}
         <div className="footer-nav-col">
-          <h4 className="footer-heading">Product & Security</h4>
+          <h4 className="footer-heading">Account & System</h4>
           <ul className="footer-nav-list">
-            <li><a href="/#faq-section">Frequently Asked Questions</a></li>
-            <li><a href="/#security-section">Privacy & Retention Policy</a></li>
-            <li><Link to="/ai-summarizer">Gemini AI Document Analysis</Link></li>
+            <li><Link to="/account">Account Settings</Link></li>
+            <li><Link to="/history">Recent Processing History</Link></li>
+            <li><Link to="/ai-summarizer">AI Document Intelligence</Link></li>
           </ul>
-          <div className="footer-security-card">
-            <span className="security-title">Strict Privacy Guarantee</span>
-            <p className="security-text">
-              Uploaded files are never indexed, stored permanently, or used for AI training.
-            </p>
-          </div>
         </div>
       </div>
 
@@ -91,12 +85,12 @@ export default function Footer() {
       <div className="footer-bottom">
         <div className="container footer-bottom-inner">
           <p className="footer-copy">
-            &copy; {currentYear} Simatrix Academy. All rights reserved.
+            &copy; {currentYear} Simatrix Academy. All rights reserved. Client-first document processing.
           </p>
           <div className="footer-bottom-links">
-            <a href="/#security-section">Security</a>
+            <Link to="/history">History</Link>
             <span className="dot-sep">&bull;</span>
-            <a href="/#faq-section">Help &amp; FAQ</a>
+            <Link to="/account">Account</Link>
           </div>
         </div>
       </div>

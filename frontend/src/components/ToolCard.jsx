@@ -8,6 +8,7 @@ export default function ToolCard({
   title,
   description,
   icon,
+  iconColor,
   path,
   badge,
   badgeType = 'primary',
@@ -16,23 +17,32 @@ export default function ToolCard({
 
   return (
     <Link to={path} className="tool-card" id={toolId}>
-      <div className="tool-card-top">
-        <div className="tool-icon-wrapper">
-          {icon && <FontAwesomeIcon icon={icon} className="tool-fa-icon" />}
+      <div className="tool-card-header">
+        <div 
+          className="tool-icon-badge" 
+          style={{ 
+            backgroundColor: iconColor ? `${iconColor}18` : 'rgba(255, 194, 71, 0.15)',
+            color: iconColor || 'var(--color-gold)'
+          }}
+        >
+          {icon && <FontAwesomeIcon icon={icon} className="tool-icon-glyph" />}
         </div>
-        {badge && (
-          <span className={`badge badge-${badgeType}`}>
-            {badge}
+
+        <div className="tool-card-action">
+          {badge && (
+            <span className={`badge badge-${badgeType}`}>
+              {badge}
+            </span>
+          )}
+          <span className="tool-arrow-circle">
+            <FontAwesomeIcon icon={faArrowRight} />
           </span>
-        )}
+        </div>
       </div>
 
-      <h3 className="tool-title">{title}</h3>
-      <p className="tool-description">{description}</p>
-
-      <div className="tool-card-footer">
-        <span className="tool-action-link">Open tool</span>
-        <FontAwesomeIcon icon={faArrowRight} className="tool-arrow" />
+      <div className="tool-card-body">
+        <h3 className="tool-card-title">{title}</h3>
+        <p className="tool-card-desc">{description}</p>
       </div>
     </Link>
   );

@@ -193,18 +193,19 @@ export default function RemovePages() {
 
   return (
     <div className="remove-pages-container container">
-      {/* Top Breadcrumb Link */}
-      <nav className="tool-breadcrumb" aria-label="Breadcrumb">
-        <Link to="/" className="breadcrumb-link">
-          Home
+      {/* Top Navigation Row with Back Button */}
+      <div className="tool-top-nav-row">
+        <Link to="/" className="tool-back-link">
+          <FontAwesomeIcon icon={faArrowLeft} /> Back to Tools
         </Link>
-        <span className="breadcrumb-separator">/</span>
-        <a href="/#tools-catalog" className="breadcrumb-link">
-          PDF Tools
-        </a>
-        <span className="breadcrumb-separator">/</span>
-        <span className="breadcrumb-current">Remove Pages</span>
-      </nav>
+        <nav className="tool-breadcrumb" aria-label="Breadcrumb">
+          <Link to="/" className="breadcrumb-link">
+            Home
+          </Link>
+          <span className="breadcrumb-separator">/</span>
+          <span className="breadcrumb-current">Remove Pages</span>
+        </nav>
+      </div>
 
       {/* Tool Header */}
       <div className="remove-pages-hero">

@@ -2,6 +2,8 @@ import { PDFDocument, PDFHexString, degrees, rgb, StandardFonts } from 'pdf-lib'
 import * as pdfjsDist from 'pdfjs-dist';
 import JSZip from 'jszip';
 import * as XLSX from 'xlsx';
+import { getPdfPageCount } from './pdfPageCounter.js';
+export { getPdfPageCount };
 
 const pdfjsLib = pdfjsDist.default || pdfjsDist;
 
@@ -130,19 +132,6 @@ export async function mergePdfs(files, onProgress) {
 
   const pdfBytes = await mergedPdf.save();
   return new Blob([pdfBytes], { type: 'application/pdf' });
-}
-
-/**
- * Safely reads the total page count of a PDF file
- */
-export async function getPdfPageCount(file) {
-  try {
-    const arrayBuffer = await file.arrayBuffer();
-    const pdfDoc = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
-    return pdfDoc.getPageCount();
-  } catch (err) {
-    return null;
-  }
 }
 
 /**
@@ -284,8 +273,9 @@ export async function compressPdf(file, compressionLevel = 'recommended', onProg
   let rasterBlob = null;
   let rasterSize = Infinity;
 
-  try {
-    const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+  if (typeof document !== 'undefined') {
+    try {
+      const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
     const pdf = await loadingTask.promise;
     const numPages = pdf.numPages;
 
@@ -328,6 +318,7 @@ export async function compressPdf(file, compressionLevel = 'recommended', onProg
   } catch (err) {
     console.warn('[compressPdf] Downsampling skipped:', err);
   }
+}
 
   if (onProgress) onProgress(95);
 
@@ -1062,7 +1053,7 @@ export async function pdfToDocx(file, onProgress) {
     if (onProgress) onProgress(Math.round(p * 0.7));
   });
 
-  const blob = await createDocxFile(structured, file?.name || 'Document');
+  const blob = await generateDocxDocument(structured, file?.name || 'Document');
   if (onProgress) onProgress(100);
 
   return {

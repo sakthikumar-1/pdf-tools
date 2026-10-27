@@ -241,8 +241,9 @@ export default function ReorderPages() {
     <div className="container reorder-pages-container">
       {/* HEADER SECTION */}
       <div className="reorder-pages-hero">
-        <Link to="/" className="btn btn-ghost" style={{ alignSelf: 'flex-start', marginBottom: '0.25rem' }}>
-          <FontAwesomeIcon icon={faArrowLeft} /> Back to All Tools
+        <Link to="/" className="tool-back-link">
+          <FontAwesomeIcon icon={faArrowLeft} />
+          <span>Back to Tools</span>
         </Link>
         <div className="reorder-pages-icon">
           <FontAwesomeIcon icon={faUpDown} size="2x" />
@@ -259,7 +260,7 @@ export default function ReorderPages() {
       {/* ERROR BANNER */}
       {error && (
         <div className="error-alert" style={{ maxWidth: '800px', margin: '0 auto', width: '100%' }}>
-          <AlertCircle size={20} />
+          <FontAwesomeIcon icon={faCircleExclamation} />
           <span>{error}</span>
         </div>
       )}

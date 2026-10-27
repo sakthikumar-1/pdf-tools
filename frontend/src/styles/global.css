@@ -118,117 +118,174 @@ button, input, select, textarea {
 }
 
 /* ==============================================================================
-   BUTTON SYSTEM (Refined SaaS Buttons — Solid Gold & Subtle Dark/Ivory Borders)
+   STANDARDIZED PAGE BACK LINK
+   ============================================================================== */
+.tool-top-nav-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.85rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.tool-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--color-text-secondary);
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-decoration: none;
+  padding: 0.3rem 0.65rem;
+  border-radius: var(--radius-xs);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  transition: all var(--transition-fast);
+  width: fit-content;
+  user-select: none;
+}
+
+.tool-back-link:hover {
+  color: var(--color-gold);
+  border-color: var(--color-gold);
+  background-color: var(--color-surface-hover);
+}
+
+.tool-back-link svg {
+  font-size: 0.78rem;
+  color: var(--color-gold);
+}
+
+/* ==============================================================================
+   BUTTON SYSTEM (Standardized SaaS Buttons — Muted Gold & Dark Charcoal)
    ============================================================================== */
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.55rem;
-  padding: 0.75rem 1.4rem;
+  gap: 0.5rem;
+  padding: 0.55rem 1.15rem;
   font-weight: 600;
-  font-size: 0.9375rem;
+  font-size: 0.9rem;
   border-radius: var(--radius-sm);
   border: 1px solid transparent;
   cursor: pointer;
-  transition: background-color var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
+  transition: background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
   user-select: none;
   text-decoration: none;
   line-height: 1.25;
 }
 
-/* Primary Button: Champagne Gold with dark high-contrast text */
+/* Primary Button: Muted Gold with dark high-contrast text */
 .btn-primary,
 a.btn-primary,
 button.btn-primary {
   background-color: var(--color-gold) !important;
-  color: #071116 !important;
+  color: var(--color-primary-text) !important;
   font-weight: 700;
-  border: 1px solid var(--color-gold-hover);
-  box-shadow: 0 2px 8px rgba(255, 194, 71, 0.25);
+  border: 1px solid var(--color-gold);
 }
 
 .btn-primary *,
 a.btn-primary *,
 button.btn-primary * {
-  color: #071116 !important;
+  color: var(--color-primary-text) !important;
 }
 
 .btn-primary:hover:not(:disabled),
 a.btn-primary:hover:not(:disabled),
 button.btn-primary:hover:not(:disabled) {
   background-color: var(--color-gold-hover) !important;
-  color: #071116 !important;
-  border-color: var(--color-gold-active);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 14px rgba(232, 170, 38, 0.35);
+  border-color: var(--color-gold-hover) !important;
+  color: var(--color-primary-text) !important;
 }
 
-/* Secondary Button: Clean bordered surface button */
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Secondary Button: Charcoal background with subtle border */
 .btn-secondary,
 a.btn-secondary,
 button.btn-secondary {
-  background-color: var(--color-surface);
-  color: var(--color-heading) !important;
+  background-color: var(--color-surface-hover) !important;
+  color: var(--color-text) !important;
   border: 1px solid var(--color-border);
-  box-shadow: var(--shadow-sm);
 }
 
 .btn-secondary *,
 a.btn-secondary *,
 button.btn-secondary * {
-  color: var(--color-heading) !important;
+  color: var(--color-text) !important;
 }
 
 .btn-secondary:hover:not(:disabled),
 a.btn-secondary:hover:not(:disabled),
 button.btn-secondary:hover:not(:disabled) {
-  background-color: var(--color-surface-hover);
-  color: var(--color-gold) !important;
-  border-color: var(--color-border-hover);
-  transform: translateY(-1px);
+  background-color: var(--color-surface-active) !important;
+  border-color: var(--color-border-hover) !important;
+  color: var(--color-text) !important;
 }
 
-.btn-secondary:hover:not(:disabled) *,
-a.btn-secondary:hover:not(:disabled) *,
-button.btn-secondary:hover:not(:disabled) * {
-  color: var(--color-gold) !important;
-}
-
-/* Outline / Ghost Buttons */
-.btn-outline {
-  background: transparent;
-  color: var(--color-heading) !important;
+/* Tertiary / Outline Button */
+.btn-outline,
+.btn-tertiary {
+  background: transparent !important;
+  color: var(--color-text-secondary) !important;
   border: 1px solid var(--color-border);
 }
 
-.btn-outline:hover:not(:disabled) {
-  border-color: var(--color-gold);
-  color: var(--color-gold) !important;
-  background-color: var(--color-gold-muted);
+.btn-outline:hover:not(:disabled),
+.btn-tertiary:hover:not(:disabled) {
+  border-color: var(--color-border-hover);
+  color: var(--color-text) !important;
+  background-color: var(--color-surface-hover) !important;
 }
 
+/* Ghost Button */
 .btn-ghost {
-  background: transparent;
-  color: var(--color-text-secondary);
+  background: transparent !important;
+  color: var(--color-text-secondary) !important;
   border: 1px solid transparent;
 }
 
 .btn-ghost:hover:not(:disabled) {
-  background-color: var(--color-surface-hover);
-  color: var(--color-heading);
+  background-color: var(--color-surface-hover) !important;
+  color: var(--color-text) !important;
+}
+
+/* Destructive Button */
+.btn-destructive,
+.btn-danger {
+  background-color: var(--color-error-bg) !important;
+  color: var(--color-error) !important;
+  border: 1px solid var(--color-error-border);
+}
+
+.btn-destructive:hover:not(:disabled),
+.btn-danger:hover:not(:disabled) {
+  background-color: rgba(224, 100, 100, 0.2) !important;
+}
+
+/* Button Sizing — Compact & Consistent */
+.btn-sm {
+  padding: 0.38rem 0.8rem;
+  font-size: 0.82rem;
+  border-radius: var(--radius-xs);
+}
+
+.btn-md {
+  padding: 0.55rem 1.15rem;
+  font-size: 0.9rem;
+  border-radius: var(--radius-sm);
 }
 
 .btn-lg {
-  padding: 0.95rem 1.85rem;
-  font-size: 1.05rem;
-  border-radius: var(--radius-md);
-}
-
-.btn-sm {
-  padding: 0.45rem 0.85rem;
-  font-size: 0.8125rem;
-  border-radius: var(--radius-xs);
+  padding: 0.65rem 1.35rem;
+  font-size: 0.95rem;
+  border-radius: var(--radius-sm);
 }
 
 .btn:disabled {

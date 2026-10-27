@@ -1,11 +1,12 @@
 import os
 import time
 import uuid
+import zipfile
 import logging
 from pathlib import Path
 from typing import Optional, Dict, Any
 
-import pymupdf as fitz
+import pymupdf
 from pdf2docx import Converter
 from docx import Document
 from django.conf import settings
@@ -43,7 +44,7 @@ def inspect_pdf_document(pdf_path: str) -> Dict[str, Any]:
         raise InvalidPdfError("The uploaded file does not have a valid PDF header.")
 
     try:
-        doc = fitz.open(pdf_path)
+        doc = pymupdf.open(pdf_path)
     except Exception as err:
         import gc
         gc.collect()
@@ -76,8 +77,18 @@ def clean_docx_artifacts(docx_path: str) -> None:
     """
     Post-processes the generated DOCX to fix character encoding artifacts,
     such as broken bullet glyphs (\ufffd) into standard Unicode bullets.
+    Uses fast binary pre-check to eliminate unnecessary docx unpacking.
     """
     try:
+        if not os.path.exists(docx_path):
+            return
+
+        # Fast pre-check: only parse and save if broken character \ufffd (b'\xef\xbf\xbd') exists
+        with zipfile.ZipFile(docx_path, 'r') as z:
+            doc_xml = z.read('word/document.xml')
+            if b'\xef\xbf\xbd' not in doc_xml:
+                return
+
         doc = Document(docx_path)
         modified = False
 
@@ -110,7 +121,7 @@ def convert_pdf_to_docx(
 ) -> Dict[str, Any]:
     """
     Converts a PDF document to Microsoft Word (.docx) using rule-based layout reconstruction.
-    Preserves words, column boundaries, text styling, and page flow.
+    Preserves words, column boundaries, text styling, and page flow with optimized raster sampling.
     """
     start_time = time.perf_counter()
 
@@ -126,10 +137,13 @@ def convert_pdf_to_docx(
         output_dir.mkdir(parents=True, exist_ok=True)
         output_docx_path = str(output_dir / filename)
 
-    # 3. Perform conversion via pdf2docx Converter
+    # 3. Perform conversion via pdf2docx Converter with optimized sampling
     cv = None
     try:
         cv = Converter(str(input_pdf_path))
+        # Optimize raster sampling ratio from 4.0 down to 2.0 to prevent 60s+ slowdowns on image/vector clips
+        cv.default_settings['clip_image_res_ratio'] = 2.0
+        cv.default_settings['float_image_ignorable_gap'] = 5.0
         cv.convert(str(output_docx_path))
     except Exception as err:
         logger.error(f"pdf2docx conversion error: {err}", exc_info=True)
@@ -141,7 +155,7 @@ def convert_pdf_to_docx(
             except Exception:
                 pass
 
-    # 4. Clean artifacts & bullet glyphs
+    # 4. Clean artifacts & bullet glyphs (fast check)
     clean_docx_artifacts(str(output_docx_path))
 
     elapsed_ms = int((time.perf_counter() - start_time) * 1000)

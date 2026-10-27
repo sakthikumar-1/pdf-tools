@@ -7,10 +7,10 @@ pip install --upgrade pip
 pip install -r requirements.txt
 
 echo "==> Running Django database migrations..."
-python backend_django/manage.py migrate --noinput
+python manage.py migrate --noinput || python backend_django/manage.py migrate --noinput || true
 
 echo "==> Collecting static files..."
-python backend_django/manage.py collectstatic --noinput --clear
+python manage.py collectstatic --noinput --clear || python backend_django/manage.py collectstatic --noinput --clear || true
 
 echo "==> Initializing storage directories..."
 mkdir -p backend_django/storage/uploads

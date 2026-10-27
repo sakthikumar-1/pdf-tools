@@ -77,6 +77,8 @@ export default function GenericTool({
   const {
     file,
     files,
+    setFiles,
+    reorderFiles,
     isDragging,
     error,
     status,
@@ -385,18 +387,19 @@ export default function GenericTool({
 
   return (
     <div className="generic-tool-container container">
-      {/* Top Breadcrumb */}
-      <nav className="tool-breadcrumb" aria-label="Breadcrumb">
-        <Link to="/" className="breadcrumb-link">
-          Home
+      {/* Top Navigation Row with Back Button */}
+      <div className="tool-top-nav-row">
+        <Link to="/" className="tool-back-link">
+          <FontAwesomeIcon icon={faArrowLeft} /> Back to Tools
         </Link>
-        <span className="breadcrumb-separator">/</span>
-        <a href="/#tools-catalog" className="breadcrumb-link">
-          PDF Tools
-        </a>
-        <span className="breadcrumb-separator">/</span>
-        <span className="breadcrumb-current">{title}</span>
-      </nav>
+        <nav className="tool-breadcrumb" aria-label="Breadcrumb">
+          <Link to="/" className="breadcrumb-link">
+            Home
+          </Link>
+          <span className="breadcrumb-separator">/</span>
+          <span className="breadcrumb-current">{title}</span>
+        </nav>
+      </div>
 
       {/* Tool Header */}
       <div className="generic-tool-hero">
@@ -405,11 +408,10 @@ export default function GenericTool({
             {typeof ToolIcon === 'function' ? <ToolIcon size={32} /> : <FontAwesomeIcon icon={ToolIcon} />}
           </div>
         )}
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '0.2rem 0.65rem', borderRadius: '100px', fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', marginBottom: '0.5rem', background: capability.status === 'AVAILABLE' ? 'rgba(16, 185, 129, 0.12)' : (capability.status === 'LIMITED' ? 'rgba(245, 158, 11, 0.12)' : 'rgba(239, 68, 68, 0.12)'), color: capability.status === 'AVAILABLE' ? '#10B981' : (capability.status === 'LIMITED' ? '#F59E0B' : '#EF4444'), border: `1px solid ${capability.status === 'AVAILABLE' ? 'rgba(16, 185, 129, 0.3)' : (capability.status === 'LIMITED' ? 'rgba(245, 158, 11, 0.3)' : 'rgba(239, 68, 68, 0.3)')}` }}>
-          <FontAwesomeIcon icon={faWandMagicSparkles} /> {capability.status}: {capability.engine}
+        <div className="generic-tool-info">
+          <h1 className="generic-tool-title">{title}</h1>
+          <p className="generic-tool-desc">{description}</p>
         </div>
-        <h1 className="generic-tool-title">{title}</h1>
-        <p className="generic-tool-desc">{description}</p>
       </div>
 
       {/* Main Workspace Area */}
@@ -449,6 +451,8 @@ export default function GenericTool({
               files={files}
               onRemove={handleReset}
               onRemoveIndex={removeFileAtIndex}
+              onReorderFiles={setFiles}
+              onMoveFile={reorderFiles}
               onAddMore={isMultipleTool ? (newFiles) => selectMultipleFiles(newFiles, accept) : null}
               onProcess={handleProcess}
               isProcessing={false}
@@ -1311,25 +1315,6 @@ export default function GenericTool({
           </>
         )}
       </div>
-
-      {/* SEO & Security Guarantee */}
-      <section className="tool-seo-section">
-        <h2 className="seo-section-title">Why Use Simatrix Academy {title}?</h2>
-        <div className="seo-faq-grid">
-          <div className="faq-card">
-            <h4 className="faq-question"><FontAwesomeIcon icon={faShieldHalved} /> 100% Private & Secure</h4>
-            <p className="faq-answer">
-              Your document files are processed securely in your browser and deleted automatically from memory right after processing.
-            </p>
-          </div>
-          <div className="faq-card">
-            <h4 className="faq-question"><FontAwesomeIcon icon={faWandMagicSparkles} /> High Performance Engine</h4>
-            <p className="faq-answer">
-              Our high-speed conversion pipeline ensures maximum document formatting retention and high resolution.
-            </p>
-          </div>
-        </div>
-      </section>
     </div>
   );
 }

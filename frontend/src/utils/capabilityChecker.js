@@ -3,13 +3,15 @@
  * Communicates with the Python Django Ninja REST backend (/api/v1/capabilities).
  */
 
+import { API_BASE_URL } from '../services/api';
+
 let cachedCapabilities = null;
 
 export async function fetchServerCapabilities() {
   if (cachedCapabilities) return cachedCapabilities;
 
   try {
-    const res = await fetch('/api/v1/capabilities');
+    const res = await fetch(`${API_BASE_URL}/capabilities`);
     if (res.ok) {
       const data = await res.json();
       cachedCapabilities = data;

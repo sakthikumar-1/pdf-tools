@@ -3,32 +3,58 @@
    ============================================================================== */
 
 .ai-summarizer-container {
-  max-width: 1040px;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 1.5rem 1.5rem 4rem;
+  padding: 1.5rem 2rem 4rem;
+  width: 100%;
 }
 
-/* Header & Hero Section */
-.ai-summarizer-header {
-  text-align: center;
+/* Tool Header matching Reference */
+.ai-tool-hero {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 1.25rem 0 2rem;
+  border-bottom: 1px solid var(--color-border);
+  text-align: left;
   margin-bottom: 2rem;
 }
 
-.back-link {
-  display: inline-flex;
+.ai-tool-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  background-color: rgba(139, 92, 246, 0.15);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  display: flex;
   align-items: center;
-  gap: 0.5rem;
-  color: var(--color-text-secondary);
-  font-size: 0.85rem;
-  font-weight: 600;
-  text-decoration: none;
-  margin-bottom: 1.25rem;
-  transition: color var(--transition-fast), transform var(--transition-fast);
+  justify-content: center;
+  color: #8B5CF6;
+  font-size: 1.5rem;
+  flex-shrink: 0;
+  box-shadow: var(--shadow-sm);
 }
 
-.back-link:hover {
-  color: var(--color-primary);
-  transform: translateX(-3px);
+.ai-tool-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.ai-tool-title {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--color-heading);
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  margin: 0;
+}
+
+.ai-tool-desc {
+  font-size: 0.95rem;
+  color: var(--color-text-secondary);
+  line-height: 1.45;
+  margin: 0;
 }
 
 .ai-badge-header {

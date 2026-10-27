@@ -2,8 +2,7 @@ import React, { useRef } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faCloudArrowUp,
-  faTriangleExclamation,
-  faShieldHalved
+  faTriangleExclamation
 } from '@fortawesome/free-solid-svg-icons';
 import './UploadBox.css';
 
@@ -15,9 +14,10 @@ export default function UploadBox({
   onDrop,
   error,
   acceptedTypes = '.pdf',
-  maxSizeText = '50 MB',
-  title = 'Select PDF file',
-  subtitle = 'or drag and drop your document here',
+  maxSizeText = '50MB',
+  title = 'Drop your PDF file here',
+  subtitle = 'or click to browse',
+  buttonText = 'Choose PDF File',
   multiple = false,
 }) {
   const fileInputRef = useRef(null);
@@ -75,14 +75,18 @@ export default function UploadBox({
           <p className="upload-subtitle">{subtitle}</p>
         </div>
 
-        <div className="upload-meta-strip">
-          <span className="upload-limit">Max size {maxSizeText}</span>
-          <span className="meta-sep">&bull;</span>
-          <span className="upload-private">
-            <FontAwesomeIcon icon={faShieldHalved} className="shield-mini-fa" />
-            <span>Client &amp; Private Sandbox</span>
-          </span>
-        </div>
+        <button 
+          type="button" 
+          className="upload-choose-btn"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleClick();
+          }}
+        >
+          {buttonText}
+        </button>
+
+        <span className="upload-limit-text">Max file size: {maxSizeText}</span>
       </div>
 
       {error && (

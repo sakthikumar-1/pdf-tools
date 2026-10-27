@@ -38,7 +38,23 @@ if RENDER_EXTERNAL_HOSTNAME:
         'https://*.onrender.com',
     ])
 
-# Whitenoise Static Files Storage
+# Whitenoise Static Files Middleware & Storage for production
+try:
+    import whitenoise
+    if 'whitenoise.middleware.WhiteNoiseMiddleware' not in MIDDLEWARE:
+        sec_idx = MIDDLEWARE.index('django.middleware.security.SecurityMiddleware')
+        MIDDLEWARE.insert(sec_idx + 1, 'whitenoise.middleware.WhiteNoiseMiddleware')
+except (ImportError, ValueError):
+    pass
+
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Security Headers & Cookie Flags

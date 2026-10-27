@@ -3,34 +3,34 @@
   --font-family-primary: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-family-mono: 'JetBrains Mono', 'Fira Code', monospace;
 
-  /* Universal Brand Identity Colors */
-  --color-gold: #FFC247;
-  --color-gold-hover: #E8AA26;
-  --color-gold-active: #D4981C;
-  --color-gold-muted: rgba(255, 194, 71, 0.15);
-  --color-gold-border: rgba(255, 194, 71, 0.35);
+  /* Universal Brand Identity Colors - Muted Gold Accent */
+  --color-gold: #D8B15A;
+  --color-gold-hover: #E5C87F;
+  --color-gold-active: #C29B47;
+  --color-gold-muted: rgba(216, 177, 90, 0.12);
+  --color-gold-border: rgba(216, 177, 90, 0.3);
 
   /* Status Colors */
-  --color-success: #168568;
-  --color-success-bg: rgba(22, 133, 104, 0.12);
-  --color-success-border: rgba(22, 133, 104, 0.3);
+  --color-success: #10B981;
+  --color-success-bg: rgba(16, 185, 129, 0.1);
+  --color-success-border: rgba(16, 185, 129, 0.25);
   
-  --color-error: #D94B4B;
-  --color-error-bg: rgba(217, 75, 75, 0.12);
-  --color-error-border: rgba(217, 75, 75, 0.3);
+  --color-error: #EF4444;
+  --color-error-bg: rgba(239, 68, 68, 0.1);
+  --color-error-border: rgba(239, 68, 68, 0.25);
 
-  --color-warning: #E5A11F;
-  --color-warning-bg: rgba(229, 161, 31, 0.12);
-  --color-warning-border: rgba(229, 161, 31, 0.3);
+  --color-warning: #F59E0B;
+  --color-warning-bg: rgba(245, 158, 11, 0.1);
+  --color-warning-border: rgba(245, 158, 11, 0.25);
 
-  /* Layout & Geometry Scale */
+  /* Layout & Geometry Scale - Compact & Moderate Radii */
   --container-max-width: 1200px;
-  --header-height: 72px;
+  --header-height: 52px;
   --radius-xs: 4px;
   --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 18px;
-  --radius-xl: 24px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-xl: 14px;
   --radius-full: 9999px;
 
   /* Standard Transitions */
@@ -40,103 +40,103 @@
 }
 
 /* ==============================================================================
-   DARK THEME (Default Experience)
-   Midnight Black, Deep Charcoal, Secondary Dark Surface, Champagne Gold
+   CLEAN WHITE WORKING THEME (Default Application Experience)
    ============================================================================== */
-[data-theme="dark"], :root:not([data-theme="light"]) {
-  color-scheme: dark;
-
-  /* Backgrounds & Surfaces */
-  --color-bg: #071116;               /* Midnight Black */
-  --color-bg-alt: #101B21;           /* Deep Charcoal */
-  --color-header-bg: rgba(7, 17, 22, 0.88);
-  --color-surface: #101B21;          /* Deep Charcoal */
-  --color-surface-hover: #17252C;    /* Secondary Dark Surface */
-  --color-surface-active: #1D2E37;
-  --color-surface-card: #101B21;     /* Deep Charcoal */
-  --color-surface-card-hover: #17252C;
-  --color-surface-inset: #071116;
-
-  /* Borders */
-  --color-border: #1E2D34;
-  --color-border-subtle: #152228;
-  --color-border-hover: #2B3E48;
-  --color-border-focus: #FFC247;
-
-  /* Primary Brand Action (Gold) */
-  --color-primary: #FFC247;
-  --color-primary-hover: #E8AA26;
-  --color-primary-active: #D4981C;
-  --color-primary-text: #071116;     /* Midnight black text on gold buttons */
-  --color-primary-light: rgba(255, 194, 71, 0.12);
-  --color-primary-border: rgba(255, 194, 71, 0.28);
-
-  /* Typography */
-  --color-heading: #F5F0E7;          /* Warm Ivory */
-  --color-text: #E5E1D8;             /* Soft Ivory */
-  --color-text-secondary: #A3AFB7;   /* Secondary muted */
-  --color-text-muted: #647078;       /* Muted Text */
-  --color-text-inverse: #071116;
-
-  /* Elevation Shadows */
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 6px 18px -2px rgba(0, 0, 0, 0.5);
-  --shadow-lg: 0 16px 36px -6px rgba(0, 0, 0, 0.65);
-  --shadow-dropdown: 0 20px 40px -10px rgba(0, 0, 0, 0.8), 0 0 0 1px #1E2D34;
-
-  /* Focus Indicator */
-  --focus-ring: 0 0 0 2px rgba(255, 194, 71, 0.6);
-  --logo-text: #F5F0E7;
-  --logo-accent: #FFC247;
-}
-
-/* ==============================================================================
-   LIGHT THEME
-   Warm Ivory, Card Ivory, Dark Text, Champagne Gold
-   ============================================================================== */
-[data-theme="light"] {
+:root, [data-theme="light"], :root:not([data-theme="dark"]) {
   color-scheme: light;
 
   /* Backgrounds & Surfaces */
-  --color-bg: #F5F0E7;               /* Warm Ivory */
-  --color-bg-alt: #EFE9DE;
-  --color-header-bg: rgba(245, 240, 231, 0.92);
-  --color-surface: #FFFCF6;          /* Card Ivory */
-  --color-surface-hover: #F8F4EC;
-  --color-surface-active: #F0ECE4;
-  --color-surface-card: #FFFCF6;     /* Card Ivory */
-  --color-surface-card-hover: #FFFFFF;
-  --color-surface-inset: #EDE7DC;
+  --color-bg: #FFFFFF;               /* Main background: #FFFFFF */
+  --color-bg-alt: #F8FAFC;           /* Inset / Alt surfaces */
+  --color-sidebar-bg: #FFFFFF;       /* Sidebar Navigation: #FFFFFF */
+  --color-header-bg: #FFFFFF;        /* Top Navigation Header: #FFFFFF */
+  --color-surface: #FFFFFF;          /* Cards and panels: #FFFFFF */
+  --color-surface-hover: #F1F5F9;    /* Hover surfaces: #F1F5F9 */
+  --color-surface-active: #E2E8F0;
+  --color-surface-card: #FFFFFF;     /* Cards: #FFFFFF */
+  --color-surface-card-hover: #F8FAFC;
+  --color-surface-inset: #F8FAFC;
 
   /* Borders */
-  --color-border: #DDD8CC;           /* Ivory Border */
-  --color-border-subtle: #E8E3D7;
-  --color-border-hover: #C5BFB1;
-  --color-border-focus: #E8AA26;
+  --color-border: #E2E8F0;           /* Borders: #E2E8F0 */
+  --color-border-subtle: #F1F5F9;
+  --color-border-hover: #CBD5E1;
+  --color-border-focus: #D8B15A;
 
-  /* Primary Brand Action (Gold) */
-  --color-primary: #FFC247;
-  --color-primary-hover: #E8AA26;
-  --color-primary-active: #D4981C;
-  --color-primary-text: #182329;     /* Dark Text */
-  --color-primary-light: rgba(255, 194, 71, 0.18);
-  --color-primary-border: rgba(232, 170, 38, 0.4);
+  /* Primary Brand Action (Retaining Muted Gold) */
+  --color-primary: #D8B15A;
+  --color-primary-hover: #E5C87F;
+  --color-primary-active: #C29B47;
+  --color-primary-text: #17212B;     /* Readable dark text on gold buttons */
+  --color-primary-light: rgba(216, 177, 90, 0.12);
+  --color-primary-border: rgba(216, 177, 90, 0.3);
 
   /* Typography */
-  --color-heading: #182329;          /* Dark Text */
-  --color-text: #223038;             /* Dark Slate */
-  --color-text-secondary: #485863;
-  --color-text-muted: #647078;       /* Muted Text */
-  --color-text-inverse: #F5F0E7;
+  --color-heading: #17212B;          /* Primary text: #17212B */
+  --color-text: #17212B;             /* Primary text: #17212B */
+  --color-text-secondary: #64748B;   /* Secondary text: #64748B */
+  --color-text-muted: #94A3B8;       /* Subtle text: #94A3B8 */
+  --color-text-inverse: #FFFFFF;
 
-  /* Elevation Shadows */
-  --shadow-sm: 0 1px 3px rgba(24, 35, 41, 0.06);
-  --shadow-md: 0 6px 18px -2px rgba(24, 35, 41, 0.08);
-  --shadow-lg: 0 16px 36px -6px rgba(24, 35, 41, 0.12);
-  --shadow-dropdown: 0 20px 40px -10px rgba(24, 35, 41, 0.15), 0 0 0 1px #DDD8CC;
+  /* Elevation Shadows - Crisp & Clean on White */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 10px 24px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.04);
+  --shadow-dropdown: 0 12px 28px rgba(0, 0, 0, 0.1), 0 0 0 1px #E2E8F0;
 
   /* Focus Indicator */
-  --focus-ring: 0 0 0 2px rgba(232, 170, 38, 0.6);
-  --logo-text: #182329;
-  --logo-accent: #E8AA26;
+  --focus-ring: 0 0 0 2px rgba(216, 177, 90, 0.4);
+  --logo-text: #17212B;
+  --logo-accent: #D8B15A;
+}
+
+/* ==============================================================================
+   DEEP MIDNIGHT BLACK THEME (Optional Dark Mode)
+   ============================================================================== */
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  /* Backgrounds & Surfaces */
+  --color-bg: #071116;               /* Main background */
+  --color-bg-alt: #0B161C;           /* Secondary / Sidebar background */
+  --color-sidebar-bg: #0B161C;       /* Sidebar */
+  --color-header-bg: #071116;        /* Header */
+  --color-surface: #101B21;          /* Cards & surfaces */
+  --color-surface-hover: #17252C;    /* Elevated surfaces */
+  --color-surface-active: #1F3039;
+  --color-surface-card: #101B21;     /* Cards */
+  --color-surface-card-hover: #17252C;
+  --color-surface-inset: #0B161C;
+
+  /* Borders */
+  --color-border: #1E2D34;
+  --color-border-subtle: #142127;
+  --color-border-hover: #2E414A;
+  --color-border-focus: #D8B15A;
+
+  /* Primary Brand Action (Muted Gold) */
+  --color-primary: #D8B15A;
+  --color-primary-hover: #E5C87F;
+  --color-primary-active: #C29B47;
+  --color-primary-text: #071116;     /* Dark text on gold buttons */
+  --color-primary-light: rgba(216, 177, 90, 0.12);
+  --color-primary-border: rgba(216, 177, 90, 0.25);
+
+  /* Typography */
+  --color-heading: #F5F0E7;          /* Primary text */
+  --color-text: #F5F0E7;             /* Primary text */
+  --color-text-secondary: #9EACB4;   /* Secondary text */
+  --color-text-muted: #657782;       /* Muted text */
+  --color-text-inverse: #071116;
+
+  /* Elevation Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 8px 28px rgba(0, 0, 0, 0.65);
+  --shadow-dropdown: 0 12px 28px rgba(0, 0, 0, 0.75), 0 0 0 1px #1E2D34;
+
+  /* Focus Indicator */
+  --focus-ring: 0 0 0 2px rgba(216, 177, 90, 0.4);
+  --logo-text: #F5F0E7;
+  --logo-accent: #D8B15A;
 }

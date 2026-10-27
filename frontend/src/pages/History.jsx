@@ -4,13 +4,29 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faClockRotateLeft, 
   faTrashCan, 
-  faShieldHalved, 
   faFilePdf, 
   faCircleCheck,
   faArrowRight,
-  faFilter
+  faDownload,
+  faEllipsisVertical,
+  faArrowLeft
 } from '@fortawesome/free-solid-svg-icons';
 import './History.css';
+
+function formatRelativeTime(timestamp) {
+  if (!timestamp) return 'Recently';
+  const now = new Date();
+  const past = new Date(timestamp);
+  const diffSec = Math.floor((now - past) / 1000);
+
+  if (diffSec < 60) return 'Just now';
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return `${diffMin} min${diffMin === 1 ? '' : 's'} ago`;
+  const diffHours = Math.floor(diffMin / 60);
+  if (diffHours < 24) return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
+}
 
 export default function History() {
   const [historyItems, setHistoryItems] = useState([]);
@@ -31,102 +47,110 @@ export default function History() {
     setHistoryItems([]);
   };
 
-  return (
-    <div className="history-page-container container">
-      {/* Top Breadcrumb */}
-      <nav className="tool-breadcrumb" aria-label="Breadcrumb">
-        <Link to="/" className="breadcrumb-link">
-          Home
-        </Link>
-        <span className="breadcrumb-separator">/</span>
-        <Link to="/account" className="breadcrumb-link">
-          Account
-        </Link>
-        <span className="breadcrumb-separator">/</span>
-        <span className="breadcrumb-current">Processing History</span>
-      </nav>
+  const handleDeleteItem = (index) => {
+    const updated = historyItems.filter((_, idx) => idx !== index);
+    setHistoryItems(updated);
+    localStorage.setItem('simatrix_pdf_history', JSON.stringify(updated));
+  };
 
-      <div className="history-header">
-        <div className="history-header-left">
-          <div className="history-icon-badge">
-            <FontAwesomeIcon icon={faClockRotateLeft} />
-          </div>
+  return (
+    <div className="recent-files-page">
+      <div className="recent-files-container">
+        {/* Top Back Link */}
+        <Link to="/" className="tool-back-link">
+          <FontAwesomeIcon icon={faArrowLeft} /> Back to Dashboard
+        </Link>
+
+        {/* Header matching Reference */}
+        <div className="recent-files-header">
           <div>
-            <h1 className="history-title">Document Processing History</h1>
-            <p className="history-subtitle">
-              Metadata logs of your recent conversions and operations.
+            <h1 className="recent-files-title">Recent Files</h1>
+            <p className="recent-files-subtitle">
+              Your recent processing history. Files are not stored on our servers.
             </p>
           </div>
+
+          {historyItems.length > 0 && (
+            <button 
+              type="button" 
+              className="btn-clear-history"
+              onClick={handleClearHistory}
+              title="Clear all recent files"
+            >
+              <FontAwesomeIcon icon={faTrashCan} />
+              <span>Clear History</span>
+            </button>
+          )}
         </div>
 
-        {historyItems.length > 0 && (
-          <button 
-            type="button" 
-            className="btn btn-secondary btn-sm clear-history-btn"
-            onClick={handleClearHistory}
-          >
-            <FontAwesomeIcon icon={faTrashCan} />
-            <span>Clear History</span>
-          </button>
+        {/* Content Table or Empty State */}
+        {historyItems.length === 0 ? (
+          <div className="recent-files-empty-card">
+            <div className="empty-files-icon">
+              <FontAwesomeIcon icon={faClockRotateLeft} />
+            </div>
+            <h3 className="empty-files-title">No Recent Files</h3>
+            <p className="empty-files-desc">
+              Documents you process using Simatrix tools will be listed here during your session.
+            </p>
+            <Link to="/" className="btn btn-primary btn-md">
+              <span>Explore PDF Tools</span>
+              <FontAwesomeIcon icon={faArrowRight} />
+            </Link>
+          </div>
+        ) : (
+          <div className="recent-files-table-wrapper">
+            <table className="recent-files-table">
+              <thead>
+                <tr>
+                  <th>File Name</th>
+                  <th>Tool</th>
+                  <th>Date</th>
+                  <th>Status</th>
+                  <th style={{ textAlign: 'right' }}>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {historyItems.map((item, idx) => (
+                  <tr key={idx} className="recent-file-row">
+                    <td className="file-name-cell">
+                      <div className="file-icon-square">
+                        <FontAwesomeIcon icon={faFilePdf} />
+                      </div>
+                      <span className="file-name-text" title={item.fileName}>
+                        {item.fileName || 'document.pdf'}
+                      </span>
+                    </td>
+                    <td className="tool-name-cell">
+                      {item.toolName || 'PDF Operation'}
+                    </td>
+                    <td className="date-cell">
+                      {formatRelativeTime(item.timestamp)}
+                    </td>
+                    <td className="status-cell">
+                      <span className="status-pill completed">
+                        <FontAwesomeIcon icon={faCircleCheck} /> Completed
+                      </span>
+                    </td>
+                    <td className="action-cell">
+                      <div className="action-cell-btns">
+                        <button
+                          type="button"
+                          className="action-icon-btn"
+                          onClick={() => handleDeleteItem(idx)}
+                          title="Remove from history"
+                        >
+                          <FontAwesomeIcon icon={faTrashCan} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
-
-      {/* Privacy Guarantee Note */}
-      <div className="history-privacy-banner">
-        <FontAwesomeIcon icon={faShieldHalved} className="privacy-banner-icon" />
-        <div className="privacy-banner-text">
-          <strong>Privacy Guaranteed:</strong> This history log stores document file names and timestamp metadata only. File content is processed strictly in temporary volatile memory and is never permanently hosted or harvested.
-        </div>
-      </div>
-
-      {/* Content Area */}
-      {historyItems.length === 0 ? (
-        <div className="history-empty-card">
-          <div className="empty-icon-circle">
-            <FontAwesomeIcon icon={faFilePdf} />
-          </div>
-          <h3 className="empty-title">No Processing History Recorded</h3>
-          <p className="empty-desc">
-            You haven't run any document conversions or AI summaries in this session yet. Convert a PDF or extract tables to see records here.
-          </p>
-          <Link to="/#tools-catalog" className="btn btn-primary btn-md">
-            <span>Explore PDF Tools</span>
-            <FontAwesomeIcon icon={faArrowRight} />
-          </Link>
-        </div>
-      ) : (
-        <div className="history-table-container">
-          <table className="history-table">
-            <thead>
-              <tr>
-                <th>Document Name</th>
-                <th>Tool / Operation</th>
-                <th>Timestamp</th>
-                <th>Engine</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {historyItems.map((item, idx) => (
-                <tr key={idx}>
-                  <td className="doc-name-cell">
-                    <FontAwesomeIcon icon={faFilePdf} className="doc-icon" />
-                    <span>{item.fileName || 'Untitled document'}</span>
-                  </td>
-                  <td>{item.toolName || 'PDF Conversion'}</td>
-                  <td className="timestamp-cell">{item.timestamp ? new Date(item.timestamp).toLocaleString() : 'Recent'}</td>
-                  <td><span className="engine-chip">{item.engine || 'WASM / PyMuPDF'}</span></td>
-                  <td>
-                    <span className="status-badge success">
-                      <FontAwesomeIcon icon={faCircleCheck} /> Completed
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
     </div>
   );
 }

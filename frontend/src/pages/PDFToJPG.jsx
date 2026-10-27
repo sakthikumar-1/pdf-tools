@@ -8,7 +8,8 @@ import {
   faCheck, 
   faCircleQuestion,
   faShieldHalved,
-  faWandMagicSparkles
+  faWandMagicSparkles,
+  faArrowLeft
 } from '@fortawesome/free-solid-svg-icons';
 import * as pdfjsDist from 'pdfjs-dist';
 const pdfjsLib = pdfjsDist.default || pdfjsDist;
@@ -190,18 +191,19 @@ function PDFToJPGInner() {
 
   return (
     <div className="tool-page-wrapper container">
-      {/* Top Breadcrumb / Navigation */}
-      <nav className="tool-breadcrumb" aria-label="Breadcrumb">
-        <Link to="/" className="breadcrumb-link">
-          Home
+      {/* Top Navigation Row with Back Button */}
+      <div className="tool-top-nav-row">
+        <Link to="/" className="tool-back-link">
+          <FontAwesomeIcon icon={faArrowLeft} /> Back to Tools
         </Link>
-        <span className="breadcrumb-separator">/</span>
-        <a href="/#tools-catalog" className="breadcrumb-link">
-          PDF Tools
-        </a>
-        <span className="breadcrumb-separator">/</span>
-        <span className="breadcrumb-current">PDF to JPG</span>
-      </nav>
+        <nav className="tool-breadcrumb" aria-label="Breadcrumb">
+          <Link to="/" className="breadcrumb-link">
+            Home
+          </Link>
+          <span className="breadcrumb-separator">/</span>
+          <span className="breadcrumb-current">PDF to JPG</span>
+        </nav>
+      </div>
 
       {/* Tool Title Header */}
       <div className="tool-header">
@@ -337,53 +339,6 @@ function PDFToJPGInner() {
           </div>
         )}
       </div>
-
-      {/* SEO & INFORMATION SECTION */}
-      <section className="tool-seo-section">
-        <h2 className="seo-section-title">How to Convert PDF to JPG Online</h2>
-
-        <div className="seo-steps-list">
-          <div className="seo-step-item">
-            <span className="seo-step-num">1</span>
-            <div>
-              <h3 className="seo-step-title">Select your PDF document</h3>
-              <p>Drag and drop your PDF into the box above or click to select a file from your device.</p>
-            </div>
-          </div>
-
-          <div className="seo-step-item">
-            <span className="seo-step-num">2</span>
-            <div>
-              <h3 className="seo-step-title">Choose image resolution</h3>
-              <p>Select between Standard (150 DPI) for web viewing or High Quality (300 DPI) for printing.</p>
-            </div>
-          </div>
-
-          <div className="seo-step-item">
-            <span className="seo-step-num">3</span>
-            <div>
-              <h3 className="seo-step-title">Download your JPG images</h3>
-              <p>Download individual converted page images or grab all pages in a single ZIP file with one click.</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="seo-faq-grid">
-          <div className="faq-card">
-            <h4 className="faq-question"><FontAwesomeIcon icon={faShieldHalved} /> Is my PDF file secure?</h4>
-            <p className="faq-answer">
-              Yes, absolutely. Your document privacy is completely protected. Conversion occurs securely without saving permanent copies.
-            </p>
-          </div>
-
-          <div className="faq-card">
-            <h4 className="faq-question"><FontAwesomeIcon icon={faWandMagicSparkles} /> Will my image quality degrade?</h4>
-            <p className="faq-answer">
-              No. Our rendering engine preserves text sharpness, vector shapes, fonts, and original image colors accurately.
-            </p>
-          </div>
-        </div>
-      </section>
     </div>
   );
 }

@@ -94,6 +94,19 @@ export function useFileUpload() {
     }
   }, [selectFile, selectMultipleFiles]);
 
+  const reorderFiles = useCallback((fromIndex, toIndex) => {
+    setFiles((prev) => {
+      if (fromIndex === toIndex || fromIndex < 0 || toIndex < 0 || fromIndex >= prev.length || toIndex >= prev.length) {
+        return prev;
+      }
+      const updated = [...prev];
+      const [movedItem] = updated.splice(fromIndex, 1);
+      updated.splice(toIndex, 0, movedItem);
+      setFile(updated[0]);
+      return updated;
+    });
+  }, []);
+
   const reset = useCallback(() => {
     setFile(null);
     setFiles([]);
@@ -106,6 +119,8 @@ export function useFileUpload() {
   return {
     file,
     files,
+    setFiles,
+    reorderFiles,
     isDragging,
     error,
     status,

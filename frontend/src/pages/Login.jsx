@@ -53,6 +53,10 @@ export default function Login() {
     return (
       <div className="login-page-container">
         <div className="login-card">
+          <Link to="/" className="login-back-link">
+            <FontAwesomeIcon icon={faArrowLeft} />
+            <span>Back to Tools</span>
+          </Link>
           <div className="login-header">
             <FontAwesomeIcon icon={faCircleCheck} size="3x" style={{ color: 'var(--color-success)', marginBottom: '1rem' }} />
             <h1 className="login-title">Already Signed In</h1>
@@ -83,7 +87,7 @@ export default function Login() {
 
         <div className="login-header">
           <div className="login-logo-mark">
-            <span className="logo-symbol">&Delta;</span>
+            <span className="brand-initial">S</span>
           </div>
           <h1 className="login-title">Sign in to Simatrix</h1>
           <p className="login-subtitle">

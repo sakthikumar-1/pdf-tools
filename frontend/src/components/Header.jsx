@@ -1,322 +1,247 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faChevronDown,
+  faBars,
   faSun,
   faMoon,
-  faBars,
-  faXmark,
-  faWandMagicSparkles,
-  faFilePdf,
+  faChevronRight,
   faUser,
-  faCircleQuestion,
-  faLayerGroup,
   faRightFromBracket,
   faClockRotateLeft,
-  faGear
+  faGear,
+  faArrowRightToBracket,
+  faCircleCheck,
+  faWifi
 } from '@fortawesome/free-solid-svg-icons';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
-import { TOOLS_DATA, TOOL_CATEGORIES } from '../utils/toolsData';
+import { TOOLS_DATA } from '../utils/toolsData';
 import './Header.css';
 
-export default function Header({ onOpenAuth }) {
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
+export default function Header({ onToggleSidebar, onOpenAuth }) {
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const [isOnline, setIsOnline] = useState(() => (typeof navigator !== 'undefined' ? navigator.onLine : true));
   const { theme, toggleTheme } = useTheme();
   const { user, isAuthenticated, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const dropdownRef = useRef(null);
-  const userMenuRef = useRef(null);
 
-  // Close menus on click outside
+  // Monitor network online/offline state
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  // Close dropdown on outside click
   useEffect(() => {
     function handleClickOutside(event) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setDropdownOpen(false);
-      }
-      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
-        setUserMenuOpen(false);
+        setUserDropdownOpen(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Close menus on route change
+  // Close dropdown on route change
   useEffect(() => {
-    setDropdownOpen(false);
-    setUserMenuOpen(false);
-    setMobileMenuOpen(false);
+    setUserDropdownOpen(false);
   }, [location.pathname]);
 
+  // Compute dynamic breadcrumbs
+  const breadcrumbs = useMemo(() => {
+    const path = location.pathname;
+    if (path === '/' || path === '') {
+      return [{ label: 'Home', path: null }];
+    }
+
+    if (path === '/account') {
+      return [
+        { label: 'Home', path: '/' },
+        { label: 'Account Settings', path: null }
+      ];
+    }
+
+    if (path === '/history') {
+      return [
+        { label: 'Home', path: '/' },
+        { label: 'Recent Files', path: null }
+      ];
+    }
+
+    if (path === '/login') {
+      return [
+        { label: 'Home', path: '/' },
+        { label: 'Sign In', path: null }
+      ];
+    }
+
+    const tool = TOOLS_DATA.find(t => t.path === path);
+    if (tool) {
+      return [
+        { label: 'Home', path: '/' },
+        { label: tool.categoryLabel, path: '/#tools-catalog' },
+        { label: tool.title, path: null }
+      ];
+    }
+
+    return [
+      { label: 'Home', path: '/' },
+      { label: 'Page', path: null }
+    ];
+  }, [location.pathname]);
+
+  const userInitial = user?.full_name ? user.full_name.charAt(0).toUpperCase() : (user?.email ? user.email.charAt(0).toUpperCase() : 'S');
+  const userDisplayName = user?.full_name || (user?.email ? user.email.split('@')[0] : 'Simatrix User');
+
   return (
-    <>
-      <header className="site-header">
-        <div className="container header-inner">
-          {/* Brand Logo */}
-          <Link to="/" className="brand-link" title="Simatrix PDF Tools">
-            <span className="brand-icon-box">
-              <FontAwesomeIcon icon={faFilePdf} className="brand-fa-icon" />
-            </span>
-            <span className="brand-text">
-              Simatrix <span className="brand-sub">PDF</span>
-            </span>
-          </Link>
+    <header className="top-nav-bar" role="banner">
+      <div className="top-nav-left">
+        {/* Sidebar Toggle Hamburger */}
+        <button
+          type="button"
+          className="top-nav-toggle-btn"
+          onClick={onToggleSidebar}
+          aria-label="Toggle navigation menu"
+          title="Toggle sidebar"
+        >
+          <FontAwesomeIcon icon={faBars} />
+        </button>
 
-          {/* Desktop Navigation */}
-          <nav className="header-nav" aria-label="Main Navigation">
-            {/* Tools Dropdown */}
-            <div className="nav-dropdown-anchor" ref={dropdownRef}>
-              <button
-                type="button"
-                className={`nav-btn ${dropdownOpen ? 'active' : ''}`}
-                onClick={() => setDropdownOpen(!dropdownOpen)}
-                aria-expanded={dropdownOpen}
-                aria-haspopup="true"
-              >
-                <span>Tools</span>
-                <FontAwesomeIcon icon={faChevronDown} className={`chevron-fa ${dropdownOpen ? 'rotated' : ''}`} />
-              </button>
-
-              {dropdownOpen && (
-                <div className="dropdown-panel">
-                  <div className="dropdown-grid">
-                    {TOOL_CATEGORIES.filter(c => c.id !== 'all').map((cat) => {
-                      const catTools = TOOLS_DATA.filter(t => t.category === cat.id);
-                      if (catTools.length === 0) return null;
-                      return (
-                        <div key={cat.id} className="dropdown-col">
-                          <span className="dropdown-col-title">
-                            {cat.icon && <FontAwesomeIcon icon={cat.icon} className="cat-mini-icon" />}
-                            {cat.label}
-                          </span>
-                          <ul className="dropdown-list">
-                            {catTools.map((tool) => (
-                              <li key={tool.id}>
-                                <Link
-                                  to={tool.path}
-                                  className={`dropdown-item ${location.pathname === tool.path ? 'current' : ''}`}
-                                >
-                                  <FontAwesomeIcon icon={tool.icon} className="item-fa-icon" />
-                                  <span className="item-title">{tool.title}</span>
-                                  {tool.badge && <span className="item-badge">{tool.badge}</span>}
-                                </Link>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
+        {/* Dynamic Breadcrumbs */}
+        <nav className="top-nav-breadcrumbs" aria-label="Breadcrumbs">
+          {breadcrumbs.map((crumb, idx) => (
+            <React.Fragment key={idx}>
+              {idx > 0 && (
+                <FontAwesomeIcon icon={faChevronRight} className="breadcrumb-separator-icon" />
               )}
-            </div>
-
-            {/* AI Tools Link */}
-            <Link
-              to="/ai-summarizer"
-              className={`nav-link-btn ${location.pathname === '/ai-summarizer' ? 'active' : ''}`}
-            >
-              <FontAwesomeIcon icon={faWandMagicSparkles} className="nav-gold-icon" />
-              <span>AI Tools</span>
-            </Link>
-
-            {/* Help Link */}
-            <a href="/#faq-section" className="nav-link-btn">
-              <FontAwesomeIcon icon={faCircleQuestion} />
-              <span>Help</span>
-            </a>
-          </nav>
-
-          {/* Header Actions */}
-          <div className="header-actions">
-            {/* Theme Toggle */}
-            <button
-              type="button"
-              className="action-icon-btn"
-              onClick={toggleTheme}
-              aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-              title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-            >
-              <FontAwesomeIcon icon={theme === 'dark' ? faSun : faMoon} />
-            </button>
-
-            {/* Auth / Account Controls */}
-            {isAuthenticated ? (
-              <div className="nav-dropdown-anchor" ref={userMenuRef}>
-                <button
-                  type="button"
-                  className="user-profile-btn"
-                  onClick={() => setUserMenuOpen(!userMenuOpen)}
-                  aria-expanded={userMenuOpen}
-                >
-                  <span className="user-avatar-initial">
-                    {user?.full_name ? user.full_name.charAt(0).toUpperCase() : (user?.email?.charAt(0).toUpperCase() || 'U')}
-                  </span>
-                  <span className="user-email-display">{user?.email || 'Account'}</span>
-                  <FontAwesomeIcon icon={faChevronDown} className={`chevron-fa ${userMenuOpen ? 'rotated' : ''}`} />
-                </button>
-
-                {userMenuOpen && (
-                  <div className="user-dropdown-menu">
-                    <div className="user-dropdown-header">
-                      <strong>{user?.full_name || 'Signed In User'}</strong>
-                      <span>{user?.email}</span>
-                    </div>
-                    <ul className="user-dropdown-links">
-                      <li>
-                        <Link to="/account" className="user-dropdown-item">
-                          <FontAwesomeIcon icon={faGear} />
-                          <span>Account Settings</span>
-                        </Link>
-                      </li>
-                      <li>
-                        <Link to="/history" className="user-dropdown-item">
-                          <FontAwesomeIcon icon={faClockRotateLeft} />
-                          <span>Processing History</span>
-                        </Link>
-                      </li>
-                      <li className="menu-divider"></li>
-                      <li>
-                        <button
-                          type="button"
-                          className="user-dropdown-item logout-item"
-                          onClick={() => {
-                            logout();
-                            setUserMenuOpen(false);
-                          }}
-                        >
-                          <FontAwesomeIcon icon={faRightFromBracket} />
-                          <span>Sign Out</span>
-                        </button>
-                      </li>
-                    </ul>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <button
-                type="button"
-                className="btn btn-sm btn-secondary sign-in-btn"
-                onClick={onOpenAuth}
-              >
-                <FontAwesomeIcon icon={faUser} />
-                <span>Sign in</span>
-              </button>
-            )}
-
-            {/* Mobile Menu Trigger */}
-            <button
-              type="button"
-              className="mobile-toggle-btn"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              aria-label="Toggle mobile menu"
-            >
-              <FontAwesomeIcon icon={mobileMenuOpen ? faXmark : faBars} />
-            </button>
-          </div>
-        </div>
-      </header>
-
-      {/* Mobile Navigation Drawer */}
-      {mobileMenuOpen && (
-        <div className="mobile-drawer-overlay" onClick={() => setMobileMenuOpen(false)}>
-          <div className="mobile-drawer" onClick={(e) => e.stopPropagation()}>
-            <div className="mobile-drawer-header">
-              <span className="brand-text">Simatrix <span className="brand-sub">PDF</span></span>
-              <button
-                type="button"
-                className="action-icon-btn"
-                onClick={() => setMobileMenuOpen(false)}
-                aria-label="Close menu"
-              >
-                <FontAwesomeIcon icon={faXmark} />
-              </button>
-            </div>
-
-            <div className="mobile-drawer-body">
-              <div className="mobile-nav-group">
-                <Link to="/" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
-                  <FontAwesomeIcon icon={faLayerGroup} />
-                  <span>All Tools</span>
+              {crumb.path ? (
+                <Link to={crumb.path} className="breadcrumb-link-item">
+                  {crumb.label}
                 </Link>
-                <Link to="/ai-summarizer" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
-                  <FontAwesomeIcon icon={faWandMagicSparkles} className="nav-gold-icon" />
-                  <span>AI Summarizer</span>
-                </Link>
-                <a href="/#faq-section" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
-                  <FontAwesomeIcon icon={faCircleQuestion} />
-                  <span>Help &amp; FAQ</span>
-                </a>
-                {isAuthenticated && (
-                  <>
-                    <Link to="/account" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
-                      <FontAwesomeIcon icon={faGear} />
-                      <span>Account Settings</span>
-                    </Link>
-                    <Link to="/history" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
-                      <FontAwesomeIcon icon={faClockRotateLeft} />
-                      <span>Processing History</span>
-                    </Link>
-                  </>
-                )}
-              </div>
-
-              <div className="mobile-tools-accordion">
-                <span className="mobile-group-title">Browse PDF Utilities</span>
-                <div className="mobile-tools-grid">
-                  {TOOLS_DATA.map((tool) => (
-                    <Link
-                      key={tool.id}
-                      to={tool.path}
-                      className="mobile-tool-item"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      <FontAwesomeIcon icon={tool.icon} className="mobile-tool-fa" />
-                      <span>{tool.title}</span>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="mobile-drawer-footer">
-              {isAuthenticated ? (
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  style={{ width: '100%' }}
-                  onClick={() => {
-                    logout();
-                    setMobileMenuOpen(false);
-                  }}
-                >
-                  <FontAwesomeIcon icon={faRightFromBracket} />
-                  <span>Sign Out ({user?.email})</span>
-                </button>
               ) : (
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  style={{ width: '100%' }}
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    if (onOpenAuth) onOpenAuth();
-                  }}
-                >
-                  <FontAwesomeIcon icon={faUser} />
-                  <span>Sign in with Google</span>
-                </button>
+                <span className="breadcrumb-current-item">
+                  {crumb.label}
+                </span>
               )}
+            </React.Fragment>
+          ))}
+        </nav>
+      </div>
+
+      <div className="top-nav-right">
+        {!isOnline && (
+          <span className="network-offline-badge" title="Working offline. Local client PDF tools remain fully available.">
+            <FontAwesomeIcon icon={faWifi} />
+            <span>Offline</span>
+          </span>
+        )}
+
+        {/* Light / Dark Theme Toggle Button */}
+        <button
+          type="button"
+          className="theme-switch-btn"
+          onClick={toggleTheme}
+          aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+          title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+        >
+          <FontAwesomeIcon icon={theme === 'dark' ? faSun : faMoon} />
+        </button>
+
+        {/* User Account / Profile Menu */}
+        <div className="user-menu-container" ref={dropdownRef}>
+          {isAuthenticated ? (
+            <button
+              type="button"
+              className="user-profile-btn"
+              onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+              aria-expanded={userDropdownOpen}
+              aria-haspopup="true"
+            >
+              <div className="user-avatar-circle">
+                {userInitial}
+              </div>
+              <span className="user-name-text">{userDisplayName}</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="sign-in-nav-btn"
+              onClick={onOpenAuth}
+            >
+              <FontAwesomeIcon icon={faUser} className="sign-in-icon" />
+              <span>Sign In</span>
+            </button>
+          )}
+
+          {/* User Dropdown Panel */}
+          {userDropdownOpen && (
+            <div className="user-dropdown-panel" role="menu">
+              <div className="user-dropdown-header">
+                <div className="user-avatar-circle large">
+                  {userInitial}
+                </div>
+                <div className="user-dropdown-info">
+                  <div className="user-dropdown-name">{userDisplayName}</div>
+                  <div className="user-dropdown-email">{user?.email || 'user@example.com'}</div>
+                  <span className="user-verified-badge">
+                    <FontAwesomeIcon icon={faCircleCheck} /> Verified with Google
+                  </span>
+                </div>
+              </div>
+
+              <div className="user-dropdown-divider" />
+
+              <ul className="user-dropdown-list">
+                <li>
+                  <Link 
+                    to="/account" 
+                    className="user-dropdown-link"
+                    onClick={() => setUserDropdownOpen(false)}
+                  >
+                    <FontAwesomeIcon icon={faGear} />
+                    <span>Account Settings</span>
+                  </Link>
+                </li>
+                <li>
+                  <Link 
+                    to="/history" 
+                    className="user-dropdown-link"
+                    onClick={() => setUserDropdownOpen(false)}
+                  >
+                    <FontAwesomeIcon icon={faClockRotateLeft} />
+                    <span>Processing History</span>
+                  </Link>
+                </li>
+              </ul>
+
+              <div className="user-dropdown-divider" />
+
+              <button
+                type="button"
+                className="user-dropdown-signout"
+                onClick={() => {
+                  setUserDropdownOpen(false);
+                  logout();
+                }}
+              >
+                <FontAwesomeIcon icon={faRightFromBracket} />
+                <span>Sign Out</span>
+              </button>
             </div>
-          </div>
+          )}
         </div>
-      )}
-    </>
+      </div>
+    </header>
   );
 }

@@ -21,7 +21,17 @@ services:
       - key: SECRET_KEY
         generateValue: true
       - key: DB_ENGINE
-        value: django.db.backends.sqlite3
+        value: django.db.backends.mysql
+      - key: DB_NAME
+        value: pdf_tool
+      - key: DB_USER
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: DB_HOST
+        sync: false
+      - key: DB_PORT
+        value: 3306
       - key: STORAGE_ROOT
         value: storage
       - key: GEMINI_API_KEY

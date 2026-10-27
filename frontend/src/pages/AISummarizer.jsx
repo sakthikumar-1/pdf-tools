@@ -26,7 +26,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import UploadBox from '../components/UploadBox';
 import { useFileUpload } from '../hooks/useFileUpload';
-import { getPdfPageCount } from '../utils/pdfProcessor';
+import { getPdfPageCount } from '../utils/pdfPageCounter';
 import { formatBytes, downloadFile } from '../utils/fileUtils';
 import { summarizePdf } from '../services/api';
 import { fetchServerCapabilities } from '../utils/capabilityChecker';
@@ -132,6 +132,18 @@ export default function AISummarizer() {
   const handleGenerateSummary = async (modeOverride = null) => {
     if (!file || isProcessing) return;
 
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      setActiveError({
+        message: 'Network Offline: Google Gemini AI document summarization requires an active internet connection. Please reconnect to summarize, or use our offline-capable PDF tools (Merge, Split, Compress, Rotate).',
+        isOffline: true,
+        isScanned: false,
+        isConfig: false,
+        isPassword: false,
+        isRateLimit: false
+      });
+      return;
+    }
+
     const mode = modeOverride || selectedMode;
     setIsProcessing(true);
     setActiveError(null);
@@ -149,8 +161,16 @@ export default function AISummarizer() {
       setIsProcessing(false);
       setStatusMessage('');
       const message = err.message || 'An unexpected error occurred while analyzing the document.';
+      const isNetworkErr = (typeof navigator !== 'undefined' && !navigator.onLine) ||
+        message.toLowerCase().includes('failed to fetch') ||
+        message.toLowerCase().includes('network') ||
+        message.toLowerCase().includes('unable to connect');
+
       setActiveError({
-        message,
+        message: isNetworkErr
+          ? 'Network connectivity unavailable. Google Gemini AI summarization requires an active internet connection. Offline PDF tools (Merge, Split, Compress, Rotate) remain fully functional.'
+          : message,
+        isOffline: isNetworkErr,
         isScanned: message.toLowerCase().includes('scanned') || message.toLowerCase().includes('ocr'),
         isConfig: message.toLowerCase().includes('not configured') || message.toLowerCase().includes('api key'),
         isPassword: message.toLowerCase().includes('password') || message.toLowerCase().includes('encrypted'),
@@ -282,24 +302,31 @@ export default function AISummarizer() {
 
   return (
     <div className="ai-summarizer-container">
-      {/* Top Breadcrumb & Hero */}
-      <div className="ai-summarizer-header">
-        <Link to="/" className="back-link">
-          <ArrowLeft size={16} /> Back to All PDF Tools
+      {/* Top Navigation Row with Back Button */}
+      <div className="tool-top-nav-row">
+        <Link to="/" className="tool-back-link">
+          <FontAwesomeIcon icon={faArrowLeft} /> Back to Tools
         </Link>
-        <div className="ai-badge-header">
-          <span className="ai-pill">
-            <Sparkles size={14} className="sparkle-icon" /> AI Document Intelligence
-          </span>
-          <span className="ai-engine-status">
-            <Cpu size={13} /> {aiEngineName}
-          </span>
+        <nav className="tool-breadcrumb" aria-label="Breadcrumb">
+          <Link to="/" className="breadcrumb-link">
+            Home
+          </Link>
+          <span className="breadcrumb-separator">/</span>
+          <span className="breadcrumb-current">AI Summarizer</span>
+        </nav>
+      </div>
+
+      {/* Tool Header matching Reference */}
+      <div className="ai-tool-hero">
+        <div className="ai-tool-icon">
+          <FontAwesomeIcon icon={faWandMagicSparkles} />
         </div>
-        <h1 className="ai-title">AI PDF Summarizer</h1>
-        <p className="ai-description">
-          Distill complex research papers, business reports, contracts, and books into concise executive briefings,
-          bulleted key takeaways, and section breakdowns with high accuracy.
-        </p>
+        <div className="ai-tool-info">
+          <h1 className="ai-tool-title">AI PDF Summarizer</h1>
+          <p className="ai-tool-desc">
+            Get instant, accurate summaries of your PDF documents using Google Gemini AI.
+          </p>
+        </div>
       </div>
 
       <div className="ai-summarizer-content">
@@ -319,36 +346,10 @@ export default function AISummarizer() {
               maxSizeText="25 MB"
             />
 
-            {/* Feature Highlights Grid */}
-            <div className="ai-features-grid">
-              <div className="ai-feature-card">
-                <div className="feature-icon-wrap">
-                  <Zap size={20} />
-                </div>
-                <h4>4 Distinct Modes</h4>
-                <p>Choose between executive briefings, exhaustive analyses, bulleted takeaways, or section walk-throughs.</p>
-              </div>
-
-              <div className="ai-feature-card">
-                <div className="feature-icon-wrap">
-                  <Layers size={20} />
-                </div>
-                <h4>Map-Reduce Chunking</h4>
-                <p>Large multi-page documents are analyzed in intelligent semantic chunks with zero context window truncation.</p>
-              </div>
-
-              <div className="ai-feature-card">
-                <div className="feature-icon-wrap">
-                  <ShieldCheck size={20} />
-                </div>
-                <h4>Privacy & Ephemeral</h4>
-                <p>Files are purged immediately from temporary storage upon completion. No documents are stored or used for AI training.</p>
-              </div>
-            </div>
 
             {/* Privacy Transparency Callout */}
             <div className="ai-privacy-note">
-              <ShieldCheck size={16} className="privacy-icon" />
+              <FontAwesomeIcon icon={faShieldHalved} className="privacy-icon" />
               <span>
                 <strong>Data Privacy Notice:</strong> Document text is securely sent to the configured hosted AI engine for
                 instant analysis. No document contents are permanently stored on our servers.
@@ -364,7 +365,7 @@ export default function AISummarizer() {
             <div className="active-file-card">
               <div className="file-meta-group">
                 <div className="file-icon-box">
-                  <FileText size={24} />
+                  <FontAwesomeIcon icon={faFileLines} />
                 </div>
                 <div className="file-details">
                   <span className="file-name" title={file.name}>
@@ -380,7 +381,7 @@ export default function AISummarizer() {
                       <>
                         <span className="spec-dot">•</span>
                         <span className="spec-badge-success">
-                          <Check size={12} /> Summarized
+                          <FontAwesomeIcon icon={faCheck} /> Summarized
                         </span>
                       </>
                     )}
@@ -404,7 +405,7 @@ export default function AISummarizer() {
             {activeError && (
               <div className="ai-error-banner" role="alert">
                 <div className="error-icon-box">
-                  <AlertCircle size={22} />
+                  <FontAwesomeIcon icon={faCircleExclamation} />
                 </div>
                 <div className="error-body">
                   <h4>Unable to Summarize Document</h4>
@@ -444,7 +445,7 @@ export default function AISummarizer() {
               <div className="ai-processing-card">
                 <div className="processing-spinner-box">
                   <div className="ai-pulse-ring" />
-                  <Sparkles size={28} className="ai-pulse-icon" />
+                  <FontAwesomeIcon icon={faWandMagicSparkles} className="ai-pulse-icon" />
                 </div>
                 <h3>Analyzing Document with AI</h3>
                 <p className="processing-status-text">
@@ -465,19 +466,19 @@ export default function AISummarizer() {
                 {/* Result Header & Metrics Bar */}
                 <div className="result-header-bar">
                   <div className="result-mode-tag">
-                    <Sparkles size={16} />
+                    <FontAwesomeIcon icon={faWandMagicSparkles} />
                     <span>{SUMMARY_MODES.find((m) => m.id === summaryResult.mode)?.title || 'Summary'}</span>
                   </div>
 
                   <div className="result-metrics">
                     <span className="metric-badge" title="Summary word count">
-                      <BookOpen size={13} /> {summaryResult.wordCount} words
+                      <FontAwesomeIcon icon={faBookOpen} /> {summaryResult.wordCount} words
                     </span>
                     <span className="metric-badge" title="Estimated reading time">
-                      <Clock size={13} /> {summaryResult.estimatedReadingTimeMinutes} min read
+                      <FontAwesomeIcon icon={faClock} /> {summaryResult.estimatedReadingTimeMinutes} min read
                     </span>
                     <span className="metric-badge" title="Pages processed">
-                      <Layers size={13} /> {summaryResult.pageCount} pages
+                      <FontAwesomeIcon icon={faLayerGroup} /> {summaryResult.pageCount} pages
                     </span>
                     {summaryResult.isChunked && (
                       <span className="metric-badge chunked" title="Map-reduce multi-chunk synthesis">
@@ -499,11 +500,11 @@ export default function AISummarizer() {
                     >
                       {copied ? (
                         <>
-                          <Check size={16} /> Copied!
+                          <FontAwesomeIcon icon={faCheck} /> Copied!
                         </>
                       ) : (
                         <>
-                          <Copy size={16} /> Copy
+                          <FontAwesomeIcon icon={faCopy} /> Copy
                         </>
                       )}
                     </button>
@@ -514,7 +515,7 @@ export default function AISummarizer() {
                       onClick={handleDownloadTxt}
                       title="Download summary as a .txt file"
                     >
-                      <Download size={16} /> Download .TXT
+                      <FontAwesomeIcon icon={faDownload} /> Download .TXT
                     </button>
                   </div>
                 </div>
@@ -522,7 +523,7 @@ export default function AISummarizer() {
                 {/* Scant Text / Partial Extraction Warning if present */}
                 {summaryResult.warning && (
                   <div className="summary-warning-alert">
-                    <AlertTriangle size={18} />
+                    <FontAwesomeIcon icon={faTriangleExclamation} />
                     <span>{summaryResult.warning}</span>
                   </div>
                 )}
@@ -549,7 +550,7 @@ export default function AISummarizer() {
                         }}
                         disabled={isProcessing || summaryResult.mode === mode.id}
                       >
-                        <mode.icon size={14} />
+                        <FontAwesomeIcon icon={mode.icon} />
                         <span>{mode.title}</span>
                       </button>
                     ))}
@@ -569,7 +570,6 @@ export default function AISummarizer() {
                 <div className="modes-selection-grid">
                   {SUMMARY_MODES.map((mode) => {
                     const isSelected = selectedMode === mode.id;
-                    const ModeIcon = mode.icon;
                     return (
                       <div
                         key={mode.id}
@@ -586,7 +586,7 @@ export default function AISummarizer() {
                       >
                         <div className="mode-card-top">
                           <div className={`mode-icon-circle ${isSelected ? 'active' : ''}`}>
-                            <ModeIcon size={20} />
+                            <FontAwesomeIcon icon={mode.icon} />
                           </div>
                           <span className="mode-badge">{mode.badge}</span>
                         </div>
@@ -611,7 +611,7 @@ export default function AISummarizer() {
                   >
                     <FontAwesomeIcon icon={faWandMagicSparkles} />
                     <span>Generate AI Summary</span>
-                    <ChevronRight size={18} />
+                    <FontAwesomeIcon icon={faChevronRight} />
                   </button>
                   <p className="cta-disclaimer">
                     Takes approximately 5-15 seconds depending on document length and token volume.

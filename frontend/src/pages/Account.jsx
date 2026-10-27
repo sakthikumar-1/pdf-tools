@@ -1,16 +1,21 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faUser, 
   faShieldHalved, 
   faGear, 
   faClockRotateLeft, 
-  faArrowRight, 
+  faChevronRight, 
   faMoon, 
   faSun, 
-  faCheck,
-  faRightFromBracket
+  faDesktop,
+  faCircleCheck,
+  faRightFromBracket,
+  faArrowRightToBracket,
+  faLanguage,
+  faBell,
+  faArrowLeft
 } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -19,166 +24,214 @@ import './Account.css';
 export default function Account() {
   const { user, isAuthenticated, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
-  const [saveMetadata, setSaveMetadata] = useState(true);
+  const [activeTab, setActiveTab] = useState('account'); // 'account' or 'preferences'
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [selectedLanguage, setSelectedLanguage] = useState('en');
+  const navigate = useNavigate();
+
+  const userInitial = user?.full_name ? user.full_name.charAt(0).toUpperCase() : (user?.email ? user.email.charAt(0).toUpperCase() : 'S');
+  const userDisplayName = user?.full_name || (user?.email ? user.email.split('@')[0] : 'Simatrix User');
+  const userDisplayEmail = user?.email || (isAuthenticated ? 'user@example.com' : 'guest@simatrix.local');
 
   return (
-    <div className="account-page-container container">
-      {/* Top Breadcrumb */}
-      <nav className="tool-breadcrumb" aria-label="Breadcrumb">
-        <Link to="/" className="breadcrumb-link">
-          Home
+    <div className="account-page-wrapper">
+      <div className="account-container">
+        {/* Top Back Link */}
+        <Link to="/" className="tool-back-link" style={{ marginBottom: '0.85rem' }}>
+          <FontAwesomeIcon icon={faArrowLeft} /> Back to Dashboard
         </Link>
-        <span className="breadcrumb-separator">/</span>
-        <span className="breadcrumb-current">Account &amp; Preferences</span>
-      </nav>
 
-      <div className="account-hero">
-        <div className="account-avatar-badge">
-          <FontAwesomeIcon icon={faUser} />
+        {/* Navigation Tabs */}
+        <div className="account-tabs-nav">
+          <button
+            type="button"
+            className={`account-tab-btn ${activeTab === 'account' ? 'active' : ''}`}
+            onClick={() => setActiveTab('account')}
+          >
+            <FontAwesomeIcon icon={faUser} />
+            <span>Account Settings</span>
+          </button>
+          <button
+            type="button"
+            className={`account-tab-btn ${activeTab === 'preferences' ? 'active' : ''}`}
+            onClick={() => setActiveTab('preferences')}
+          >
+            <FontAwesomeIcon icon={faGear} />
+            <span>Preferences</span>
+          </button>
+          <Link to="/history" className="account-tab-link">
+            <FontAwesomeIcon icon={faClockRotateLeft} />
+            <span>Recent Files</span>
+          </Link>
         </div>
-        <h1 className="account-title">Account &amp; Workspace Settings</h1>
-        <p className="account-subtitle">
-          Manage your session preferences, privacy configurations, and client processing parameters.
-        </p>
-      </div>
 
-      <div className="account-grid">
-        {/* Profile / Session Card */}
-        <div className="account-card">
-          <div className="account-card-header">
-            <FontAwesomeIcon icon={faUser} className="card-header-icon" />
-            <h3>Session Status</h3>
-          </div>
-          <div className="account-card-body">
-            {isAuthenticated ? (
-              <>
-                <div className="session-status-row">
-                  <span className="status-indicator-dot" style={{ background: 'var(--color-success)', boxShadow: '0 0 0 3px rgba(22, 133, 104, 0.2)' }}></span>
-                  <div>
-                    <strong>{user?.full_name || 'Signed In with Google'}</strong>
-                    <p style={{ color: 'var(--color-primary)', fontWeight: 600 }}>{user?.email}</p>
+        {/* TAB 1: ACCOUNT SETTINGS */}
+        {activeTab === 'account' && (
+          <div className="account-tab-content">
+            <div className="account-section-header">
+              <h1 className="account-main-title">Account Settings</h1>
+              <p className="account-main-desc">Manage your profile and preferences.</p>
+            </div>
+
+            {/* Profile Card matching Reference */}
+            <div className="account-profile-card">
+              <div className="profile-identity-row">
+                <div className="profile-avatar-large">
+                  {userInitial}
+                </div>
+                <div className="profile-text-group">
+                  <h2 className="profile-name">{userDisplayName}</h2>
+                  <p className="profile-email">{userDisplayEmail}</p>
+                  <div className="profile-verified-badge">
+                    <FontAwesomeIcon icon={faCircleCheck} className="verified-check-icon" />
+                    <span>{isAuthenticated ? 'Verified with Google' : 'Anonymous Guest Session'}</span>
                   </div>
                 </div>
-                <div className="session-action-box">
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', color: 'var(--color-text-secondary)' }}>
-                    <span>Account Tier:</span>
-                    <strong style={{ color: 'var(--color-heading)', textTransform: 'capitalize' }}>{user?.role || 'Verified User'}</strong>
+              </div>
+
+              {/* Action List Menu */}
+              <div className="profile-menu-list">
+                <div className="profile-menu-item">
+                  <div className="menu-item-left">
+                    <FontAwesomeIcon icon={faUser} className="menu-fa-icon" />
+                    <div>
+                      <span className="menu-title">Account Information</span>
+                      <span className="menu-sub">Role: {user?.role || (isAuthenticated ? 'Verified User' : 'Guest')}</span>
+                    </div>
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', color: 'var(--color-text-secondary)' }}>
-                    <span>Email Verification:</span>
-                    <strong style={{ color: 'var(--color-success)' }}>Verified</strong>
+                  <FontAwesomeIcon icon={faChevronRight} className="menu-arrow" />
+                </div>
+
+                <div 
+                  className="profile-menu-item clickable"
+                  onClick={() => navigate('/history')}
+                >
+                  <div className="menu-item-left">
+                    <FontAwesomeIcon icon={faClockRotateLeft} className="menu-fa-icon" />
+                    <div>
+                      <span className="menu-title">Processing History</span>
+                      <span className="menu-sub">Review recently processed document metadata</span>
+                    </div>
                   </div>
-                  <button 
-                    type="button" 
-                    className="btn btn-secondary btn-sm"
-                    style={{ marginTop: '0.5rem', width: '100%' }}
+                  <FontAwesomeIcon icon={faChevronRight} className="menu-arrow" />
+                </div>
+
+                <div 
+                  className="profile-menu-item clickable"
+                  onClick={() => setActiveTab('preferences')}
+                >
+                  <div className="menu-item-left">
+                    <FontAwesomeIcon icon={faGear} className="menu-fa-icon" />
+                    <div>
+                      <span className="menu-title">Preferences</span>
+                      <span className="menu-sub">Theme, language, and system settings</span>
+                    </div>
+                  </div>
+                  <FontAwesomeIcon icon={faChevronRight} className="menu-arrow" />
+                </div>
+
+                {isAuthenticated ? (
+                  <button
+                    type="button"
+                    className="profile-signout-btn"
                     onClick={logout}
                   >
                     <FontAwesomeIcon icon={faRightFromBracket} />
                     <span>Sign Out</span>
                   </button>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="session-status-row">
-                  <span className="status-indicator-dot guest"></span>
-                  <div>
-                    <strong>Anonymous Guest Access</strong>
-                    <p>You have full access to all 18 standard client &amp; server PDF utilities.</p>
-                  </div>
-                </div>
-                <div className="session-action-box">
-                  <p>Sign in with your Google account to record metadata-only conversion logs.</p>
-                  <Link to="/login" className="btn btn-primary btn-sm">
+                ) : (
+                  <Link to="/login" className="profile-signin-btn">
+                    <FontAwesomeIcon icon={faArrowRightToBracket} />
                     <span>Sign in with Google</span>
-                    <FontAwesomeIcon icon={faArrowRight} />
                   </Link>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 2: PREFERENCES */}
+        {activeTab === 'preferences' && (
+          <div className="account-tab-content">
+            <div className="account-section-header">
+              <h1 className="account-main-title">Preferences</h1>
+              <p className="account-main-desc">Customize your experience.</p>
+            </div>
+
+            <div className="preferences-card">
+              {/* Theme Preference */}
+              <div className="pref-row">
+                <div className="pref-info">
+                  <label className="pref-label">Theme</label>
+                  <p className="pref-desc">Select how Simatrix looks on your device.</p>
                 </div>
-              </>
-            )}
-          </div>
-        </div>
 
-        {/* Security & Privacy Card */}
-        <div className="account-card">
-          <div className="account-card-header">
-            <FontAwesomeIcon icon={faShieldHalved} className="card-header-icon" />
-            <h3>Privacy &amp; Data Security</h3>
-          </div>
-          <div className="account-card-body">
-            <ul className="security-features-list">
-              <li>
-                <FontAwesomeIcon icon={faCheck} className="check-icon" />
-                <span>Zero Document Retention: Documents processed strictly in RAM</span>
-              </li>
-              <li>
-                <FontAwesomeIcon icon={faCheck} className="check-icon" />
-                <span>Client Sandbox: 10 tools execute directly in your browser</span>
-              </li>
-              <li>
-                <FontAwesomeIcon icon={faCheck} className="check-icon" />
-                <span>Google Gemini AI: Encrypted payload transport via TLS 1.3</span>
-              </li>
-            </ul>
-
-            <div className="privacy-toggle-row">
-              <div>
-                <strong>Conversion History Logging</strong>
-                <p>Record file name and timestamps in your local browser storage</p>
+                <div className="theme-toggle-group">
+                  <button
+                    type="button"
+                    className={`theme-segment-btn ${theme === 'light' ? 'active' : ''}`}
+                    onClick={() => { if (theme !== 'light') toggleTheme(); }}
+                  >
+                    <FontAwesomeIcon icon={faSun} />
+                    <span>Light</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`theme-segment-btn ${theme === 'dark' ? 'active' : ''}`}
+                    onClick={() => { if (theme !== 'dark') toggleTheme(); }}
+                  >
+                    <FontAwesomeIcon icon={faMoon} />
+                    <span>Dark</span>
+                  </button>
+                </div>
               </div>
-              <button 
-                type="button" 
-                className={`switch-toggle-btn ${saveMetadata ? 'active' : ''}`}
-                onClick={() => setSaveMetadata(!saveMetadata)}
-                aria-label="Toggle history metadata logging"
-              >
-                <span className="switch-thumb"></span>
-              </button>
+
+              <div className="pref-divider" />
+
+              {/* Language Selection */}
+              <div className="pref-row">
+                <div className="pref-info">
+                  <label className="pref-label">Language</label>
+                  <p className="pref-desc">Interface language for tools and menus.</p>
+                </div>
+
+                <div className="pref-control-box">
+                  <select
+                    className="pref-select"
+                    value={selectedLanguage}
+                    onChange={(e) => setSelectedLanguage(e.target.value)}
+                  >
+                    <option value="en">English (US)</option>
+                    <option value="es">Español</option>
+                    <option value="fr">Français</option>
+                    <option value="de">Deutsch</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="pref-divider" />
+
+              {/* Notification Preference */}
+              <div className="pref-row">
+                <div className="pref-info">
+                  <label className="pref-label">Enable notifications</label>
+                  <p className="pref-desc">Get notified when processing is complete.</p>
+                </div>
+
+                <div className="pref-control-box">
+                  <button
+                    type="button"
+                    className={`toggle-switch ${notificationsEnabled ? 'active' : ''}`}
+                    onClick={() => setNotificationsEnabled(!notificationsEnabled)}
+                    aria-label="Toggle notifications"
+                  >
+                    <span className="toggle-thumb" />
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-
-        {/* Workspace Display Preferences */}
-        <div className="account-card">
-          <div className="account-card-header">
-            <FontAwesomeIcon icon={faGear} className="card-header-icon" />
-            <h3>Appearance &amp; Theme</h3>
-          </div>
-          <div className="account-card-body">
-            <div className="theme-preference-row">
-              <div>
-                <strong>Current Visual Theme</strong>
-                <p>{theme === 'dark' ? 'Midnight Black with Champagne Gold' : 'Warm Ivory with Champagne Gold'}</p>
-              </div>
-              <button 
-                type="button" 
-                className="btn btn-secondary btn-sm"
-                onClick={toggleTheme}
-              >
-                <FontAwesomeIcon icon={theme === 'dark' ? faSun : faMoon} />
-                <span>Switch to {theme === 'dark' ? 'Light' : 'Dark'}</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Processing History Shortcut */}
-        <div className="account-card">
-          <div className="account-card-header">
-            <FontAwesomeIcon icon={faClockRotateLeft} className="card-header-icon" />
-            <h3>Processing Records</h3>
-          </div>
-          <div className="account-card-body">
-            <p className="card-body-text">
-              Review your recent document processing operations, execution engines, and output metadata.
-            </p>
-            <Link to="/history" className="btn btn-secondary btn-sm view-history-btn">
-              <span>View Processing History</span>
-              <FontAwesomeIcon icon={faArrowRight} />
-            </Link>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );

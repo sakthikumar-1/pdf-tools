@@ -1,94 +1,116 @@
+/* ==============================================================================
+   SIMATRIX COMPACT TOOL CARD STYLES
+   #1C2022 background, subtle #303537 border, muted gold accents
+   ============================================================================== */
+
 .tool-card {
   display: flex;
   flex-direction: column;
-  background-color: var(--color-surface-card);
+  padding: 1rem 1.15rem;
+  background-color: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  padding: 1.5rem;
+  border-radius: var(--radius-sm);
   text-decoration: none;
+  color: inherit;
+  transition: border-color var(--transition-fast), background-color var(--transition-fast);
   position: relative;
-  transition: transform var(--transition-fast), border-color var(--transition-fast), background-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .tool-card:hover {
-  transform: translateY(-2px);
   border-color: var(--color-gold);
-  background-color: var(--color-surface-card-hover);
-  box-shadow: var(--shadow-md);
+  background-color: var(--color-surface-hover);
 }
 
-.tool-card-top {
+/* Header & Icon */
+.tool-card-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 1.15rem;
+  margin-bottom: 0.75rem;
 }
 
-.tool-icon-wrapper {
-  width: 44px;
-  height: 44px;
-  border-radius: var(--radius-sm);
-  background-color: var(--color-surface-inset);
-  border: 1px solid var(--color-border);
+.tool-icon-badge {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-xs);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--color-gold);
-  font-size: 1.15rem;
-  transition: background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+  font-size: 1.05rem;
 }
 
-.tool-card:hover .tool-icon-wrapper {
-  border-color: var(--color-gold-border);
-  background-color: var(--color-gold-muted);
-}
-
-.tool-fa-icon {
-  width: 1.15rem;
-  height: 1.15rem;
-}
-
-.tool-title {
-  font-size: 1.125rem;
-  font-weight: 700;
-  color: var(--color-heading);
-  margin-bottom: 0.5rem;
-  transition: color var(--transition-fast);
-}
-
-.tool-card:hover .tool-title {
-  color: var(--color-gold);
-}
-
-.tool-description {
-  font-size: 0.875rem;
-  line-height: 1.55;
-  color: var(--color-text-secondary);
-  margin-bottom: 1.25rem;
-  flex-grow: 1;
-}
-
-.tool-card-footer {
+.tool-card-action {
   display: flex;
   align-items: center;
-  gap: 0.45rem;
-  font-size: 0.85rem;
-  font-weight: 600;
+  gap: 0.4rem;
+}
+
+.tool-arrow-circle {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-xs);
+  background-color: var(--color-surface-hover);
   color: var(--color-text-muted);
-  transition: color var(--transition-fast);
-  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  transition: all var(--transition-fast);
 }
 
-.tool-arrow {
-  font-size: 0.75rem;
-  transition: transform var(--transition-fast), color var(--transition-fast);
+.tool-card:hover .tool-arrow-circle {
+  background-color: var(--color-gold);
+  color: var(--color-primary-text);
 }
 
-.tool-card:hover .tool-card-footer {
+/* Body */
+.tool-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.tool-card-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--color-heading);
+  letter-spacing: -0.01em;
+}
+
+.tool-card-desc {
+  font-size: 0.82rem;
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Badges */
+.badge {
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 0.1rem 0.45rem;
+  border-radius: var(--radius-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.badge-primary {
+  background-color: rgba(216, 177, 90, 0.12);
   color: var(--color-gold);
+  border: 1px solid rgba(216, 177, 90, 0.25);
 }
 
-.tool-card:hover .tool-arrow {
-  transform: translateX(4px);
-  color: var(--color-gold);
+.badge-success {
+  background-color: rgba(67, 181, 129, 0.12);
+  color: var(--color-success);
+  border: 1px solid rgba(67, 181, 129, 0.25);
+}
+
+.badge-muted {
+  background-color: var(--color-surface-hover);
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
 }

@@ -5,8 +5,8 @@ const ThemeContext = createContext();
 export function ThemeProvider({ children }) {
   const [theme, setTheme] = useState(() => {
     const savedTheme = localStorage.getItem('simatrix_theme');
-    if (savedTheme) return savedTheme;
-    return window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+    if (savedTheme === 'light' || savedTheme === 'dark') return savedTheme;
+    return 'light'; // Clean white working interface default
   });
 
   useEffect(() => {

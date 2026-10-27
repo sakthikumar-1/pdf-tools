@@ -5,7 +5,8 @@ import {
   faMagnifyingGlass,
   faXmark,
   faArrowRight,
-  faArrowTurnDown
+  faArrowTurnDown,
+  faArrowLeft
 } from '@fortawesome/free-solid-svg-icons';
 import { filterTools } from '../utils/toolsData';
 import './QuickSearchModal.css';
@@ -65,8 +66,17 @@ export default function QuickSearchModal({ isOpen, onClose }) {
   return (
     <div className="quick-search-backdrop" onClick={onClose} role="dialog" aria-modal="true" aria-label="Search Tools">
       <div className="quick-search-card" onClick={(e) => e.stopPropagation()}>
-        {/* Search Input Bar */}
+        {/* Search Input Bar with Back Button */}
         <div className="quick-search-input-box">
+          <button
+            type="button"
+            className="search-back-btn"
+            onClick={onClose}
+            aria-label="Back / Close search"
+            title="Back (Esc)"
+          >
+            <FontAwesomeIcon icon={faArrowLeft} />
+          </button>
           <FontAwesomeIcon icon={faMagnifyingGlass} className="search-lead-icon" />
           <input
             ref={inputRef}
@@ -83,11 +93,20 @@ export default function QuickSearchModal({ isOpen, onClose }) {
               className="search-clear-btn"
               onClick={() => setQuery('')}
               aria-label="Clear query"
+              title="Clear search"
             >
               <FontAwesomeIcon icon={faXmark} />
             </button>
           )}
-          <span className="search-esc-hint">ESC</span>
+          <button
+            type="button"
+            className="search-esc-hint"
+            onClick={onClose}
+            title="Close search modal"
+            aria-label="Close"
+          >
+            ESC
+          </button>
         </div>
 
         {/* Results List */}
