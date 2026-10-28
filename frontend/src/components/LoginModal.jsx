@@ -1,49 +1,115 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFilePdf, faXmark, faShieldHalved, faArrowRight, faSpinner, faCircleCheck } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '../context/AuthContext';
+import { GOOGLE_CLIENT_ID } from '../config/auth';
 import './LoginModal.css';
 
 export default function LoginModal({ isOpen, onClose }) {
   const { loginWithGoogle, isAuthenticated, user, logout } = useAuth();
   const [emailInput, setEmailInput] = useState('');
   const [nameInput, setNameInput] = useState('');
-  const [isCustomMode, setIsCustomMode] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
+  const [gsiReady, setGsiReady] = useState(false);
+  const googleBtnRef = useRef(null);
+
+  // Initialize Google Identity Services whenever modal opens
+  useEffect(() => {
+    if (!isOpen) return;
+
+    let checkInterval = null;
+
+    const renderGoogleButton = () => {
+      if (window.google?.accounts?.id && googleBtnRef.current) {
+        try {
+          window.google.accounts.id.initialize({
+            client_id: GOOGLE_CLIENT_ID,
+            callback: async (response) => {
+              if (response?.credential) {
+                setIsLoading(true);
+                setError(null);
+                try {
+                  await loginWithGoogle({ credential: response.credential });
+                  setSuccess(true);
+                  setTimeout(() => {
+                    setSuccess(false);
+                    onClose();
+                  }, 800);
+                } catch (err) {
+                  setError(err.message || 'Google authentication failed. Please try again.');
+                } finally {
+                  setIsLoading(false);
+                }
+              }
+            },
+            auto_select: false,
+            cancel_on_tap_outside: true,
+          });
+
+          googleBtnRef.current.innerHTML = '';
+          window.google.accounts.id.renderButton(googleBtnRef.current, {
+            theme: 'outline',
+            size: 'large',
+            type: 'standard',
+            shape: 'rectangular',
+            text: 'continue_with',
+            logo_alignment: 'left',
+            width: googleBtnRef.current.offsetWidth || 340,
+          });
+
+          setGsiReady(true);
+          if (checkInterval) clearInterval(checkInterval);
+        } catch (err) {
+          console.warn('Google Identity Services init error:', err);
+        }
+      }
+    };
+
+    renderGoogleButton();
+
+    if (!window.google?.accounts?.id) {
+      checkInterval = setInterval(() => {
+        if (window.google?.accounts?.id) {
+          renderGoogleButton();
+        }
+      }, 150);
+    }
+
+    return () => {
+      if (checkInterval) clearInterval(checkInterval);
+    };
+  }, [isOpen, loginWithGoogle, onClose]);
 
   if (!isOpen) return null;
 
-  const handleInstantGoogleSignIn = async () => {
+  const handleCustomEmailSignIn = async (e) => {
+    e.preventDefault();
+    if (!emailInput || !emailInput.includes('@')) {
+      setError('Please enter a valid email address.');
+      return;
+    }
     setIsLoading(true);
     setError(null);
     try {
-      // Authenticate with Google identity service
+      const cleanEmail = emailInput.trim();
+      const cleanName = nameInput.trim() || cleanEmail.split('@')[0];
       await loginWithGoogle({
-        email: emailInput || 'user@gmail.com',
-        name: nameInput || 'Google User',
+        email: cleanEmail,
+        name: cleanName,
         avatar_url: ''
       });
       setSuccess(true);
       setTimeout(() => {
         setSuccess(false);
         onClose();
-      }, 1000);
+      }, 800);
     } catch (err) {
       setError(err.message || 'Authentication failed. Please try again.');
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleSubmitCustom = async (e) => {
-    e.preventDefault();
-    if (!emailInput || !emailInput.includes('@')) {
-      setError('Please enter a valid email address.');
-      return;
-    }
-    await handleInstantGoogleSignIn();
   };
 
   return (
@@ -73,7 +139,7 @@ export default function LoginModal({ isOpen, onClose }) {
             <div className="login-success-state">
               <FontAwesomeIcon icon={faCircleCheck} className="login-success-icon" />
               <h3>Successfully Signed In</h3>
-              <p>Welcome back to Simatrix PDF Tools.</p>
+              <p>Welcome to Simatrix PDF Tools.</p>
             </div>
           ) : (
             <>
@@ -83,38 +149,43 @@ export default function LoginModal({ isOpen, onClose }) {
                 </div>
               )}
 
-              {/* Main One-Click Google Action */}
-              <button
-                type="button"
-                className="google-signin-btn"
-                onClick={() => {
-                  if (isCustomMode) {
-                    setIsCustomMode(false);
-                  } else {
-                    handleInstantGoogleSignIn();
-                  }
-                }}
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <FontAwesomeIcon icon={faSpinner} spin />
-                ) : (
-                  <svg viewBox="0 0 24 24" width="20" height="20" className="google-svg-icon" aria-hidden="true">
-                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
-                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
-                  </svg>
+              {/* Official Google Identity Services Button Container */}
+              <div className="google-gsi-wrapper">
+                <div ref={googleBtnRef} className="google-gsi-container" />
+                
+                {/* Fallback button if GSI script is still connecting */}
+                {!gsiReady && (
+                  <button
+                    type="button"
+                    className="google-signin-btn"
+                    onClick={() => {
+                      if (window.google?.accounts?.id) {
+                        window.google.accounts.id.prompt();
+                      }
+                    }}
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <FontAwesomeIcon icon={faSpinner} spin />
+                    ) : (
+                      <svg viewBox="0 0 24 24" width="20" height="20" className="google-svg-icon" aria-hidden="true">
+                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+                      </svg>
+                    )}
+                    <span>{isLoading ? 'Connecting to Google...' : 'Continue with Google'}</span>
+                  </button>
                 )}
-                <span>{isLoading ? 'Signing in...' : 'Continue with Google'}</span>
-              </button>
+              </div>
 
               <div className="login-divider">
                 <span>or enter Google account email</span>
               </div>
 
-              {/* Email specification */}
-              <form onSubmit={handleSubmitCustom} className="email-login-form">
+              {/* Direct email sign-in */}
+              <form onSubmit={handleCustomEmailSignIn} className="email-login-form">
                 <input
                   type="email"
                   value={emailInput}

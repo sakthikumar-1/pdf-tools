@@ -76,8 +76,12 @@ export default function Account() {
             {/* Profile Card matching Reference */}
             <div className="account-profile-card">
               <div className="profile-identity-row">
-                <div className="profile-avatar-large">
-                  {userInitial}
+                <div className="profile-avatar-large" style={{ overflow: 'hidden' }}>
+                  {user?.avatar_url ? (
+                    <img src={user.avatar_url} alt={userDisplayName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    userInitial
+                  )}
                 </div>
                 <div className="profile-text-group">
                   <h2 className="profile-name">{userDisplayName}</h2>

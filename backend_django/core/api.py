@@ -5,6 +5,7 @@ import logging
 import mimetypes
 from pathlib import Path
 from typing import Optional, List, Dict, Any
+import requests
 
 from ninja import NinjaAPI, Schema, File, Form
 from ninja.files import UploadedFile

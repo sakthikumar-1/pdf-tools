@@ -104,6 +104,26 @@
   gap: 1.25rem;
 }
 
+.google-gsi-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 44px;
+}
+
+.google-gsi-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.google-gsi-container iframe {
+  margin: 0 auto !important;
+}
+
 .google-signin-btn {
   display: flex;
   align-items: center;
