@@ -19,7 +19,7 @@ export default function Footer() {
         <div className="footer-brand">
           <Link to="/" className="footer-logo">
             <span className="brand-icon-box">
-              <FontAwesomeIcon icon={faFilePdf} />
+              <img src="/logo.png" alt="Simatrix Logo" className="footer-logo-img" />
             </span>
             <span className="brand-text">
               Simatrix <span className="brand-sub">PDF</span>

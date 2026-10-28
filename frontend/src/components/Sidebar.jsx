@@ -81,7 +81,7 @@ export default function Sidebar({
         <div className="sidebar-header">
           <NavLink to="/" className="sidebar-brand" onClick={handleNavClick}>
             <div className="brand-logo-icon">
-              <span className="brand-initial">S</span>
+              <img src="/logo.png" alt="Simatrix Logo" className="brand-logo-img" />
             </div>
             {!isCollapsed && (
               <div className="brand-info">

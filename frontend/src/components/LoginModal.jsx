@@ -215,7 +215,7 @@ export default function LoginModal({ isOpen, onClose }) {
 
         <div className="login-modal-header">
           <span className="login-brand-icon">
-            <FontAwesomeIcon icon={faFilePdf} />
+            <img src="/logo.png" alt="Simatrix Logo" className="modal-logo-img" />
           </span>
           <h2 className="login-modal-title">Sign in to Simatrix PDF</h2>
           <p className="login-modal-subtitle">

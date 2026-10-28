@@ -233,7 +233,7 @@ export default function Login() {
 
         <div className="login-header">
           <div className="login-logo-mark">
-            <span className="brand-initial">S</span>
+            <img src="/logo.png" alt="Simatrix Logo" className="login-logo-img" />
           </div>
           <h1 className="login-title">Sign in to Simatrix</h1>
           <p className="login-subtitle">
