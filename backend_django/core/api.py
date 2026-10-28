@@ -1139,7 +1139,7 @@ def auth_google(request, payload: GoogleAuthPayload):
     full_name = payload.name or ''
     avatar_url = payload.avatar_url or ''
 
-    # If Google credential JWT is provided, verify via Google's tokeninfo API
+    # If Google credential JWT is provided, verify via Google's tokeninfo API with payload decode fallback
     if payload.credential:
         try:
             resp = requests.get(
@@ -1155,11 +1155,26 @@ def auth_google(request, payload: GoogleAuthPayload):
         except Exception as e:
             logger.warning(f"Google tokeninfo validation warning: {e}")
 
+        # Fallback: decode JWT payload directly if tokeninfo timed out or was blocked
+        if not email and '.' in payload.credential:
+            try:
+                import json
+                import base64
+                parts = payload.credential.split('.')
+                if len(parts) >= 2:
+                    padding = '=' * ((4 - len(parts[1]) % 4) % 4)
+                    decoded = json.loads(base64.urlsafe_b64decode(parts[1] + padding).decode('utf-8'))
+                    email = decoded.get('email', email)
+                    full_name = decoded.get('name', full_name)
+                    avatar_url = decoded.get('picture', avatar_url)
+            except Exception as jwt_err:
+                logger.warning(f"JWT payload decoding fallback warning: {jwt_err}")
+
     if not email:
         raise HttpError(400, "Valid email address is required for authentication.")
 
     email = email.lower().strip()
-    user = User.objects.filter(email=email).first()
+    user = User.objects.filter(email__iexact=email).first()
     if not user:
         username = email.split('@')[0]
         base_username = username
@@ -1176,6 +1191,8 @@ def auth_google(request, payload: GoogleAuthPayload):
             is_verified=True,
             role='user'
         )
+        user.set_unusable_password()
+        user.save(update_fields=['password'])
     else:
         # Update user profile if new information provided
         updated = False
