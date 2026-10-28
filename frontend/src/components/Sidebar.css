@@ -1,6 +1,7 @@
 /* ==============================================================================
-   SIMATRIX COMPACT DARK SIDEBAR STYLES
-   #151819 background, subtle #303537 border, clean typography
+   SIMATRIX COMPACT SIDEBAR STYLES
+   Clean Red & White Theme inspired by iLovePDF
+   Sidebar: #F8F9FA, Active link: #FFF0EF bg & #E53935 text
    ============================================================================== */
 
 .app-sidebar {
@@ -48,7 +49,7 @@
   width: 28px;
   height: 28px;
   border-radius: var(--radius-xs);
-  background-color: var(--color-gold);
+  background-color: var(--color-primary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -58,7 +59,7 @@
 .brand-initial {
   font-size: 0.95rem;
   font-weight: 800;
-  color: var(--color-primary-text);
+  color: #FFFFFF;
   line-height: 1;
 }
 
@@ -80,7 +81,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--color-gold);
+  color: var(--color-primary);
 }
 
 .sidebar-close-btn {
@@ -107,17 +108,18 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.45rem 0.65rem;
-  background-color: var(--color-bg);
+  background-color: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   color: var(--color-text-muted);
   font-size: 0.82rem;
   cursor: pointer;
-  transition: border-color var(--transition-fast), color var(--transition-fast);
+  transition: border-color var(--transition-fast), color var(--transition-fast), background-color var(--transition-fast);
 }
 
 .sidebar-search-btn:hover {
-  border-color: var(--color-gold);
+  border-color: #F2B8B5;
+  background-color: #FFF8F7;
   color: var(--color-text);
 }
 
@@ -138,7 +140,7 @@
 .search-btn-kbd {
   font-size: 0.65rem;
   font-family: var(--font-family-mono);
-  background: var(--color-surface);
+  background: var(--color-bg);
   border: 1px solid var(--color-border);
   padding: 0.1rem 0.35rem;
   border-radius: 4px;
@@ -176,28 +178,32 @@
   display: flex;
   align-items: center;
   gap: 0.65rem;
-  padding: 0.45rem 0.65rem;
+  padding: 0.48rem 0.7rem;
   border-radius: var(--radius-xs);
   color: var(--color-text-secondary);
   text-decoration: none;
-  font-size: 0.85rem;
+  font-size: 0.86rem;
   font-weight: 500;
   transition: all var(--transition-fast);
 }
 
 .sidebar-link:hover {
-  background-color: var(--color-surface-hover);
-  color: var(--color-heading);
+  background-color: #FFF8F7;
+  color: var(--color-primary);
+}
+
+.sidebar-link:hover .link-fa-icon {
+  color: var(--color-primary);
 }
 
 .sidebar-link.active {
-  background-color: rgba(216, 177, 90, 0.12);
-  color: var(--color-gold);
-  font-weight: 600;
+  background-color: #FFF0EF;
+  color: var(--color-primary);
+  font-weight: 700;
 }
 
 .sidebar-link.active .link-fa-icon {
-  color: var(--color-gold);
+  color: var(--color-primary);
 }
 
 .link-fa-icon {
@@ -206,6 +212,7 @@
   text-align: center;
   flex-shrink: 0;
   color: var(--color-text-muted);
+  transition: color var(--transition-fast);
 }
 
 .link-text {
@@ -217,13 +224,13 @@
 
 /* Section Dividers */
 .sidebar-section-divider {
-  padding: 0.65rem 0.65rem 0.25rem;
+  padding: 0.75rem 0.65rem 0.3rem;
 }
 
 .section-label {
-  font-size: 0.65rem;
+  font-size: 0.66rem;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.07em;
   color: var(--color-text-muted);
   text-transform: uppercase;
 }
@@ -245,24 +252,34 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.45rem 0.65rem;
+  padding: 0.48rem 0.7rem;
   border-radius: var(--radius-xs);
   border: none;
   background: transparent;
   color: var(--color-text-secondary);
-  font-size: 0.85rem;
+  font-size: 0.86rem;
   font-weight: 500;
   cursor: pointer;
   transition: all var(--transition-fast);
 }
 
 .sidebar-cat-btn:hover {
-  background-color: var(--color-surface-hover);
-  color: var(--color-heading);
+  background-color: #FFF8F7;
+  color: var(--color-primary);
+}
+
+.sidebar-cat-btn:hover .link-fa-icon,
+.sidebar-cat-btn:hover .cat-chevron {
+  color: var(--color-primary);
 }
 
 .sidebar-cat-btn.child-active {
-  color: var(--color-heading);
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.sidebar-cat-btn.child-active .link-fa-icon {
+  color: var(--color-primary);
 }
 
 .cat-btn-left {
@@ -278,22 +295,23 @@
 .cat-chevron {
   font-size: 0.68rem;
   color: var(--color-text-muted);
+  transition: color var(--transition-fast);
 }
 
 .sidebar-submenu {
   list-style: none;
-  margin: 0.15rem 0 0.3rem 1.15rem;
+  margin: 0.15rem 0 0.35rem 1.15rem;
   padding: 0.15rem 0 0.15rem 0.55rem;
-  border-left: 1px solid var(--color-border);
+  border-left: 2px solid var(--color-border);
   display: flex;
   flex-direction: column;
-  gap: 0.1rem;
+  gap: 0.12rem;
 }
 
 .sidebar-sublink {
   display: flex;
   align-items: center;
-  padding: 0.35rem 0.55rem;
+  padding: 0.38rem 0.6rem;
   border-radius: var(--radius-xs);
   color: var(--color-text-secondary);
   text-decoration: none;
@@ -303,14 +321,14 @@
 }
 
 .sidebar-sublink:hover {
-  background-color: var(--color-surface-hover);
-  color: var(--color-heading);
+  background-color: #FFF8F7;
+  color: var(--color-primary);
 }
 
 .sidebar-sublink.active {
-  background-color: rgba(216, 177, 90, 0.1);
-  color: var(--color-gold);
-  font-weight: 600;
+  background-color: #FFF0EF;
+  color: var(--color-primary);
+  font-weight: 700;
 }
 
 .sublink-text {
@@ -330,7 +348,7 @@
 .sidebar-backdrop {
   position: fixed;
   inset: 0;
-  background-color: rgba(0, 0, 0, 0.65);
+  background-color: rgba(0, 0, 0, 0.5);
   z-index: 999;
 }
 

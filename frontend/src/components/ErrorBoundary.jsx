@@ -54,11 +54,11 @@ export default class ErrorBoundary extends React.Component {
               height: '64px',
               margin: '0 auto 1.5rem',
               borderRadius: '50%',
-              backgroundColor: 'rgba(255, 194, 71, 0.1)',
+              backgroundColor: '#FFF0EF',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#FFC247',
+              color: '#E53935',
               fontSize: '1.75rem'
             }}>
               <FontAwesomeIcon icon={faTriangleExclamation} />
@@ -92,7 +92,7 @@ export default class ErrorBoundary extends React.Component {
                 marginBottom: '1.75rem',
                 fontSize: '0.82rem',
                 fontFamily: 'monospace',
-                color: '#E8AA26',
+                color: '#EF5350',
                 overflowX: 'auto'
               }}>
                 {this.state.error.toString()}
@@ -113,8 +113,8 @@ export default class ErrorBoundary extends React.Component {
                   alignItems: 'center',
                   gap: '0.5rem',
                   padding: '0.75rem 1.5rem',
-                  backgroundColor: '#FFC247',
-                  color: '#071116',
+                  backgroundColor: '#E53935',
+                  color: '#FFFFFF',
                   border: 'none',
                   borderRadius: '10px',
                   fontWeight: 600,
@@ -122,8 +122,8 @@ export default class ErrorBoundary extends React.Component {
                   cursor: 'pointer',
                   transition: 'background 0.2s'
                 }}
-                onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#E8AA26'}
-                onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#FFC247'}
+                onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#C62828'}
+                onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#E53935'}
               >
                 <FontAwesomeIcon icon={faRotateRight} /> Reload Page
               </button>

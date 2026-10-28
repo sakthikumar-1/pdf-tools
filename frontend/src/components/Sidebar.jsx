@@ -31,9 +31,9 @@ export default function Sidebar({
 
   // Track which category accordion is open in sidebar
   const [openCategories, setOpenCategories] = useState({
-    'create-convert': false,
+    'convert-pdf': false,
     'organize-pdf': false,
-    'optimize-compress': true,
+    'compress-pdf': false,
     'security-protect': false,
     'ai-tools': false
   });

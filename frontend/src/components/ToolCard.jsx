@@ -21,8 +21,8 @@ export default function ToolCard({
         <div 
           className="tool-icon-badge" 
           style={{ 
-            backgroundColor: iconColor ? `${iconColor}18` : 'rgba(255, 194, 71, 0.15)',
-            color: iconColor || 'var(--color-gold)'
+            backgroundColor: iconColor ? `${iconColor}18` : 'rgba(229, 57, 53, 0.12)',
+            color: iconColor || 'var(--color-primary)'
           }}
         >
           {icon && <FontAwesomeIcon icon={icon} className="tool-icon-glyph" />}
@@ -43,6 +43,11 @@ export default function ToolCard({
       <div className="tool-card-body">
         <h3 className="tool-card-title">{title}</h3>
         <p className="tool-card-desc">{description}</p>
+      </div>
+
+      <div className="tool-card-footer">
+        <span className="tool-card-link-text">Open tool</span>
+        <FontAwesomeIcon icon={faArrowRight} className="tool-card-arrow-icon" />
       </div>
     </Link>
   );

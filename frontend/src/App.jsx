@@ -23,17 +23,17 @@ function PageLoader() {
       alignItems: 'center',
       justifyContent: 'center',
       gap: '1rem',
-      color: '#FFC247'
+      color: '#E53935'
     }}>
       <div style={{
         width: '40px',
         height: '40px',
-        border: '3px solid rgba(255, 194, 71, 0.2)',
-        borderTopColor: '#FFC247',
+        border: '3px solid rgba(229, 57, 53, 0.2)',
+        borderTopColor: '#E53935',
         borderRadius: '50%',
         animation: 'spin 0.8s linear infinite'
       }} />
-      <span style={{ fontSize: '0.85rem', color: 'rgba(245, 240, 231, 0.7)' }}>Loading tool...</span>
+      <span style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)' }}>Loading tool...</span>
       <style>{`
         @keyframes spin {
           to { transform: rotate(360deg); }

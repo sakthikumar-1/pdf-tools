@@ -1,6 +1,7 @@
 /* ==============================================================================
    SIMATRIX COMPACT UPLOAD BOX STYLES
-   #1C2022 background, subtle #303537 dashed border, muted gold accents
+   Clean Red & White Theme inspired by iLovePDF
+   Hover/Drag: #FFF8F7 background, #F2B8B5 dashed border, #E53935 button
    ============================================================================== */
 
 .upload-box-wrapper {
@@ -10,7 +11,7 @@
 .upload-box {
   width: 100%;
   min-height: 280px;
-  border: 1.5px dashed var(--color-border);
+  border: 2px dashed var(--color-border);
   border-radius: var(--radius-sm);
   background-color: var(--color-surface);
   padding: 2.25rem 1.5rem;
@@ -21,13 +22,19 @@
   text-align: center;
   cursor: pointer;
   outline: none;
-  transition: border-color var(--transition-fast), background-color var(--transition-fast);
+  transition: border-color var(--transition-fast), background-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .upload-box:hover,
 .upload-box.dragging {
-  border-color: var(--color-gold);
-  background-color: var(--color-surface-hover);
+  border-color: #F2B8B5;
+  background-color: #FFF8F7;
+  box-shadow: 0 4px 16px rgba(229, 57, 53, 0.05);
+}
+
+.upload-box:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
 .upload-box.has-error {
@@ -40,21 +47,27 @@
 }
 
 .upload-icon-circle {
-  width: 48px;
-  height: 48px;
+  width: 52px;
+  height: 52px;
   border-radius: var(--radius-sm);
-  background-color: var(--color-surface-hover);
-  color: var(--color-gold);
+  background-color: #FFF0EF;
+  color: var(--color-primary);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.4rem;
+  font-size: 1.45rem;
   margin-bottom: 1rem;
+  transition: transform var(--transition-fast);
+}
+
+.upload-box:hover .upload-icon-circle,
+.upload-box.dragging .upload-icon-circle {
+  transform: scale(1.06);
 }
 
 .upload-icon-fa {
-  width: 1.4rem;
-  height: 1.4rem;
+  width: 1.45rem;
+  height: 1.45rem;
 }
 
 .upload-box-content {
@@ -62,14 +75,14 @@
 }
 
 .upload-main-title {
-  font-size: 1.05rem;
+  font-size: 1.1rem;
   font-weight: 700;
   color: var(--color-heading);
   margin-bottom: 0.25rem;
 }
 
 .upload-subtitle {
-  font-size: 0.85rem;
+  font-size: 0.88rem;
   color: var(--color-text-secondary);
 }
 
@@ -77,24 +90,32 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.55rem 1.35rem;
-  font-size: 0.88rem;
+  padding: 0.65rem 1.6rem;
+  font-size: 0.92rem;
   font-weight: 700;
   border-radius: var(--radius-sm);
-  background-color: var(--color-gold);
-  color: var(--color-primary-text);
-  border: none;
+  background-color: var(--color-primary);
+  color: #FFFFFF;
+  border: 1px solid var(--color-primary);
   cursor: pointer;
   margin-bottom: 0.85rem;
-  transition: background-color var(--transition-fast);
+  transition: background-color var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast);
+  box-shadow: 0 2px 6px rgba(229, 57, 53, 0.2);
 }
 
 .upload-choose-btn:hover {
-  background-color: var(--color-gold-hover);
+  background-color: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
+  transform: translateY(-1px);
+}
+
+.upload-choose-btn:active {
+  background-color: var(--color-primary-active);
+  border-color: var(--color-primary-active);
 }
 
 .upload-limit-text {
-  font-size: 0.76rem;
+  font-size: 0.78rem;
   color: var(--color-text-muted);
 }
 

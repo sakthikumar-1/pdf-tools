@@ -75,14 +75,14 @@
   width: 48px;
   height: 48px;
   border-radius: var(--radius-sm);
-  background-color: var(--color-gold);
-  color: #071116;
+  background-color: var(--color-primary);
+  color: #FFFFFF;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   font-size: 1.4rem;
   margin-bottom: 1rem;
-  box-shadow: 0 4px 12px rgba(255, 194, 71, 0.3);
+  box-shadow: 0 4px 12px rgba(229, 57, 53, 0.25);
 }
 
 .login-modal-title {
@@ -123,8 +123,8 @@
 }
 
 .google-signin-btn:hover {
-  border-color: var(--color-gold);
-  background-color: var(--color-surface-hover);
+  border-color: #F2B8B5;
+  background-color: #FFF8F7;
   transform: translateY(-1px);
   box-shadow: var(--shadow-md);
 }
@@ -142,7 +142,7 @@
 }
 
 .callout-icon {
-  color: var(--color-gold);
+  color: var(--color-primary);
   font-size: 0.95rem;
   flex-shrink: 0;
   margin-top: 0.1rem;
@@ -178,7 +178,7 @@
 }
 
 .continue-free-btn:hover {
-  color: var(--color-gold);
+  color: var(--color-primary);
 }
 
 .login-divider {
@@ -219,7 +219,7 @@
 }
 
 .login-text-input:focus {
-  border-color: var(--color-gold);
+  border-color: var(--color-primary);
 }
 
 .login-submit-btn {

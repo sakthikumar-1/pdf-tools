@@ -24,12 +24,12 @@
   width: 56px;
   height: 56px;
   border-radius: 14px;
-  background-color: rgba(139, 92, 246, 0.15);
-  border: 1px solid rgba(139, 92, 246, 0.3);
+  background-color: #FFF0EF;
+  border: 1px solid #F2B8B5;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #8B5CF6;
+  color: var(--color-primary);
   font-size: 1.5rem;
   flex-shrink: 0;
   box-shadow: var(--shadow-sm);
@@ -447,7 +447,7 @@
 
 .mode-icon-circle.active {
   background: var(--color-primary);
-  color: #071116;
+  color: #FFFFFF;
   border-color: var(--color-primary);
 }
 

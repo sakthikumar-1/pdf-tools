@@ -1,5 +1,5 @@
 /* ==============================================================================
-   SIMATRIX COMPACT TOPBAR STYLES (50px Height, Dark Charcoal)
+   SIMATRIX COMPACT TOPBAR STYLES (50px Height, Clean Red & White Theme)
    ============================================================================== */
 
 .top-nav-bar {
@@ -65,7 +65,7 @@
 }
 
 .breadcrumb-link-item:hover {
-  color: var(--color-gold);
+  color: var(--color-primary);
 }
 
 .breadcrumb-current-item {
@@ -117,8 +117,9 @@
 }
 
 .theme-switch-btn:hover {
-  color: var(--color-gold);
-  border-color: var(--color-gold);
+  color: var(--color-primary);
+  border-color: #F2B8B5;
+  background-color: #FFF8F7;
 }
 
 /* User Menu & Profile */
@@ -146,8 +147,8 @@
   width: 28px;
   height: 28px;
   border-radius: var(--radius-xs);
-  background-color: var(--color-gold);
-  color: var(--color-primary-text);
+  background-color: var(--color-primary);
+  color: #FFFFFF;
   font-weight: 800;
   font-size: 0.82rem;
   display: flex;
@@ -176,23 +177,30 @@
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
-  padding: 0.35rem 0.85rem;
+  padding: 0.38rem 0.9rem;
   font-size: 0.82rem;
-  font-weight: 600;
+  font-weight: 700;
   border-radius: var(--radius-xs);
-  background-color: var(--color-gold);
-  color: var(--color-primary-text);
-  border: none;
+  background-color: var(--color-primary);
+  color: #FFFFFF;
+  border: 1px solid var(--color-primary);
   cursor: pointer;
-  transition: background-color var(--transition-fast);
+  transition: background-color var(--transition-fast), border-color var(--transition-fast);
 }
 
 .sign-in-nav-btn:hover {
-  background-color: var(--color-gold-hover);
+  background-color: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
+}
+
+.sign-in-nav-btn:active {
+  background-color: var(--color-primary-active);
+  border-color: var(--color-primary-active);
 }
 
 .sign-in-icon {
   font-size: 0.78rem;
+  color: #FFFFFF;
 }
 
 /* User Dropdown */
@@ -281,8 +289,8 @@
 }
 
 .user-dropdown-link:hover {
-  background-color: var(--color-surface-hover);
-  color: var(--color-gold);
+  background-color: #FFF8F7;
+  color: var(--color-primary);
 }
 
 .user-dropdown-signout {

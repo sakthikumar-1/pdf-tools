@@ -27,7 +27,7 @@
 }
 
 .reorder-hint-icon {
-  color: var(--color-gold);
+  color: var(--color-primary);
   font-size: 0.9rem;
   flex-shrink: 0;
 }
@@ -68,28 +68,29 @@
 }
 
 .selected-file-card:hover {
-  border-color: var(--color-gold);
+  border-color: #F2B8B5;
+  background-color: #FFF8F7;
 }
 
 /* Dragging & Drop Target States */
 .selected-file-card.is-dragging {
   opacity: 0.45;
-  border: 1px dashed var(--color-gold);
+  border: 1px dashed var(--color-primary);
   transform: scale(0.99);
 }
 
 .selected-file-card.drag-over-target {
-  border: 2px solid var(--color-gold) !important;
-  background-color: var(--color-surface-hover);
+  border: 2px solid var(--color-primary) !important;
+  background-color: #FFF0EF;
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);
 }
 
 /* Double-Click Move Selection State */
 .selected-file-card.selected-for-move {
-  border: 2px solid var(--color-gold) !important;
-  background-color: var(--color-surface-hover);
-  box-shadow: 0 0 0 3px rgba(216, 177, 90, 0.2);
+  border: 2px solid var(--color-primary) !important;
+  background-color: #FFF0EF;
+  box-shadow: 0 0 0 3px rgba(229, 57, 53, 0.2);
   cursor: pointer;
 }
 
@@ -113,13 +114,13 @@
   width: 44px;
   height: 44px;
   border-radius: var(--radius-sm);
-  background-color: var(--color-surface-inset);
-  border: 1px solid var(--color-border);
+  background-color: #FFF0EF;
+  border: 1px solid #F2B8B5;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: var(--color-gold);
+  color: var(--color-primary);
   flex-shrink: 0;
   position: relative;
 }
@@ -165,8 +166,8 @@
   letter-spacing: 0.04em;
   padding: 0.15rem 0.5rem;
   border-radius: 100px;
-  background-color: var(--color-gold);
-  color: #071116;
+  background-color: var(--color-primary);
+  color: #FFFFFF;
 }
 
 .selected-file-meta {
@@ -207,7 +208,7 @@
 }
 
 .reorder-arrow-btn {
-  background: var(--color-surface-inset);
+  background: var(--color-surface);
   border: 1px solid var(--color-border);
   color: var(--color-text-secondary);
   width: 24px;
@@ -223,9 +224,9 @@
 }
 
 .reorder-arrow-btn:hover:not(:disabled) {
-  border-color: var(--color-gold);
-  color: var(--color-gold);
-  background-color: var(--color-surface-hover);
+  border-color: #F2B8B5;
+  color: var(--color-primary);
+  background-color: #FFF0EF;
 }
 
 .reorder-arrow-btn:disabled {

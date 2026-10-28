@@ -502,7 +502,7 @@ export default function GenericTool({
                       Pages to Extract:
                     </label>
                     {docPageCount !== null && (
-                      <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--color-primary)', background: 'rgba(37, 99, 235, 0.1)', padding: '0.15rem 0.55rem', borderRadius: '6px' }}>
+                      <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--color-primary)', background: 'var(--color-primary-light)', padding: '0.15rem 0.55rem', borderRadius: '6px' }}>
                         Total Pages: {docPageCount}
                       </span>
                     )}
@@ -651,7 +651,7 @@ export default function GenericTool({
                     </div>
                   </div>
 
-                  <div style={{ marginTop: '1rem', padding: '0.75rem 1rem', background: 'rgba(59, 130, 246, 0.08)', border: '1px solid rgba(59, 130, 246, 0.2)', borderRadius: '8px', fontSize: '0.85rem', color: 'var(--color-text-secondary)', lineHeight: 1.5 }}>
+                  <div style={{ marginTop: '1rem', padding: '0.75rem 1rem', background: 'var(--color-primary-light)', border: '1px solid var(--color-primary-border)', borderRadius: '8px', fontSize: '0.85rem', color: 'var(--color-text-secondary)', lineHeight: 1.5 }}>
                     <strong style={{ color: 'var(--color-primary)' }}>Layout Note:</strong> Standard PDF text, titles, and data tables are extracted into editable PowerPoint elements. For scanned PDFs or documents containing intricate vector artwork, visual slide rendering preserves the exact visual appearance.
                   </div>
                 </div>
@@ -1082,7 +1082,7 @@ export default function GenericTool({
                 /* EDIT METADATA OPTIONS */
                 <div className="utility-options-form">
                   {isReadingMeta && (
-                    <div style={{ padding: '0.5rem', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '6px', fontSize: '0.82rem', color: 'var(--color-primary)' }}>
+                    <div style={{ padding: '0.5rem', background: 'var(--color-primary-light)', borderRadius: '6px', fontSize: '0.82rem', color: 'var(--color-primary)' }}>
                       Reading existing PDF properties...
                     </div>
                   )}

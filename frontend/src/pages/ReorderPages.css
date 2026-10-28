@@ -1,6 +1,6 @@
 /* ==============================================================================
    SIMATRIX COMPACT REORDER PAGES STYLES
-   #111416 background, #1C2022 surface, #303537 borders
+   Clean Red & White Theme inspired by iLovePDF
    ============================================================================== */
 
 .reorder-pages-container {
@@ -27,12 +27,12 @@
   width: 44px;
   height: 44px;
   border-radius: var(--radius-sm);
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-border);
+  background-color: #FFF0EF;
+  border: 1px solid #F2B8B5;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--color-gold);
+  color: var(--color-primary);
   font-size: 1.25rem;
   flex-shrink: 0;
 }
@@ -90,7 +90,8 @@
 }
 
 .reorder-page-card:hover {
-  border-color: var(--color-gold);
+  border-color: #F2B8B5;
+  background-color: #FFF8F7;
 }
 
 .reorder-page-card.dragging {
@@ -99,8 +100,8 @@
 }
 
 .reorder-page-card.drag-over {
-  border-color: var(--color-gold);
-  background-color: var(--color-surface-hover);
+  border-color: var(--color-primary);
+  background-color: #FFF0EF;
 }
 
 .reorder-page-badge {

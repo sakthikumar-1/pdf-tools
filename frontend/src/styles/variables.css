@@ -3,21 +3,29 @@
   --font-family-primary: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-family-mono: 'JetBrains Mono', 'Fira Code', monospace;
 
-  /* Universal Brand Identity Colors - Muted Gold Accent */
-  --color-gold: #D8B15A;
-  --color-gold-hover: #E5C87F;
-  --color-gold-active: #C29B47;
-  --color-gold-muted: rgba(216, 177, 90, 0.12);
-  --color-gold-border: rgba(216, 177, 90, 0.3);
+  /* Universal Brand Identity Colors - Modern High-Contrast Red (iLovePDF style) */
+  --color-primary: #E53935;
+  --color-primary-hover: #C62828;
+  --color-primary-active: #B71C1C;
+  --color-primary-light: #FFF0EF;
+  --color-primary-border: #F2B8B5;
+  --color-primary-text: #FFFFFF;
+
+  /* Legacy variable alias mapped to new primary red so any remaining variable references resolve cleanly */
+  --color-gold: #E53935;
+  --color-gold-hover: #C62828;
+  --color-gold-active: #B71C1C;
+  --color-gold-muted: #FFF0EF;
+  --color-gold-border: #F2B8B5;
 
   /* Status Colors */
-  --color-success: #10B981;
-  --color-success-bg: rgba(16, 185, 129, 0.1);
-  --color-success-border: rgba(16, 185, 129, 0.25);
+  --color-success: #16A34A;
+  --color-success-bg: rgba(22, 163, 74, 0.1);
+  --color-success-border: rgba(22, 163, 74, 0.25);
   
-  --color-error: #EF4444;
-  --color-error-bg: rgba(239, 68, 68, 0.1);
-  --color-error-border: rgba(239, 68, 68, 0.25);
+  --color-error: #DC2626;
+  --color-error-bg: rgba(220, 38, 38, 0.1);
+  --color-error-border: rgba(220, 38, 38, 0.25);
 
   --color-warning: #F59E0B;
   --color-warning-bg: rgba(245, 158, 11, 0.1);
@@ -35,108 +43,108 @@
 
   /* Standard Transitions */
   --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-normal: 220ms cubic-bezier(0.16, 1, 0.3, 1);
-  --transition-slow: 350ms cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-normal: 200ms cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-slow: 300ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* ==============================================================================
-   CLEAN WHITE WORKING THEME (Default Application Experience)
+   CLEAN RED & WHITE WORKING THEME (Default Application Experience)
    ============================================================================== */
 :root, [data-theme="light"], :root:not([data-theme="dark"]) {
   color-scheme: light;
 
   /* Backgrounds & Surfaces */
   --color-bg: #FFFFFF;               /* Main background: #FFFFFF */
-  --color-bg-alt: #F8FAFC;           /* Inset / Alt surfaces */
-  --color-sidebar-bg: #FFFFFF;       /* Sidebar Navigation: #FFFFFF */
+  --color-bg-alt: #F8F9FA;           /* Inset / Alt surfaces */
+  --color-sidebar-bg: #F8F9FA;       /* Sidebar background: #F8F9FA */
   --color-header-bg: #FFFFFF;        /* Top Navigation Header: #FFFFFF */
   --color-surface: #FFFFFF;          /* Cards and panels: #FFFFFF */
-  --color-surface-hover: #F1F5F9;    /* Hover surfaces: #F1F5F9 */
-  --color-surface-active: #E2E8F0;
+  --color-surface-hover: #FFF8F7;    /* Card hover background: #FFF8F7 */
+  --color-surface-active: #FFF0EF;   /* Soft red background: #FFF0EF */
   --color-surface-card: #FFFFFF;     /* Cards: #FFFFFF */
-  --color-surface-card-hover: #F8FAFC;
-  --color-surface-inset: #F8FAFC;
+  --color-surface-card-hover: #FFF8F7;
+  --color-surface-inset: #F8F9FA;
 
   /* Borders */
-  --color-border: #E2E8F0;           /* Borders: #E2E8F0 */
-  --color-border-subtle: #F1F5F9;
-  --color-border-hover: #CBD5E1;
-  --color-border-focus: #D8B15A;
+  --color-border: #E5E7EB;           /* Border: #E5E7EB */
+  --color-border-subtle: #F3F4F6;
+  --color-border-hover: #F2B8B5;     /* Border hover: #F2B8B5 */
+  --color-border-focus: #E53935;
 
-  /* Primary Brand Action (Retaining Muted Gold) */
-  --color-primary: #D8B15A;
-  --color-primary-hover: #E5C87F;
-  --color-primary-active: #C29B47;
-  --color-primary-text: #17212B;     /* Readable dark text on gold buttons */
-  --color-primary-light: rgba(216, 177, 90, 0.12);
-  --color-primary-border: rgba(216, 177, 90, 0.3);
+  /* Primary Brand Action (High-Contrast Red) */
+  --color-primary: #E53935;
+  --color-primary-hover: #C62828;
+  --color-primary-active: #B71C1C;
+  --color-primary-text: #FFFFFF;     /* White text on red buttons */
+  --color-primary-light: #FFF0EF;
+  --color-primary-border: #F2B8B5;
 
   /* Typography */
-  --color-heading: #17212B;          /* Primary text: #17212B */
-  --color-text: #17212B;             /* Primary text: #17212B */
+  --color-heading: #17212B;          /* Main text: #17212B */
+  --color-text: #17212B;             /* Main text: #17212B */
   --color-text-secondary: #64748B;   /* Secondary text: #64748B */
-  --color-text-muted: #94A3B8;       /* Subtle text: #94A3B8 */
+  --color-text-muted: #94A3B8;       /* Muted text: #94A3B8 */
   --color-text-inverse: #FFFFFF;
 
   /* Elevation Shadows - Crisp & Clean on White */
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
-  --shadow-lg: 0 10px 24px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.04);
-  --shadow-dropdown: 0 12px 28px rgba(0, 0, 0, 0.1), 0 0 0 1px #E2E8F0;
+  --shadow-md: 0 4px 12px rgba(229, 57, 53, 0.06), 0 1px 3px rgba(0, 0, 0, 0.03);
+  --shadow-lg: 0 10px 24px rgba(229, 57, 53, 0.1), 0 2px 6px rgba(0, 0, 0, 0.04);
+  --shadow-dropdown: 0 12px 28px rgba(0, 0, 0, 0.08), 0 0 0 1px #E5E7EB;
 
   /* Focus Indicator */
-  --focus-ring: 0 0 0 2px rgba(216, 177, 90, 0.4);
+  --focus-ring: 0 0 0 2px rgba(229, 57, 53, 0.35);
   --logo-text: #17212B;
-  --logo-accent: #D8B15A;
+  --logo-accent: #E53935;
 }
 
 /* ==============================================================================
-   DEEP MIDNIGHT BLACK THEME (Optional Dark Mode)
+   DEEP MIDNIGHT THEME (Optional Dark Mode with High-Contrast Red)
    ============================================================================== */
 [data-theme="dark"] {
   color-scheme: dark;
 
   /* Backgrounds & Surfaces */
-  --color-bg: #071116;               /* Main background */
-  --color-bg-alt: #0B161C;           /* Secondary / Sidebar background */
-  --color-sidebar-bg: #0B161C;       /* Sidebar */
-  --color-header-bg: #071116;        /* Header */
-  --color-surface: #101B21;          /* Cards & surfaces */
-  --color-surface-hover: #17252C;    /* Elevated surfaces */
-  --color-surface-active: #1F3039;
-  --color-surface-card: #101B21;     /* Cards */
-  --color-surface-card-hover: #17252C;
-  --color-surface-inset: #0B161C;
+  --color-bg: #0F141C;               /* Main background */
+  --color-bg-alt: #161D26;           /* Secondary / Sidebar background */
+  --color-sidebar-bg: #161D26;       /* Sidebar */
+  --color-header-bg: #0F141C;        /* Header */
+  --color-surface: #1A222D;          /* Cards & surfaces */
+  --color-surface-hover: #222C3A;    /* Elevated surfaces */
+  --color-surface-active: #2C3849;
+  --color-surface-card: #1A222D;     /* Cards */
+  --color-surface-card-hover: #222C3A;
+  --color-surface-inset: #161D26;
 
   /* Borders */
-  --color-border: #1E2D34;
-  --color-border-subtle: #142127;
-  --color-border-hover: #2E414A;
-  --color-border-focus: #D8B15A;
+  --color-border: #283546;
+  --color-border-subtle: #1E2937;
+  --color-border-hover: #E53935;
+  --color-border-focus: #E53935;
 
-  /* Primary Brand Action (Muted Gold) */
-  --color-primary: #D8B15A;
-  --color-primary-hover: #E5C87F;
-  --color-primary-active: #C29B47;
-  --color-primary-text: #071116;     /* Dark text on gold buttons */
-  --color-primary-light: rgba(216, 177, 90, 0.12);
-  --color-primary-border: rgba(216, 177, 90, 0.25);
+  /* Primary Brand Action (High-Contrast Red) */
+  --color-primary: #E53935;
+  --color-primary-hover: #EF5350;
+  --color-primary-active: #C62828;
+  --color-primary-text: #FFFFFF;     /* White text on red buttons */
+  --color-primary-light: rgba(229, 57, 53, 0.15);
+  --color-primary-border: rgba(229, 57, 53, 0.35);
 
   /* Typography */
-  --color-heading: #F5F0E7;          /* Primary text */
-  --color-text: #F5F0E7;             /* Primary text */
-  --color-text-secondary: #9EACB4;   /* Secondary text */
-  --color-text-muted: #657782;       /* Muted text */
-  --color-text-inverse: #071116;
+  --color-heading: #F8FAFC;          /* Primary text */
+  --color-text: #F1F5F9;             /* Primary text */
+  --color-text-secondary: #94A3B8;   /* Secondary text */
+  --color-text-muted: #64748B;       /* Muted text */
+  --color-text-inverse: #0F141C;
 
   /* Elevation Shadows */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
   --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.5);
   --shadow-lg: 0 8px 28px rgba(0, 0, 0, 0.65);
-  --shadow-dropdown: 0 12px 28px rgba(0, 0, 0, 0.75), 0 0 0 1px #1E2D34;
+  --shadow-dropdown: 0 12px 28px rgba(0, 0, 0, 0.75), 0 0 0 1px #283546;
 
   /* Focus Indicator */
-  --focus-ring: 0 0 0 2px rgba(216, 177, 90, 0.4);
-  --logo-text: #F5F0E7;
-  --logo-accent: #D8B15A;
+  --focus-ring: 0 0 0 2px rgba(229, 57, 53, 0.5);
+  --logo-text: #F8FAFC;
+  --logo-accent: #E53935;
 }

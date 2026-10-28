@@ -1,6 +1,6 @@
 /* ==============================================================================
    SIMATRIX COMPACT PDF TO JPG STYLES
-   #111416 background, #1C2022 surface, #303537 borders
+   Clean Red & White Theme inspired by iLovePDF
    ============================================================================== */
 
 .tool-page-wrapper {
@@ -26,12 +26,12 @@
   width: 44px;
   height: 44px;
   border-radius: var(--radius-sm);
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-border);
+  background-color: #FFF0EF;
+  border: 1px solid #F2B8B5;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #0EA5E9;
+  color: var(--color-primary);
   font-size: 1.25rem;
   flex-shrink: 0;
 }
@@ -92,7 +92,7 @@
 }
 
 .options-icon {
-  color: var(--color-gold);
+  color: var(--color-primary);
 }
 
 .options-title {
@@ -119,12 +119,13 @@
 }
 
 .quality-card:hover {
-  border-color: var(--color-border-hover);
+  border-color: #F2B8B5;
+  background-color: #FFF8F7;
 }
 
 .quality-card.active {
-  border-color: var(--color-gold);
-  background-color: rgba(216, 177, 90, 0.08);
+  border-color: var(--color-primary);
+  background-color: #FFF0EF;
 }
 
 .quality-radio {
@@ -143,9 +144,9 @@
 }
 
 .quality-card.active .quality-radio {
-  border-color: var(--color-gold);
-  background-color: var(--color-gold);
-  color: var(--color-primary-text);
+  border-color: var(--color-primary);
+  background-color: var(--color-primary);
+  color: #FFFFFF;
 }
 
 .quality-text {

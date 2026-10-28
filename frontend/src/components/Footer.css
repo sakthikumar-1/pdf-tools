@@ -47,6 +47,22 @@
   color: var(--color-heading);
 }
 
+.brand-icon-box {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-xs);
+  background-color: var(--color-primary);
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+}
+
+.brand-sub {
+  color: var(--color-primary);
+}
+
 .footer-tagline {
   font-size: 0.875rem;
   line-height: 1.6;
@@ -70,7 +86,7 @@
 }
 
 .highlight-icon {
-  color: var(--color-gold);
+  color: var(--color-primary);
   font-size: 0.75rem;
 }
 
@@ -98,7 +114,7 @@
 }
 
 .footer-nav-list a:hover {
-  color: var(--color-gold);
+  color: var(--color-primary);
 }
 
 .footer-security-card {
@@ -113,7 +129,7 @@
   display: block;
   font-size: 0.75rem;
   font-weight: 700;
-  color: var(--color-gold);
+  color: var(--color-primary);
   margin-bottom: 0.35rem;
 }
 
@@ -152,7 +168,7 @@
 }
 
 .footer-bottom-links a:hover {
-  color: var(--color-gold);
+  color: var(--color-primary);
 }
 
 .dot-sep {

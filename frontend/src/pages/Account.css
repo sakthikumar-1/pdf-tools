@@ -49,8 +49,8 @@
 }
 
 .account-tab-btn.active {
-  background-color: var(--color-gold);
-  color: var(--color-primary-text);
+  background-color: var(--color-primary);
+  color: #FFFFFF;
   font-weight: 700;
 }
 
@@ -94,8 +94,8 @@
   width: 56px;
   height: 56px;
   border-radius: var(--radius-xs);
-  background-color: var(--color-gold);
-  color: var(--color-primary-text);
+  background-color: var(--color-primary);
+  color: #FFFFFF;
   font-weight: 800;
   font-size: 1.5rem;
   display: flex;
@@ -226,8 +226,8 @@
   gap: 0.55rem;
   padding: 0.55rem 1rem;
   border-radius: var(--radius-xs);
-  background-color: var(--color-gold);
-  color: var(--color-primary-text);
+  background-color: var(--color-primary);
+  color: #FFFFFF;
   font-size: 0.88rem;
   font-weight: 700;
   text-decoration: none;
@@ -339,7 +339,7 @@
 }
 
 .toggle-switch.active {
-  background-color: var(--color-gold);
+  background-color: var(--color-primary);
 }
 
 .toggle-thumb {
