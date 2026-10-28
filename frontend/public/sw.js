@@ -1,11 +1,10 @@
-const CACHE_NAME = 'simatrix-pdf-cache-v4';
+const CACHE_NAME = 'simatrix-pdf-cache-v5';
 
-// Static assets to precache immediately on install
+// Fast critical assets to precache immediately on install (lightweight only)
 const PRECACHE_ASSETS = [
   '/',
   '/index.html',
-  '/favicon.svg',
-  '/qpdf.wasm'
+  '/favicon.svg'
 ];
 
 self.addEventListener('install', (event) => {
@@ -59,11 +58,16 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 3. Static assets (assets, wasm, images, fonts): Cache First with Background Refresh
+  // 3. Static assets: Fast Cache-First
   event.respondWith(
     caches.match(request).then((cachedResponse) => {
       if (cachedResponse) {
-        // Fetch in background to update cache
+        // Hashed immutable assets (/assets/*) NEVER change: return instantly without network overhead!
+        if (url.pathname.startsWith('/assets/')) {
+          return cachedResponse;
+        }
+
+        // Only non-hashed assets (manifest, favicon) check background update
         fetch(request)
           .then((networkResponse) => {
             if (networkResponse && networkResponse.status === 200) {
@@ -72,9 +76,7 @@ self.addEventListener('fetch', (event) => {
               });
             }
           })
-          .catch(() => {
-            // Background fetch failed, continue with cached response
-          });
+          .catch(() => {});
         return cachedResponse;
       }
 
