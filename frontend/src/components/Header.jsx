@@ -12,14 +12,16 @@ import {
   faGear,
   faArrowRightToBracket,
   faCircleCheck,
-  faWifi
+  faWifi,
+  faMagnifyingGlass
 } from '@fortawesome/free-solid-svg-icons';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { TOOLS_DATA } from '../utils/toolsData';
+import SidebarToggleIcon from './SidebarToggleIcon';
 import './Header.css';
 
-export default function Header({ onToggleSidebar, onOpenAuth }) {
+export default function Header({ onToggleSidebar, onOpenAuth, onOpenSearch, isCollapsed }) {
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [isOnline, setIsOnline] = useState(() => (typeof navigator !== 'undefined' ? navigator.onLine : true));
   const [avatarError, setAvatarError] = useState(false);
@@ -108,15 +110,15 @@ export default function Header({ onToggleSidebar, onOpenAuth }) {
   return (
     <header className="top-nav-bar" role="banner">
       <div className="top-nav-left">
-        {/* Sidebar Toggle Hamburger */}
+        {/* Desktop Sidebar Toggle Button */}
         <button
           type="button"
-          className="top-nav-toggle-btn"
+          className="top-nav-toggle-btn desktop-toggle-btn"
           onClick={onToggleSidebar}
-          aria-label="Toggle navigation menu"
-          title="Toggle sidebar"
+          aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
-          <FontAwesomeIcon icon={faBars} />
+          <SidebarToggleIcon isCollapsed={isCollapsed} />
         </button>
 
         {/* Dynamic Breadcrumbs */}
@@ -147,6 +149,28 @@ export default function Header({ onToggleSidebar, onOpenAuth }) {
             <span>Offline</span>
           </span>
         )}
+
+        {/* Quick Search Button (Image 2 style) */}
+        <button
+          type="button"
+          className="header-icon-btn search-nav-btn"
+          onClick={onOpenSearch}
+          aria-label="Search tools (Ctrl+K)"
+          title="Search tools (Ctrl+K)"
+        >
+          <FontAwesomeIcon icon={faMagnifyingGlass} />
+        </button>
+
+        {/* Mobile Sidebar Toggle Button (Image 2 style: on right of topbar on mobile) */}
+        <button
+          type="button"
+          className="header-icon-btn mobile-toggle-btn"
+          onClick={onToggleSidebar}
+          aria-label="Toggle navigation menu"
+          title="Toggle menu"
+        >
+          <SidebarToggleIcon isCollapsed={isCollapsed} />
+        </button>
 
         {/* Light / Dark Theme Toggle Button */}
         <button

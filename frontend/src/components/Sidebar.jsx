@@ -18,6 +18,7 @@ import {
   faXmark
 } from '@fortawesome/free-solid-svg-icons';
 import { TOOL_CATEGORIES, TOOLS_DATA } from '../utils/toolsData';
+import SidebarToggleIcon from './SidebarToggleIcon';
 import './Sidebar.css';
 
 export default function Sidebar({
@@ -77,20 +78,25 @@ export default function Sidebar({
     <>
       {/* Mobile Backdrop */}
       {isMobileOpen && (
-        <div 
-          className="sidebar-backdrop" 
+        <div
+          className="sidebar-backdrop"
           onClick={onCloseMobile}
           aria-hidden="true"
         />
       )}
 
-      <aside 
+      <aside
         className={`app-sidebar ${isCollapsed ? 'collapsed' : ''} ${isMobileOpen ? 'mobile-open' : ''}`}
         aria-label="Application Sidebar"
       >
         {/* Brand Header */}
         <div className="sidebar-header">
-          <NavLink to="/" className="sidebar-brand" onClick={handleNavClick}>
+          <NavLink
+            to="/"
+            className="sidebar-brand"
+            onClick={handleNavClick}
+            data-tooltip={isCollapsed ? "Simatrix PDF Tools (Home)" : undefined}
+          >
             <div className="brand-logo-icon">
               <img src="/logo.png" alt="Simatrix Logo" className="brand-logo-img" />
             </div>
@@ -103,8 +109,8 @@ export default function Sidebar({
           </NavLink>
 
           {isMobileOpen && (
-            <button 
-              type="button" 
+            <button
+              type="button"
               className="sidebar-close-btn"
               onClick={onCloseMobile}
               aria-label="Close sidebar"
@@ -121,6 +127,7 @@ export default function Sidebar({
             className="sidebar-search-btn"
             onClick={onOpenSearch}
             title="Search tools (Ctrl + K)"
+            data-tooltip={isCollapsed ? "Search tools (Ctrl+K)" : undefined}
           >
             <FontAwesomeIcon icon={faMagnifyingGlass} className="search-btn-icon" />
             {!isCollapsed && (
@@ -137,23 +144,25 @@ export default function Sidebar({
           {/* Main Navigation */}
           <ul className="sidebar-menu-list">
             <li>
-              <NavLink 
-                to="/" 
+              <NavLink
+                to="/"
                 end
                 className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
                 onClick={handleNavClick}
                 title="Home Dashboard"
+                data-tooltip={isCollapsed ? "Home Dashboard" : undefined}
               >
                 <FontAwesomeIcon icon={faHouse} className="link-fa-icon" />
                 {!isCollapsed && <span className="link-text">Home</span>}
               </NavLink>
             </li>
             <li>
-              <NavLink 
-                to="/history" 
+              <NavLink
+                to="/history"
                 className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
                 onClick={handleNavClick}
                 title="Recent Files"
+                data-tooltip={isCollapsed ? "Recent Files" : undefined}
               >
                 <FontAwesomeIcon icon={faClockRotateLeft} className="link-fa-icon" />
                 {!isCollapsed && <span className="link-text">Recent Files</span>}
@@ -177,8 +186,16 @@ export default function Sidebar({
                   <button
                     type="button"
                     className={`sidebar-cat-btn ${isAnyChildActive ? 'child-active' : ''}`}
-                    onClick={(e) => toggleCategory(cat.id, e)}
+                    onClick={(e) => {
+                      if (isCollapsed && onToggleCollapse) {
+                        onToggleCollapse();
+                        setOpenCategories(prev => ({ ...prev, [cat.id]: true }));
+                      } else {
+                        toggleCategory(cat.id, e);
+                      }
+                    }}
                     title={cat.label}
+                    data-tooltip={isCollapsed ? cat.label : undefined}
                     aria-expanded={isOpen}
                   >
                     <div className="cat-btn-left">
@@ -186,9 +203,9 @@ export default function Sidebar({
                       {!isCollapsed && <span className="cat-label">{cat.label}</span>}
                     </div>
                     {!isCollapsed && (
-                      <FontAwesomeIcon 
-                        icon={isOpen ? faChevronDown : faChevronRight} 
-                        className="cat-chevron" 
+                      <FontAwesomeIcon
+                        icon={isOpen ? faChevronDown : faChevronRight}
+                        className="cat-chevron"
                       />
                     )}
                   </button>
@@ -226,6 +243,7 @@ export default function Sidebar({
                 className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
                 onClick={handleNavClick}
                 title="AI PDF Summarizer"
+                data-tooltip={isCollapsed ? "AI PDF Summarizer" : undefined}
               >
                 <FontAwesomeIcon icon={faWandMagicSparkles} className="link-fa-icon" />
                 {!isCollapsed && <span className="link-text">AI Summarizer</span>}
@@ -238,17 +256,32 @@ export default function Sidebar({
         <div className="sidebar-footer">
           <ul className="sidebar-menu-list">
             <li>
-              <NavLink 
-                to="/account" 
+              <NavLink
+                to="/account"
                 className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
                 onClick={handleNavClick}
                 title="Settings"
+                data-tooltip={isCollapsed ? "Settings" : undefined}
               >
                 <FontAwesomeIcon icon={faGear} className="link-fa-icon" />
                 {!isCollapsed && <span className="link-text">Settings</span>}
               </NavLink>
             </li>
           </ul>
+
+          {/* Expand Toggle Button in Collapsed Rail */}
+          {isCollapsed && onToggleCollapse && (
+            <button
+              type="button"
+              className="sidebar-rail-expand-btn"
+              onClick={onToggleCollapse}
+              aria-label="Expand sidebar"
+              title="Expand sidebar"
+              data-tooltip="Expand sidebar"
+            >
+              <SidebarToggleIcon isCollapsed={true} />
+            </button>
+          )}
         </div>
       </aside>
     </>

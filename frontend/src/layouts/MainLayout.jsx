@@ -36,7 +36,9 @@ export default function MainLayout({ children }) {
       <div className="main-wrapper">
         <Header 
           onToggleSidebar={handleToggleSidebar}
-          onOpenAuth={() => setAuthModalOpen(true)} 
+          onOpenAuth={() => setAuthModalOpen(true)}
+          onOpenSearch={() => setSearchModalOpen(true)}
+          isCollapsed={sidebarCollapsed}
         />
         
         <main className="main-content-area">

@@ -20,10 +20,199 @@
   user-select: none;
 }
 
-/* Collapsed Desktop State */
+/* Inline Sidebar Toggle Button */
+.sidebar-toggle-inline-btn,
+.sidebar-rail-expand-btn {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-xs);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.sidebar-rail-expand-btn {
+  margin: 0.35rem auto 0;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-sm);
+}
+
+.sidebar-toggle-inline-btn:hover,
+.sidebar-rail-expand-btn:hover {
+  background-color: var(--color-surface-hover);
+  color: var(--color-primary);
+  border-color: var(--color-border-hover);
+}
+
+/* ==============================================================================
+   COLLAPSED DESKTOP STATE (Image 1 Style — Slim Icon Rail)
+   ============================================================================== */
 .app-sidebar.collapsed {
-  width: 60px;
-  min-width: 60px;
+  width: 56px;
+  min-width: 56px;
+}
+
+.app-sidebar.collapsed .sidebar-header {
+  padding: 0;
+  justify-content: center;
+}
+
+.app-sidebar.collapsed .sidebar-brand {
+  justify-content: center;
+  width: 100%;
+  padding: 0.5rem 0;
+}
+
+.app-sidebar.collapsed .brand-logo-icon {
+  width: 32px;
+  height: 32px;
+  margin: 0 auto;
+}
+
+.app-sidebar.collapsed .sidebar-search-box {
+  padding: 0.5rem 0.35rem 0.25rem;
+  display: flex;
+  justify-content: center;
+}
+
+.app-sidebar.collapsed .sidebar-search-btn {
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+}
+
+.app-sidebar.collapsed .sidebar-scrollable {
+  padding: 0.35rem 0.25rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.app-sidebar.collapsed .sidebar-menu-list {
+  width: 100%;
+  align-items: center;
+}
+
+.app-sidebar.collapsed .sidebar-menu-list li {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.app-sidebar.collapsed .sidebar-link {
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  margin: 0.15rem auto;
+}
+
+.app-sidebar.collapsed .link-fa-icon {
+  width: auto;
+  font-size: 1.05rem;
+  margin: 0;
+}
+
+.app-sidebar.collapsed .sidebar-section-divider {
+  width: 28px;
+  height: 1px;
+  background-color: var(--color-border);
+  margin: 0.5rem auto;
+  padding: 0;
+}
+
+.app-sidebar.collapsed .sidebar-categories {
+  width: 100%;
+  align-items: center;
+}
+
+.app-sidebar.collapsed .sidebar-cat-group {
+  width: 100%;
+  align-items: center;
+}
+
+.app-sidebar.collapsed .sidebar-cat-btn {
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  margin: 0.15rem auto;
+}
+
+.app-sidebar.collapsed .cat-btn-left {
+  gap: 0;
+  justify-content: center;
+}
+
+.app-sidebar.collapsed .sidebar-footer {
+  padding: 0.5rem 0.25rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.app-sidebar.collapsed .sidebar-footer .sidebar-menu-list {
+  width: 100%;
+  align-items: center;
+}
+
+.app-sidebar.collapsed .sidebar-footer .sidebar-menu-list li {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+/* Tooltips in Collapsed Icon Rail (Image 1 style) */
+.app-sidebar.collapsed [data-tooltip] {
+  position: relative;
+}
+
+.app-sidebar.collapsed [data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: calc(100% + 10px);
+  top: 50%;
+  transform: translateY(-50%) scale(0.92);
+  background: #0F172A;
+  color: #FFFFFF;
+  font-size: 0.76rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  padding: 0.35rem 0.65rem;
+  border-radius: 6px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  z-index: 2000;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
+}
+
+[data-theme="dark"] .app-sidebar.collapsed [data-tooltip]::after {
+  background: #1E293B;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+}
+
+.app-sidebar.collapsed [data-tooltip]:hover::after {
+  opacity: 1;
+  transform: translateY(-50%) scale(1);
 }
 
 /* Sidebar Header & Brand */
