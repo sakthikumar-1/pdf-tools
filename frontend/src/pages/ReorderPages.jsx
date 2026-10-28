@@ -307,12 +307,12 @@ export default function ReorderPages() {
             <span>Pages: {pages.length}</span>
           </div>
 
-          <div className="result-actions" style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-            <button onClick={handleDownload} className="btn btn-primary" style={{ minWidth: '180px' }}>
-              <FontAwesomeIcon icon={faDownload} /> Download PDF
+          <div className="result-actions">
+            <button type="button" onClick={handleDownload} className="btn btn-primary">
+              <FontAwesomeIcon icon={faDownload} /> Download Reordered PDF
             </button>
-            <button onClick={handleFullReset} className="btn btn-secondary">
-              <FontAwesomeIcon icon={faArrowRotateLeft} /> Reorder Another File
+            <button type="button" onClick={handleFullReset} className="btn btn-secondary">
+              <FontAwesomeIcon icon={faArrowRotateLeft} /> Reorder Another Document
             </button>
           </div>
         </div>

@@ -324,10 +324,10 @@ export default function RemovePages() {
             <h2>PDF Pages Removed Successfully!</h2>
             <p>Your modified PDF is ready for download.</p>
             <div className="success-actions">
-              <button onClick={handleDownload} className="btn btn-primary btn-lg">
+              <button type="button" onClick={handleDownload} className="btn btn-primary">
                 <FontAwesomeIcon icon={faDownload} /> Download Modified PDF
               </button>
-              <button onClick={handleResetAll} className="btn btn-secondary btn-lg">
+              <button type="button" onClick={handleResetAll} className="btn btn-secondary">
                 <FontAwesomeIcon icon={faArrowRotateLeft} /> Remove Pages from Another PDF
               </button>
             </div>

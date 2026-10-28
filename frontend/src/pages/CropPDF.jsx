@@ -13,6 +13,7 @@ import {
   faSliders,
   faCircleInfo,
   faArrowsUpDownLeftRight,
+  faEye,
   faExpand
 } from '@fortawesome/free-solid-svg-icons';
 import { pdfjsLib } from '../utils/pdfjsConfig';
@@ -29,7 +30,7 @@ const PRESETS = [
   { label: '0.5 in (36 pt)', top: 36, bottom: 36, left: 36, right: 36 },
   { label: '0.75 in (54 pt)', top: 54, bottom: 54, left: 54, right: 54 },
   { label: '1.0 in (72 pt)', top: 72, bottom: 72, left: 72, right: 72 },
-  { label: 'Reset (0 pt)', top: 0, bottom: 0, left: 0, right: 0 },
+  { label: 'Full Page (0 pt)', top: 0, bottom: 0, left: 0, right: 0 },
 ];
 
 export default function CropPDF() {
@@ -50,10 +51,14 @@ export default function CropPDF() {
   } = useFileUpload();
 
   const [totalPages, setTotalPages] = useState(0);
-  const [thumbnails, setThumbnails] = useState([]); // array of { pageNumber, dataUrl, width, height }
+  const [thumbnails, setThumbnails] = useState([]);
   const [activePageIndex, setActivePageIndex] = useState(0); // 0-based
-  const [isRendering, setIsRendering] = useState(false);
+  const [isLoadingPdf, setIsLoadingPdf] = useState(false);
+  const [isPageRendering, setIsPageRendering] = useState(false);
   const [pdfDocProxy, setPdfDocProxy] = useState(null);
+
+  // View mode: 'crop' (interactive box) | 'preview' (trimmed view)
+  const [viewMode, setViewMode] = useState('crop');
 
   // Crop margins in points (pt)
   const [margins, setMargins] = useState({ top: 36, bottom: 36, left: 36, right: 36 });
@@ -61,28 +66,31 @@ export default function CropPDF() {
   const [customRange, setCustomRange] = useState('');
   const [processedResult, setProcessedResult] = useState(null);
 
-  // Visual Interactive Canvas & Handles
+  // Canvas & Page Measurements
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
-  const [pageSizePt, setPageSizePt] = useState({ width: 612, height: 792 }); // default standard Letter
-  const [canvasDimensions, setCanvasDimensions] = useState({ width: 0, height: 0 });
+  const renderTaskRef = useRef(null);
 
-  // Dragging state for visual crop overlay
-  const [draggingHandle, setDraggingHandle] = useState(null); // 'move' | 'top' | 'bottom' | 'left' | 'right' | 'tl' | 'tr' | 'bl' | 'br'
+  const [pageSizePt, setPageSizePt] = useState({ width: 612, height: 792 }); // Unscaled PDF point dimensions
+  const [canvasDimensions, setCanvasDimensions] = useState({ width: 480, height: 620 });
+
+  // Interactive Dragging State
+  const [draggingHandle, setDraggingHandle] = useState(null);
   const dragStartRef = useRef({ x: 0, y: 0, initialMargins: { ...margins } });
 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
 
-  // 1. Render all page thumbnails & initialize PDF doc
+  // 1. Load PDF Document & render filmstrip thumbnails
   useEffect(() => {
     if (!file) return;
 
     let isMounted = true;
     const loadPdf = async () => {
       try {
-        setIsRendering(true);
+        setIsLoadingPdf(true);
+        setError(null);
         const arrayBuffer = await file.arrayBuffer();
         const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
         if (!isMounted) return;
@@ -94,7 +102,7 @@ export default function CropPDF() {
         const loadedThumbs = [];
         for (let i = 1; i <= count; i++) {
           const page = await pdf.getPage(i);
-          const viewport = page.getViewport({ scale: 0.35 });
+          const viewport = page.getViewport({ scale: 0.3 });
           const canvas = document.createElement('canvas');
           const ctx = canvas.getContext('2d');
           canvas.width = viewport.width;
@@ -112,13 +120,13 @@ export default function CropPDF() {
         if (isMounted) {
           setThumbnails(loadedThumbs);
           setActivePageIndex(0);
-          setIsRendering(false);
+          setIsLoadingPdf(false);
         }
       } catch (err) {
         console.error('[CropPDF Load Error]:', err);
         if (isMounted) {
-          setError('Failed to load PDF pages for cropping. Ensure file is not corrupt.');
-          setIsRendering(false);
+          setError('Failed to load PDF document for cropping. Please ensure the file is not damaged.');
+          setIsLoadingPdf(false);
         }
       }
     };
@@ -131,50 +139,77 @@ export default function CropPDF() {
   useEffect(() => {
     if (!pdfDocProxy || totalPages === 0) return;
 
-    let isMounted = true;
+    let isCancelled = false;
     const renderActivePage = async () => {
       try {
+        setIsPageRendering(true);
+
+        if (renderTaskRef.current) {
+          try { renderTaskRef.current.cancel(); } catch (_) {}
+        }
+
         const pageNumber = activePageIndex + 1;
         const page = await pdfDocProxy.getPage(pageNumber);
-        
-        // Get unscaled PDF point size
-        const unscaledViewport = page.getViewport({ scale: 1.0 });
-        setPageSizePt({ width: unscaledViewport.width, height: unscaledViewport.height });
+        if (isCancelled) return;
 
-        // Fit inside preview container (approx 520px max width/height)
-        const containerMaxWidth = Math.min(window.innerWidth > 960 ? 560 : 360, window.innerWidth - 60);
-        const fitScale = Math.min(containerMaxWidth / unscaledViewport.width, 680 / unscaledViewport.height);
-        const scale = Math.max(fitScale, 0.4);
+        // Unscaled points
+        const unscaledViewport = page.getViewport({ scale: 1.0 });
+        const ptWidth = unscaledViewport.width;
+        const ptHeight = unscaledViewport.height;
+        setPageSizePt({ width: ptWidth, height: ptHeight });
+
+        // Calculate fitting scale for comfortable viewport (approx 480-540px width)
+        const containerWidth = containerRef.current ? containerRef.current.clientWidth : 540;
+        const targetMaxWidth = Math.min(Math.max(340, containerWidth - 48), 540);
+        const scale = Math.min(targetMaxWidth / ptWidth, 680 / ptHeight);
 
         const viewport = page.getViewport({ scale });
         const canvas = canvasRef.current;
-        if (!canvas) return;
+        if (!canvas || isCancelled) return;
 
         const ctx = canvas.getContext('2d');
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
+        canvas.width = Math.floor(viewport.width);
+        canvas.height = Math.floor(viewport.height);
 
-        setCanvasDimensions({ width: viewport.width, height: viewport.height });
+        setCanvasDimensions({ width: canvas.width, height: canvas.height });
 
-        await page.render({ canvasContext: ctx, viewport }).promise;
+        const task = page.render({ canvasContext: ctx, viewport });
+        renderTaskRef.current = task;
+        await task.promise;
+
+        if (!isCancelled) {
+          setIsPageRendering(false);
+        }
       } catch (err) {
-        console.error('[CropPDF Page Render Error]:', err);
+        if (err?.name !== 'RenderingCancelledException') {
+          console.error('[CropPDF Page Render Error]:', err);
+        }
+        if (!isCancelled) {
+          setIsPageRendering(false);
+        }
       }
     };
 
     renderActivePage();
+
+    return () => {
+      isCancelled = true;
+      if (renderTaskRef.current) {
+        try { renderTaskRef.current.cancel(); } catch (_) {}
+      }
+    };
   }, [pdfDocProxy, activePageIndex, totalPages]);
 
-  // Conversion helpers between Canvas Pixels and PDF Points (pt)
-  const scaleX = canvasDimensions.width > 0 ? canvasDimensions.width / pageSizePt.width : 1;
-  const scaleY = canvasDimensions.height > 0 ? canvasDimensions.height / pageSizePt.height : 1;
+  // Scale ratio: Canvas Pixels per PDF Point
+  const scaleX = canvasDimensions.width > 0 && pageSizePt.width > 0 ? canvasDimensions.width / pageSizePt.width : 1;
+  const scaleY = canvasDimensions.height > 0 && pageSizePt.height > 0 ? canvasDimensions.height / pageSizePt.height : 1;
 
-  // Pixel coordinates of crop box inside canvas
+  // Pixel coordinates of crop box on the canvas
   const cropBoxPx = {
-    x: margins.left * scaleX,
-    y: margins.top * scaleY,
-    width: Math.max(20, canvasDimensions.width - (margins.left + margins.right) * scaleX),
-    height: Math.max(20, canvasDimensions.height - (margins.top + margins.bottom) * scaleY)
+    x: Math.round(margins.left * scaleX),
+    y: Math.round(margins.top * scaleY),
+    width: Math.max(30, Math.round(canvasDimensions.width - (margins.left + margins.right) * scaleX)),
+    height: Math.max(30, Math.round(canvasDimensions.height - (margins.top + margins.bottom) * scaleY))
   };
 
   // Dragging event handlers for interactive handles
@@ -198,8 +233,8 @@ export default function CropPDF() {
     const dyPt = dy / scaleY;
 
     const init = dragStartRef.current.initialMargins;
-    const maxPtW = pageSizePt.width - 40;
-    const maxPtH = pageSizePt.height - 40;
+    const minRemainW = 40;
+    const minRemainH = 40;
 
     let newTop = init.top;
     let newBottom = init.bottom;
@@ -207,23 +242,25 @@ export default function CropPDF() {
     let newRight = init.right;
 
     if (draggingHandle === 'move') {
-      // Reposition box without resizing
-      newLeft = Math.max(0, Math.min(pageSizePt.width - (pageSizePt.width - init.left - init.right), init.left + dxPt));
-      newRight = pageSizePt.width - (newLeft + (pageSizePt.width - init.left - init.right));
-      newTop = Math.max(0, Math.min(pageSizePt.height - (pageSizePt.height - init.top - init.bottom), init.top + dyPt));
-      newBottom = pageSizePt.height - (newTop + (pageSizePt.height - init.top - init.bottom));
+      const currentBoxW = pageSizePt.width - init.left - init.right;
+      const currentBoxH = pageSizePt.height - init.top - init.bottom;
+
+      newLeft = Math.max(0, Math.min(pageSizePt.width - currentBoxW, init.left + dxPt));
+      newRight = pageSizePt.width - currentBoxW - newLeft;
+      newTop = Math.max(0, Math.min(pageSizePt.height - currentBoxH, init.top + dyPt));
+      newBottom = pageSizePt.height - currentBoxH - newTop;
     } else {
       if (draggingHandle.includes('t') || draggingHandle === 'top') {
-        newTop = Math.max(0, Math.min(pageSizePt.height - init.bottom - 40, init.top + dyPt));
+        newTop = Math.max(0, Math.min(pageSizePt.height - init.bottom - minRemainH, init.top + dyPt));
       }
       if (draggingHandle.includes('b') || draggingHandle === 'bottom') {
-        newBottom = Math.max(0, Math.min(pageSizePt.height - init.top - 40, init.bottom - dyPt));
+        newBottom = Math.max(0, Math.min(pageSizePt.height - init.top - minRemainH, init.bottom - dyPt));
       }
       if (draggingHandle.includes('l') || draggingHandle === 'left') {
-        newLeft = Math.max(0, Math.min(pageSizePt.width - init.right - 40, init.left + dxPt));
+        newLeft = Math.max(0, Math.min(pageSizePt.width - init.right - minRemainW, init.left + dxPt));
       }
       if (draggingHandle.includes('r') || draggingHandle === 'right') {
-        newRight = Math.max(0, Math.min(pageSizePt.width - init.left - 40, init.right - dxPt));
+        newRight = Math.max(0, Math.min(pageSizePt.width - init.left - minRemainW, init.right - dxPt));
       }
     }
 
@@ -250,17 +287,16 @@ export default function CropPDF() {
     }
   }, [draggingHandle, handlePointerMove, handlePointerUp]);
 
-  // Execute Crop
+  // Execute Lossless PDF Crop
   const handleExecuteCrop = async () => {
     if (!file) return;
 
     setStatus('processing');
-    setProgress(15);
+    setProgress(20);
     setError(null);
 
     const baseName = file.name ? file.name.replace(/\.[^/.]+$/, '') : 'document';
     
-    // Determine target page range
     let pageRangeArg = 'all';
     if (cropScope === 'current') {
       pageRangeArg = String(activePageIndex + 1);
@@ -282,7 +318,6 @@ export default function CropPDF() {
       let blob;
       let filename;
 
-      // 1. Try Python Django Ninja backend
       try {
         const res = await cropPdfPython(file, cropOptions, (p) => setProgress(p));
         blob = res.blob;
@@ -317,6 +352,9 @@ export default function CropPDF() {
     setCropScope('all');
     reset();
   };
+
+  const remainingPtWidth = Math.max(0, Math.round(pageSizePt.width - margins.left - margins.right));
+  const remainingPtHeight = Math.max(0, Math.round(pageSizePt.height - margins.top - margins.bottom));
 
   return (
     <div className="crop-pdf-container">
@@ -385,18 +423,18 @@ export default function CropPDF() {
           <div className="result-icon-box">
             <FontAwesomeIcon icon={faCheck} size="2x" />
           </div>
-          <h2 className="result-title">PDF Cropped Successfully!</h2>
+          <h2 className="result-title">Your Cropped PDF is Ready!</h2>
           <p className="result-filename">{processedResult.filename}</p>
           <div style={{ display: 'flex', gap: '1.25rem', justifyContent: 'center', marginBottom: '1.5rem', color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>
             <span>Size: {formatFileSize(processedResult.blob.size)}</span>
-            <span>Target: {cropScope === 'all' ? 'All Pages' : cropScope === 'current' ? `Page ${activePageIndex + 1}` : customRange}</span>
+            <span>Target: {cropScope === 'all' ? `All Pages (${totalPages})` : cropScope === 'current' ? `Page ${activePageIndex + 1}` : customRange}</span>
           </div>
 
-          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-            <button onClick={handleDownload} className="btn-process-action" style={{ minWidth: '190px' }}>
+          <div className="result-actions">
+            <button type="button" onClick={handleDownload} className="btn btn-primary">
               <FontAwesomeIcon icon={faDownload} /> Download Cropped PDF
             </button>
-            <button onClick={handleFullReset} className="btn-secondary-sm" style={{ padding: '0.75rem 1.25rem' }}>
+            <button type="button" onClick={handleFullReset} className="btn btn-secondary">
               <FontAwesomeIcon icon={faArrowRotateLeft} /> Crop Another Document
             </button>
           </div>
@@ -417,7 +455,7 @@ export default function CropPDF() {
                 </span>
               </div>
               <span style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)' }}>
-                Viewing Page <strong>{activePageIndex + 1}</strong> of {totalPages}
+                Viewing Page <strong>{activePageIndex + 1}</strong> of {totalPages} (Click any page thumbnail below to inspect)
               </span>
             </div>
 
@@ -427,10 +465,24 @@ export default function CropPDF() {
                   key={t.pageNumber}
                   className={`filmstrip-thumb-item ${activePageIndex === idx ? 'active' : ''}`}
                   onClick={() => setActivePageIndex(idx)}
-                  title={`Click to preview Page ${t.pageNumber}`}
+                  title={`Click to preview and crop Page ${t.pageNumber}`}
                 >
                   <div className="thumb-img-wrapper">
                     <img src={t.dataUrl} alt={`Page ${t.pageNumber}`} />
+                    
+                    {/* Miniature Crop Outline showing decreased crop area on each page */}
+                    {(cropScope === 'all' || activePageIndex === idx) && (
+                      <div 
+                        className="thumb-crop-cutout"
+                        style={{
+                          top: `${Math.min(45, (margins.top / pageSizePt.height) * 100)}%`,
+                          bottom: `${Math.min(45, (margins.bottom / pageSizePt.height) * 100)}%`,
+                          left: `${Math.min(45, (margins.left / pageSizePt.width) * 100)}%`,
+                          right: `${Math.min(45, (margins.right / pageSizePt.width) * 100)}%`,
+                        }}
+                      />
+                    )}
+
                     <span className="thumb-page-badge">{t.pageNumber}</span>
                   </div>
                 </div>
@@ -442,21 +494,50 @@ export default function CropPDF() {
             {/* VISUAL INTERACTIVE CROP CANVAS */}
             <div className="crop-canvas-card">
               <div className="crop-canvas-header">
-                <span className="canvas-header-title">
-                  <FontAwesomeIcon icon={faArrowsUpDownLeftRight} /> Interactive Page Preview
-                </span>
-                <span className="canvas-header-sub">
-                  Drag the handles or the crop box to trim margins visually
-                </span>
+                <div>
+                  <div className="canvas-header-title">
+                    <FontAwesomeIcon icon={faArrowsUpDownLeftRight} /> Interactive Page Preview (Page {activePageIndex + 1})
+                  </div>
+                  <div className="canvas-header-sub">
+                    {viewMode === 'crop' 
+                      ? 'Drag handles or the blue box to visually trim margins. Content inside the box is kept.' 
+                      : 'Live preview of the trimmed document after applying crop.'}
+                  </div>
+                </div>
+
+                {/* View Mode Toggle: Interactive Box vs Trimmed Document */}
+                <div className="crop-view-toggle">
+                  <button
+                    type="button"
+                    className={`view-mode-btn ${viewMode === 'crop' ? 'active' : ''}`}
+                    onClick={() => setViewMode('crop')}
+                    title="Interactive crop box with adjustable handles"
+                  >
+                    <FontAwesomeIcon icon={faCropSimple} />
+                    <span>Crop Box</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`view-mode-btn ${viewMode === 'preview' ? 'active' : ''}`}
+                    onClick={() => setViewMode('preview')}
+                    title="Preview document with margins trimmed"
+                  >
+                    <FontAwesomeIcon icon={faEye} />
+                    <span>Trimmed Preview</span>
+                  </button>
+                </div>
               </div>
 
               <div className="canvas-viewport-container" ref={containerRef}>
-                {isRendering ? (
-                  <div className="rendering-placeholder">
+                {isPageRendering && (
+                  <div className="canvas-loading-overlay">
                     <div className="loading-spinner"></div>
-                    <span>Rendering page canvas...</span>
+                    <span>Rendering page...</span>
                   </div>
-                ) : (
+                )}
+
+                {/* MODE 1: INTERACTIVE CROP BOX OVERLAY */}
+                {viewMode === 'crop' && (
                   <div 
                     className="canvas-stage-wrapper" 
                     style={{ 
@@ -464,10 +545,10 @@ export default function CropPDF() {
                       height: canvasDimensions.height || 'auto' 
                     }}
                   >
-                    {/* The Underlying High-Res Page Canvas */}
+                    {/* Underlying High-Resolution Document Canvas */}
                     <canvas ref={canvasRef} className="page-render-canvas" />
 
-                    {/* Semi-transparent Dimmed Backdrop Overlays Outside Crop Area */}
+                    {/* Darkened Backdrop Overlays Outside Crop Area */}
                     <div className="dim-mask top" style={{ top: 0, left: 0, right: 0, height: cropBoxPx.y }} />
                     <div className="dim-mask bottom" style={{ top: cropBoxPx.y + cropBoxPx.height, left: 0, right: 0, bottom: 0 }} />
                     <div className="dim-mask left" style={{ top: cropBoxPx.y, left: 0, width: cropBoxPx.x, height: cropBoxPx.height }} />
@@ -486,20 +567,56 @@ export default function CropPDF() {
                     >
                       {/* Live Dimension Tag */}
                       <div className="crop-dimension-pill">
-                        {Math.round(pageSizePt.width - margins.left - margins.right)} × {Math.round(pageSizePt.height - margins.top - margins.bottom)} pt
+                        {remainingPtWidth} × {remainingPtHeight} pt
+                        <span style={{ opacity: 0.75, marginLeft: '4px' }}>
+                          ({(remainingPtWidth / 72).toFixed(2)}″ × {(remainingPtHeight / 72).toFixed(2)}″)
+                        </span>
                       </div>
 
                       {/* 4 Corner Handles */}
-                      <div className="crop-handle handle-tl" onPointerDown={(e) => handlePointerDown('tl', e)} />
-                      <div className="crop-handle handle-tr" onPointerDown={(e) => handlePointerDown('tr', e)} />
-                      <div className="crop-handle handle-bl" onPointerDown={(e) => handlePointerDown('bl', e)} />
-                      <div className="crop-handle handle-br" onPointerDown={(e) => handlePointerDown('br', e)} />
+                      <div className="crop-handle handle-tl" onPointerDown={(e) => handlePointerDown('tl', e)} title="Resize top-left" />
+                      <div className="crop-handle handle-tr" onPointerDown={(e) => handlePointerDown('tr', e)} title="Resize top-right" />
+                      <div className="crop-handle handle-bl" onPointerDown={(e) => handlePointerDown('bl', e)} title="Resize bottom-left" />
+                      <div className="crop-handle handle-br" onPointerDown={(e) => handlePointerDown('br', e)} title="Resize bottom-right" />
 
                       {/* 4 Edge Handles */}
-                      <div className="crop-handle handle-t" onPointerDown={(e) => handlePointerDown('top', e)} />
-                      <div className="crop-handle handle-b" onPointerDown={(e) => handlePointerDown('bottom', e)} />
-                      <div className="crop-handle handle-l" onPointerDown={(e) => handlePointerDown('left', e)} />
-                      <div className="crop-handle handle-r" onPointerDown={(e) => handlePointerDown('right', e)} />
+                      <div className="crop-handle handle-t" onPointerDown={(e) => handlePointerDown('top', e)} title="Resize top" />
+                      <div className="crop-handle handle-b" onPointerDown={(e) => handlePointerDown('bottom', e)} title="Resize bottom" />
+                      <div className="crop-handle handle-l" onPointerDown={(e) => handlePointerDown('left', e)} title="Resize left" />
+                      <div className="crop-handle handle-r" onPointerDown={(e) => handlePointerDown('right', e)} title="Resize right" />
+                    </div>
+                  </div>
+                )}
+
+                {/* MODE 2: TRIMMED DOCUMENT PREVIEW (Decreased size reflecting the crop) */}
+                {viewMode === 'preview' && (
+                  <div className="trimmed-preview-stage">
+                    <div 
+                      className="trimmed-viewport-box"
+                      style={{
+                        width: cropBoxPx.width,
+                        height: cropBoxPx.height,
+                      }}
+                    >
+                      <div style={{
+                        position: 'absolute',
+                        left: -cropBoxPx.x,
+                        top: -cropBoxPx.y,
+                        width: canvasDimensions.width,
+                        height: canvasDimensions.height,
+                      }}>
+                        {/* Cloned page canvas representation */}
+                        {canvasRef.current && (
+                          <img 
+                            src={canvasRef.current.toDataURL()} 
+                            alt="Trimmed Preview" 
+                            style={{ display: 'block', width: canvasDimensions.width, height: canvasDimensions.height }}
+                          />
+                        )}
+                      </div>
+                    </div>
+                    <div className="trimmed-info-tag">
+                      Trimmed Preview: {remainingPtWidth} × {remainingPtHeight} pt
                     </div>
                   </div>
                 )}
@@ -530,9 +647,12 @@ export default function CropPDF() {
                 </div>
               </div>
 
-              {/* Numeric Margin Inputs (Synchronized Live with Visual Handles) */}
+              {/* Numeric Margin Inputs (Synchronized with visual handles) */}
               <div className="crop-section">
-                <label className="crop-section-label">Margins in Points (pt):</label>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <label className="crop-section-label">Margins in Points (pt):</label>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>72 pt = 1 inch</span>
+                </div>
                 <div className="margin-inputs-grid">
                   <div className="margin-field">
                     <span>Top:</span>
@@ -588,7 +708,7 @@ export default function CropPDF() {
                       checked={cropScope === 'all'}
                       onChange={() => setCropScope('all')}
                     />
-                    <span>All Pages ({totalPages})</span>
+                    <span>All Document Pages ({totalPages})</span>
                   </label>
                   <label className={`scope-radio-btn ${cropScope === 'current' ? 'active' : ''}`}>
                     <input
@@ -597,7 +717,7 @@ export default function CropPDF() {
                       checked={cropScope === 'current'}
                       onChange={() => setCropScope('current')}
                     />
-                    <span>Current Page ({activePageIndex + 1})</span>
+                    <span>Current Page Only (Page {activePageIndex + 1})</span>
                   </label>
                   <label className={`scope-radio-btn ${cropScope === 'range' ? 'active' : ''}`}>
                     <input
@@ -606,7 +726,7 @@ export default function CropPDF() {
                       checked={cropScope === 'range'}
                       onChange={() => setCropScope('range')}
                     />
-                    <span>Page Range</span>
+                    <span>Specific Page Range</span>
                   </label>
                 </div>
 
@@ -625,7 +745,7 @@ export default function CropPDF() {
               <div className="crop-info-callout">
                 <FontAwesomeIcon icon={faCircleInfo} />
                 <span>
-                  <strong>Lossless ISO Crop:</strong> Trims document viewport boundaries (CropBox & MediaBox) without re-encoding or degrading text and vector quality.
+                  <strong>Lossless ISO Crop:</strong> Adjusts document boundary boxes (CropBox & MediaBox) conforming to ISO 32000-1 without rasterizing or losing text searchability.
                 </span>
               </div>
 
@@ -634,7 +754,7 @@ export default function CropPDF() {
                 type="button"
                 className="btn-process-action"
                 onClick={handleExecuteCrop}
-                disabled={isRendering}
+                disabled={isLoadingPdf || isPageRendering}
               >
                 <FontAwesomeIcon icon={faCropSimple} />
                 <span>Crop PDF Pages Now</span>

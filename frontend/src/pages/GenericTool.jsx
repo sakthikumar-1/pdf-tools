@@ -1283,11 +1283,23 @@ export default function GenericTool({
             )}
 
             <div className="success-actions">
-              <button className="btn btn-primary btn-lg" onClick={handleDownload}>
+              <button type="button" className="btn btn-primary" onClick={handleDownload}>
                 <FontAwesomeIcon icon={faDownload} /> Download {processedResult ? processedResult.filename : 'File'}
               </button>
-              <button className="btn btn-secondary btn-lg" onClick={handleReset}>
-                <FontAwesomeIcon icon={faArrowRotateLeft} /> Convert Another File
+              <button type="button" className="btn btn-secondary" onClick={handleReset}>
+                <FontAwesomeIcon icon={faArrowRotateLeft} />
+                <span>
+                  {titleLower.includes('merge') ? 'Merge Another Document' :
+                   titleLower.includes('split') ? 'Split Another Document' :
+                   titleLower.includes('compress') ? 'Compress Another Document' :
+                   titleLower.includes('protect') ? 'Protect Another Document' :
+                   titleLower.includes('watermark') ? 'Watermark Another Document' :
+                   titleLower.includes('number') ? 'Add Numbers to Another PDF' :
+                   titleLower.includes('meta') ? 'Edit Another Document' :
+                   titleLower.includes('crop') ? 'Crop Another Document' :
+                   titleLower.includes('word') || titleLower.includes('ppt') || titleLower.includes('excel') || titleLower.includes('jpg') ? 'Convert Another Document' :
+                   'Process Another Document'}
+                </span>
               </button>
             </div>
           </div>

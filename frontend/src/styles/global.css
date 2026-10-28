@@ -380,3 +380,86 @@ button.btn-secondary:active:not(:disabled) {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-primary);
 }
+
+/* ==============================================================================
+   STANDARDIZED SUCCESS / RESULT ACTION BUTTON LAYOUT ACROSS ALL TOOLS
+   Ensures harmonious side-by-side buttons on desktop and balanced stacking on mobile
+   ============================================================================== */
+
+.success-actions,
+.result-actions,
+.success-action-group,
+.main-download-box {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 1rem !important;
+  flex-wrap: wrap !important;
+  margin-top: 1.5rem !important;
+  width: 100% !important;
+}
+
+.success-actions .btn,
+.result-actions .btn,
+.success-action-group .btn,
+.main-download-box .btn {
+  min-height: 48px !important;
+  padding: 0.85rem 1.6rem !important;
+  font-size: 0.95rem !important;
+  font-weight: 700 !important;
+  border-radius: var(--radius-sm) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.6rem !important;
+  text-decoration: none !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  margin: 0 !important;
+}
+
+.success-actions .btn-primary,
+.result-actions .btn-primary,
+.success-action-group .btn-primary,
+.main-download-box .main-download-btn {
+  flex: 0 1 auto !important;
+  min-width: 240px !important;
+  max-width: 420px !important;
+  box-shadow: 0 4px 14px rgba(229, 57, 53, 0.25) !important;
+}
+
+[data-theme="dark"] .success-actions .btn-primary,
+[data-theme="dark"] .result-actions .btn-primary,
+[data-theme="dark"] .success-action-group .btn-primary,
+[data-theme="dark"] .main-download-box .main-download-btn {
+  background: linear-gradient(135deg, #00A3FF 0%, #0077CC 100%) !important;
+  border-color: #00A3FF !important;
+  box-shadow: 0 4px 16px rgba(0, 163, 255, 0.3) !important;
+}
+
+.success-actions .btn-secondary,
+.result-actions .btn-secondary,
+.success-action-group .btn-secondary,
+.main-download-box .convert-another-btn {
+  flex: 0 1 auto !important;
+  min-width: 200px !important;
+  max-width: 320px !important;
+}
+
+@media (max-width: 640px) {
+  .success-actions,
+  .result-actions,
+  .success-action-group,
+  .main-download-box {
+    flex-direction: column !important;
+    gap: 0.75rem !important;
+  }
+
+  .success-actions .btn,
+  .result-actions .btn,
+  .success-action-group .btn,
+  .main-download-box .btn {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}
