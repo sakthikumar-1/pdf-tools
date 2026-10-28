@@ -26,7 +26,7 @@ def index_view(request):
         "<body style='font-family:sans-serif;text-align:center;padding:50px;'>"
         "<h1>Simatrix PDF Tools Backend is Live</h1>"
         "<p>Django Ninja API is operational.</p>"
-        "<p><a href='/api/v1/docs' style='color:#D8B15A;font-weight:bold;'>View API Interactive Docs &rarr;</a></p>"
+        "<p><a href='/api/v1/docs' style='color:#E53935;font-weight:bold;'>View API Interactive Docs &rarr;</a></p>"
         "</body></html>",
         content_type='text/html'
     )

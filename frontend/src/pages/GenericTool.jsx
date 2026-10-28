@@ -52,7 +52,8 @@ import {
   watermarkPdf,
   cropPdf,
   readPdfMetadata,
-  editPdfMetadata
+  editPdfMetadata,
+  compressPdf
 } from '../utils/pdfProcessor';
 import { fetchServerCapabilities, getToolCapability } from '../utils/capabilityChecker';
 import './GenericTool.css';
