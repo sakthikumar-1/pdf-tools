@@ -137,6 +137,9 @@ CORS_ALLOWED_ORIGINS = [
     if origin.strip()
 ]
 
+# Allow Google Identity Services OAuth popup to communicate with opener
+SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin-allow-popups'
+
 # Configurable Private Storage Directory (Isolated outside public web root)
 storage_root_env = os.getenv('STORAGE_ROOT', 'storage')
 STORAGE_ROOT = Path(storage_root_env) if os.path.isabs(storage_root_env) else (BASE_DIR / storage_root_env)

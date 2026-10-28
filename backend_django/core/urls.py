@@ -20,6 +20,7 @@ def index_view(request):
     if INDEX_FILE.exists():
         response = FileResponse(open(INDEX_FILE, 'rb'), content_type='text/html')
         response['Cache-Control'] = 'no-cache, must-revalidate'
+        response['Cross-Origin-Opener-Policy'] = 'same-origin-allow-popups'
         return response
     return HttpResponse(
         "<!DOCTYPE html><html><head><title>Simatrix PDF Tools API</title></head>"
