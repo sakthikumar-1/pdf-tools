@@ -347,7 +347,9 @@
 .sidebar-backdrop {
   position: fixed;
   inset: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
   z-index: 999;
 }
 
@@ -357,12 +359,20 @@
     top: 0;
     left: 0;
     bottom: 0;
+    width: min(300px, 85vw);
+    min-width: 0;
     transform: translateX(-100%);
-    box-shadow: var(--shadow-lg);
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.22);
     z-index: 1000;
   }
 
   .app-sidebar.mobile-open {
     transform: translateX(0);
+  }
+}
+
+@media (max-width: 768px) {
+  .search-btn-kbd {
+    display: none !important;
   }
 }

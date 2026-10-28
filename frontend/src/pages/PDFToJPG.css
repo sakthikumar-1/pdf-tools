@@ -205,8 +205,19 @@
 }
 
 @media (max-width: 600px) {
+  .tool-page-wrapper {
+    padding: 1rem 0.85rem 2.5rem;
+    gap: 1rem;
+    box-sizing: border-box;
+    max-width: 100vw;
+  }
+
   .tool-header {
     flex-direction: column;
     text-align: center;
+  }
+
+  .options-panel {
+    padding: 1rem 0.85rem;
   }
 }

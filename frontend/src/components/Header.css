@@ -327,10 +327,67 @@
 
 @media (max-width: 768px) {
   .top-nav-bar {
-    padding: 0 0.85rem;
+    padding: 0 0.75rem;
+    width: 100%;
+    max-width: 100vw;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+
+  .top-nav-left {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    gap: 0.6rem;
+  }
+
+  .top-nav-right {
+    flex-shrink: 0;
+    gap: 0.45rem;
   }
 
   .user-name-text {
-    display: none;
+    display: none !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .top-nav-breadcrumbs .breadcrumb-link-item,
+  .top-nav-breadcrumbs .breadcrumb-separator-icon {
+    display: none !important;
+  }
+
+  .top-nav-breadcrumbs {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .breadcrumb-current-item {
+    display: block;
+    font-size: 0.88rem;
+    font-weight: 700;
+    max-width: 140px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .sign-in-nav-btn {
+    padding: 0.35rem 0.65rem;
+    font-size: 0.78rem;
+    gap: 0.35rem;
+  }
+
+  .theme-switch-btn {
+    width: 30px;
+    height: 30px;
+    font-size: 0.8rem;
+  }
+
+  .user-avatar-circle {
+    width: 30px;
+    height: 30px;
+    font-size: 0.78rem;
   }
 }

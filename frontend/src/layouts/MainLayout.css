@@ -7,9 +7,12 @@
   display: flex;
   min-height: 100vh;
   width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
   background-color: var(--color-bg);
   color: var(--color-text);
   position: relative;
+  box-sizing: border-box;
 }
 
 .main-wrapper {
@@ -17,9 +20,13 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
   min-height: 100vh;
   background-color: var(--color-bg);
   transition: margin-left var(--transition-normal);
+  box-sizing: border-box;
 }
 
 .main-content-area {
@@ -27,4 +34,7 @@
   display: flex;
   flex-direction: column;
   width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
+  box-sizing: border-box;
 }

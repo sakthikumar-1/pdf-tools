@@ -49,6 +49,17 @@ export default function Sidebar({
     }
   }, [location.pathname]);
 
+  // Lock body scroll on mobile when drawer is active
+  useEffect(() => {
+    if (isMobileOpen) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = originalOverflow;
+      };
+    }
+  }, [isMobileOpen]);
+
   const toggleCategory = (catId, e) => {
     e.preventDefault();
     e.stopPropagation();
