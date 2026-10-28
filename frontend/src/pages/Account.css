@@ -370,3 +370,51 @@
     margin: 0.2rem auto 0;
   }
 }
+
+/* ==============================================================================
+   DARK THEME SPECIFIC OVERRIDES FOR ACCOUNT & PREFERENCES
+   ============================================================================== */
+[data-theme="dark"] .account-profile-card,
+[data-theme="dark"] .preferences-card {
+  background-color: #131B24;
+  border-color: #283546;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .profile-menu-list {
+  border-top-color: #283546;
+}
+
+[data-theme="dark"] .profile-menu-item.clickable:hover {
+  background-color: #1A2330;
+}
+
+[data-theme="dark"] .account-tab-btn,
+[data-theme="dark"] .account-tab-link {
+  color: #94A3B8;
+}
+
+[data-theme="dark"] .account-tab-btn:hover,
+[data-theme="dark"] .account-tab-link:hover {
+  background-color: #1E293B;
+  color: #F8FAFC;
+}
+
+[data-theme="dark"] .account-tab-btn.active {
+  background-color: #E53935;
+  color: #FFFFFF;
+}
+
+[data-theme="dark"] .pref-row {
+  border-bottom-color: #283546;
+}
+
+[data-theme="dark"] .pref-select {
+  background-color: #0F141C;
+  border-color: #283546;
+  color: #F8FAFC;
+}
+
+[data-theme="dark"] .pref-select:focus {
+  border-color: #E53935;
+}

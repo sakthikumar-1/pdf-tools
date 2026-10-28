@@ -83,26 +83,28 @@ if database_url:
         pass
 
 if 'DATABASES' not in locals() or 'default' not in DATABASES:
-    if not os.getenv('DB_ENGINE') and (os.getenv('RENDER') or not os.getenv('DB_HOST')) and not os.getenv('DATABASE_URL'):
+    db_host = os.getenv('DB_HOST', '').strip()
+    db_engine = os.getenv('DB_ENGINE', '').strip()
+    # Only attempt MySQL if an explicit external DB_HOST was provided
+    if db_host and db_host != '127.0.0.1' and db_host != 'localhost' and 'mysql' in db_engine:
         DATABASES = {
             'default': {
-                'ENGINE': 'django.db.backends.sqlite3',
-                'NAME': BASE_DIR / 'db.sqlite3',
+                'ENGINE': db_engine,
+                'NAME': os.getenv('DB_NAME', 'pdf_tool'),
+                'USER': os.getenv('DB_USER', 'root'),
+                'PASSWORD': os.getenv('DB_PASSWORD', ''),
+                'HOST': db_host,
+                'PORT': os.getenv('DB_PORT', '3306'),
+                'OPTIONS': {
+                    'charset': 'utf8mb4',
+                },
             }
         }
     else:
         DATABASES = {
             'default': {
-                'ENGINE': os.getenv('DB_ENGINE', 'django.db.backends.mysql'),
-                'NAME': os.getenv('DB_NAME', 'pdf_tool'),
-                'USER': os.getenv('DB_USER', 'root'),
-                'PASSWORD': os.getenv('DB_PASSWORD', ''),
-                'HOST': os.getenv('DB_HOST', '127.0.0.1'),
-                'PORT': os.getenv('DB_PORT', '3306'),
-                'OPTIONS': {
-                    'charset': 'utf8mb4',
-                    'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
-                },
+                'ENGINE': 'django.db.backends.sqlite3',
+                'NAME': BASE_DIR / 'db.sqlite3',
             }
         }
 

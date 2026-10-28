@@ -27,6 +27,7 @@ export default function Account() {
   const [activeTab, setActiveTab] = useState('account'); // 'account' or 'preferences'
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [selectedLanguage, setSelectedLanguage] = useState('en');
+  const [avatarError, setAvatarError] = useState(false);
   const navigate = useNavigate();
 
   const userInitial = user?.full_name ? user.full_name.charAt(0).toUpperCase() : (user?.email ? user.email.charAt(0).toUpperCase() : 'S');
@@ -77,10 +78,16 @@ export default function Account() {
             <div className="account-profile-card">
               <div className="profile-identity-row">
                 <div className="profile-avatar-large" style={{ overflow: 'hidden' }}>
-                  {user?.avatar_url ? (
-                    <img src={user.avatar_url} alt={userDisplayName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  {user?.avatar_url && !avatarError ? (
+                    <img
+                      src={user.avatar_url}
+                      alt=""
+                      referrerPolicy="no-referrer"
+                      onError={() => setAvatarError(true)}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                    />
                   ) : (
-                    userInitial
+                    <span>{userInitial}</span>
                   )}
                 </div>
                 <div className="profile-text-group">

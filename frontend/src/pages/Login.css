@@ -79,26 +79,37 @@
   gap: 0.75rem;
   width: 100%;
   padding: 0.85rem 1.25rem;
-  background: var(--color-primary);
-  border: 1px solid var(--color-primary);
+  background: #E53935 !important;
+  border: 1px solid #E53935 !important;
   border-radius: var(--radius-md);
-  color: #FFFFFF;
+  color: #FFFFFF !important;
   font-size: 0.95rem;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(229, 57, 53, 0.25);
+  box-shadow: 0 4px 14px rgba(229, 57, 53, 0.35);
   transition: all var(--transition-fast);
 }
 
+.guest-signin-btn * {
+  color: #FFFFFF !important;
+}
+
+.guest-signin-btn .guest-bolt-icon {
+  color: #FFD54F !important;
+  font-size: 1.05rem;
+}
+
 .guest-signin-btn:hover:not(:disabled) {
-  background: var(--color-primary-hover);
-  border-color: var(--color-primary-hover);
+  background: #C62828 !important;
+  border-color: #C62828 !important;
   transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(229, 57, 53, 0.35);
+  box-shadow: 0 6px 20px rgba(229, 57, 53, 0.5);
 }
 
 .guest-signin-btn:disabled {
-  opacity: 0.65;
+  background: #E53935 !important;
+  opacity: 0.65 !important;
+  color: #FFFFFF !important;
   cursor: not-allowed;
 }
 
@@ -114,20 +125,50 @@
   gap: 0.75rem;
   width: 100%;
   padding: 0.85rem 1.25rem;
-  background: var(--color-surface-card);
-  border: 1px solid var(--color-border);
+  background: #FFFFFF;
+  border: 1px solid #D1D5DB;
   border-radius: var(--radius-md);
-  color: var(--color-heading);
+  color: #1F2937 !important;
   font-size: 0.95rem;
   font-weight: 700;
   cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   transition: all var(--transition-fast);
 }
 
-.google-signin-btn:hover {
-  border-color: var(--color-primary);
-  background: var(--color-surface);
+.google-signin-btn * {
+  color: #1F2937;
+}
+
+.google-signin-btn:hover:not(:disabled) {
+  border-color: #9CA3AF;
+  background: #F8FAFC;
   transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
+}
+
+/* Dark Theme Overrides for Login Page */
+[data-theme="dark"] .login-card {
+  background: #131B24;
+  border-color: #283546;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .google-signin-btn {
+  background: #1E293B !important;
+  border-color: #334155 !important;
+  color: #F8FAFC !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .google-signin-btn * {
+  color: #F8FAFC !important;
+}
+
+[data-theme="dark"] .google-signin-btn:hover:not(:disabled) {
+  background: #2D3B4F !important;
+  border-color: #E53935 !important;
+  color: #FFFFFF !important;
 }
 
 .continue-anonymous-btn {

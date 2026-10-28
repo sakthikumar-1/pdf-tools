@@ -22,6 +22,7 @@ import './Header.css';
 export default function Header({ onToggleSidebar, onOpenAuth }) {
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [isOnline, setIsOnline] = useState(() => (typeof navigator !== 'undefined' ? navigator.onLine : true));
+  const [avatarError, setAvatarError] = useState(false);
   const { theme, toggleTheme } = useTheme();
   const { user, isAuthenticated, logout } = useAuth();
   const location = useLocation();
@@ -169,8 +170,14 @@ export default function Header({ onToggleSidebar, onOpenAuth }) {
               aria-haspopup="true"
             >
               <div className="user-avatar-circle" style={{ overflow: 'hidden' }}>
-                {user?.avatar_url ? (
-                  <img src={user.avatar_url} alt={userDisplayName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                {user?.avatar_url && !avatarError ? (
+                  <img
+                    src={user.avatar_url}
+                    alt=""
+                    referrerPolicy="no-referrer"
+                    onError={() => setAvatarError(true)}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                  />
                 ) : (
                   userInitial
                 )}
@@ -193,8 +200,14 @@ export default function Header({ onToggleSidebar, onOpenAuth }) {
             <div className="user-dropdown-panel" role="menu">
               <div className="user-dropdown-header">
                 <div className="user-avatar-circle large" style={{ overflow: 'hidden' }}>
-                  {user?.avatar_url ? (
-                    <img src={user.avatar_url} alt={userDisplayName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  {user?.avatar_url && !avatarError ? (
+                    <img
+                      src={user.avatar_url}
+                      alt=""
+                      referrerPolicy="no-referrer"
+                      onError={() => setAvatarError(true)}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                    />
                   ) : (
                     userInitial
                   )}
