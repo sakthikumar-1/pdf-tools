@@ -123,7 +123,7 @@ button, input, select, textarea {
 .tool-top-nav-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   margin-bottom: 0.85rem;
   flex-wrap: wrap;
   gap: 0.5rem;

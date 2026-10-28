@@ -27,8 +27,8 @@
 
 .upload-box:hover,
 .upload-box.dragging {
-  border-color: #F2B8B5;
-  background-color: #FFF8F7;
+  border-color: var(--color-border-hover);
+  background-color: var(--color-surface-hover);
   box-shadow: 0 4px 16px rgba(229, 57, 53, 0.05);
 }
 
@@ -50,7 +50,7 @@
   width: 52px;
   height: 52px;
   border-radius: var(--radius-sm);
-  background-color: #FFF0EF;
+  background-color: var(--color-primary-light);
   color: var(--color-primary);
   display: flex;
   align-items: center;

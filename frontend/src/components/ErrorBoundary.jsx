@@ -54,7 +54,7 @@ export default class ErrorBoundary extends React.Component {
               height: '64px',
               margin: '0 auto 1.5rem',
               borderRadius: '50%',
-              backgroundColor: '#FFF0EF',
+              backgroundColor: 'var(--color-primary-light, #FFF0EF)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',

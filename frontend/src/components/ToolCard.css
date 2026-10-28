@@ -19,8 +19,8 @@
 
 .tool-card:hover,
 .tool-card:focus-visible {
-  border-color: #F2B8B5;
-  background-color: #FFF8F7;
+  border-color: var(--color-border-hover);
+  background-color: var(--color-surface-hover);
   box-shadow: 0 4px 14px rgba(229, 57, 53, 0.08);
   outline: none;
 }
@@ -114,9 +114,9 @@
 }
 
 .badge-primary {
-  background-color: #FFF0EF;
+  background-color: var(--color-primary-light);
   color: var(--color-primary);
-  border: 1px solid #F2B8B5;
+  border: 1px solid var(--color-primary-border);
 }
 
 .badge-success {
@@ -159,3 +159,32 @@
 .tool-card:focus-visible .tool-card-arrow-icon {
   transform: translateX(4px);
 }
+
+/* ==============================================================================
+   DARK THEME SPECIFIC STYLES
+   ============================================================================== */
+[data-theme="dark"] .tool-card {
+  background-color: var(--color-surface);
+  border-color: var(--color-border);
+}
+
+[data-theme="dark"] .tool-card:hover,
+[data-theme="dark"] .tool-card:focus-visible {
+  border-color: var(--color-primary);
+  background-color: var(--color-surface-hover);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45), 0 0 15px rgba(229, 57, 53, 0.15);
+}
+
+[data-theme="dark"] .tool-card-title {
+  color: var(--color-heading);
+}
+
+[data-theme="dark"] .tool-card-desc {
+  color: var(--color-text-secondary);
+}
+
+[data-theme="dark"] .tool-card-footer {
+  border-top-color: var(--color-border-subtle);
+  color: var(--color-primary-hover);
+}
+

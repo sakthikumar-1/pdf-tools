@@ -118,8 +118,8 @@
 }
 
 .sidebar-search-btn:hover {
-  border-color: #F2B8B5;
-  background-color: #FFF8F7;
+  border-color: var(--color-border-hover);
+  background-color: var(--color-surface-hover);
   color: var(--color-text);
 }
 
@@ -188,7 +188,7 @@
 }
 
 .sidebar-link:hover {
-  background-color: #FFF8F7;
+  background-color: var(--color-surface-hover);
   color: var(--color-primary);
 }
 
@@ -197,7 +197,7 @@
 }
 
 .sidebar-link.active {
-  background-color: #FFF0EF;
+  background-color: var(--color-primary-light);
   color: var(--color-primary);
   font-weight: 700;
 }
@@ -264,7 +264,7 @@
 }
 
 .sidebar-cat-btn:hover {
-  background-color: #FFF8F7;
+  background-color: var(--color-surface-hover);
   color: var(--color-primary);
 }
 
@@ -321,12 +321,12 @@
 }
 
 .sidebar-sublink:hover {
-  background-color: #FFF8F7;
+  background-color: var(--color-surface-hover);
   color: var(--color-primary);
 }
 
 .sidebar-sublink.active {
-  background-color: #FFF0EF;
+  background-color: var(--color-primary-light);
   color: var(--color-primary);
   font-weight: 700;
 }

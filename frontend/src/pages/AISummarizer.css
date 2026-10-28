@@ -24,8 +24,8 @@
   width: 56px;
   height: 56px;
   border-radius: 14px;
-  background-color: #FFF0EF;
-  border: 1px solid #F2B8B5;
+  background-color: var(--color-primary-light);
+  border: 1px solid var(--color-primary-border);
   display: flex;
   align-items: center;
   justify-content: center;

@@ -48,8 +48,8 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.35rem 0.85rem;
-  background-color: #FFF0EF;
-  border: 1px solid #F2B8B5;
+  background-color: var(--color-primary-light);
+  border: 1px solid var(--color-primary-border);
   border-radius: 9999px;
   font-size: 0.8rem;
   font-weight: 700;
@@ -189,7 +189,7 @@
 }
 
 .hero-suggestion-item:hover {
-  background-color: #FFF8F7;
+  background-color: var(--color-surface-hover);
 }
 
 .suggestion-details {
@@ -260,9 +260,9 @@
 }
 
 .hero-tag-btn:hover {
-  border-color: #F2B8B5;
+  border-color: var(--color-primary-border);
   color: var(--color-primary);
-  background-color: #FFF0EF;
+  background-color: var(--color-primary-light);
 }
 
 /* Action Buttons */
@@ -317,13 +317,13 @@
 }
 
 .btn-hero-secondary:hover {
-  background-color: #FFF0EF;
-  border-color: #F2B8B5;
+  background-color: var(--color-surface-hover);
+  border-color: var(--color-border-hover);
   color: var(--color-primary);
 }
 
 .btn-hero-secondary:active {
-  background-color: #FDE8E7;
+  background-color: var(--color-primary-light);
 }
 
 .hero-ai-icon {
@@ -429,7 +429,7 @@
   width: 28px;
   height: 28px;
   border-radius: 6px;
-  background-color: #FFF0EF;
+  background-color: var(--color-primary-light);
   color: var(--color-primary);
   display: flex;
   align-items: center;
@@ -565,9 +565,9 @@
 
 /* Hovered category filter: soft-red background with red text */
 .category-pill-btn:hover {
-  background-color: #FFF0EF;
+  background-color: var(--color-primary-light);
   color: var(--color-primary);
-  border-color: #F2B8B5;
+  border-color: var(--color-primary-border);
 }
 
 /* Selected category filter: solid red background with white text */
@@ -657,8 +657,8 @@
 
 .how-step-card:hover {
   transform: translateY(-2px);
-  border-color: #F2B8B5;
-  background-color: #FFF8F7;
+  border-color: var(--color-border-hover);
+  background-color: var(--color-surface-hover);
 }
 
 .how-step-badge {
@@ -675,7 +675,7 @@
   width: 44px;
   height: 44px;
   border-radius: var(--radius-sm);
-  background-color: #FFF0EF;
+  background-color: var(--color-primary-light);
   color: var(--color-primary);
   display: flex;
   align-items: center;
@@ -809,7 +809,7 @@
   width: 36px;
   height: 36px;
   border-radius: 6px;
-  background-color: #FFF0EF;
+  background-color: var(--color-primary-light);
   color: var(--color-primary);
   display: flex;
   align-items: center;
@@ -858,7 +858,7 @@
 }
 
 .faq-accordion-item.open {
-  border-color: #F2B8B5;
+  border-color: var(--color-border-hover);
 }
 
 .faq-question-btn {
@@ -878,7 +878,7 @@
 }
 
 .faq-question-btn:hover {
-  background-color: #FFF8F7;
+  background-color: var(--color-surface-hover);
   color: var(--color-primary);
 }
 

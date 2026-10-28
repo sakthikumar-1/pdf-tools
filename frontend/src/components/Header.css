@@ -118,8 +118,8 @@
 
 .theme-switch-btn:hover {
   color: var(--color-primary);
-  border-color: #F2B8B5;
-  background-color: #FFF8F7;
+  border-color: var(--color-border-hover);
+  background-color: var(--color-surface-hover);
 }
 
 /* User Menu & Profile */
@@ -289,7 +289,7 @@
 }
 
 .user-dropdown-link:hover {
-  background-color: #FFF8F7;
+  background-color: var(--color-surface-hover);
   color: var(--color-primary);
 }
 
