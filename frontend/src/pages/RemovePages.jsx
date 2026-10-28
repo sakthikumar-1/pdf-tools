@@ -12,8 +12,7 @@ import {
   faArrowRotateLeft, 
   faFileLines 
 } from '@fortawesome/free-solid-svg-icons';
-import * as pdfjsDist from 'pdfjs-dist';
-const pdfjsLib = pdfjsDist.default || pdfjsDist;
+import { pdfjsLib } from '../utils/pdfjsConfig';
 import UploadBox from '../components/UploadBox';
 import FileUploader from '../components/FileUploader';
 import ProgressBar from '../components/ProgressBar';
@@ -25,10 +24,6 @@ import {
   formatPageRanges 
 } from '../utils/pdfProcessor';
 import './RemovePages.css';
-
-if (pdfjsLib.GlobalWorkerOptions) {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version || '4.0.379'}/pdf.worker.min.js`;
-}
 
 export default function RemovePages() {
   const {
@@ -216,7 +211,7 @@ export default function RemovePages() {
 
       {/* Main Workspace Area */}
       <div className="tool-workspace">
-        {status === 'idle' && (
+        {(status === 'idle' || status === 'error') && (
           <UploadBox
             onFileSelect={selectFile}
             isDragging={isDragging}

@@ -1,16 +1,10 @@
 import { PDFDocument, PDFHexString, degrees, rgb, StandardFonts } from 'pdf-lib';
-import * as pdfjsDist from 'pdfjs-dist';
+import { pdfjsLib } from './pdfjsConfig.js';
 import JSZip from 'jszip';
 import * as XLSX from 'xlsx';
 import { getPdfPageCount } from './pdfPageCounter.js';
 export { getPdfPageCount };
 
-const pdfjsLib = pdfjsDist.default || pdfjsDist;
-
-// Configure PDF.js worker
-if (pdfjsLib.GlobalWorkerOptions && typeof window !== 'undefined') {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version || '4.0.379'}/pdf.worker.min.js`;
-}
 
 /**
  * Extract clean text content from all pages of a PDF file

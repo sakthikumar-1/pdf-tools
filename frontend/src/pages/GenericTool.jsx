@@ -421,8 +421,8 @@ export default function GenericTool({
           </div>
         ) : (
           <>
-            {/* Step 1: Idle Upload Box */}
-            {status === 'idle' && (
+            {/* Step 1: Idle or Error Upload Box */}
+            {(status === 'idle' || status === 'error') && (
               <UploadBox
                 onFileSelect={(sel) => isMultipleTool ? selectMultipleFiles(Array.isArray(sel) ? sel : [sel], accept) : selectFile(sel, accept)}
                 isDragging={isDragging}
@@ -1290,20 +1290,6 @@ export default function GenericTool({
                 <FontAwesomeIcon icon={faArrowRotateLeft} /> Convert Another File
               </button>
             </div>
-          </div>
-        )}
-
-        {/* Step 5: Error State */}
-        {status === 'error' && (
-          <div className="tool-error-card">
-            <UploadBox
-              onFileSelect={selectFile}
-              isDragging={isDragging}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-              error={error}
-            />
           </div>
         )}
           </>

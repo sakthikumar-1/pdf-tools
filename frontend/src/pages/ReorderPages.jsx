@@ -16,8 +16,7 @@ import {
   faFileLines,
   faCircleExclamation
 } from '@fortawesome/free-solid-svg-icons';
-import * as pdfjsDist from 'pdfjs-dist';
-const pdfjsLib = pdfjsDist.default || pdfjsDist;
+import { pdfjsLib } from '../utils/pdfjsConfig';
 import UploadBox from '../components/UploadBox';
 import ProgressBar from '../components/ProgressBar';
 import { useFileUpload } from '../hooks/useFileUpload';
@@ -26,10 +25,6 @@ import { formatFileSize } from '../utils/formatFileSize';
 import { reorderPdfPages } from '../utils/pdfProcessor';
 import { reorderPdfPagesPython } from '../services/api';
 import './ReorderPages.css';
-
-if (pdfjsLib.GlobalWorkerOptions) {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version || '4.0.379'}/pdf.worker.min.js`;
-}
 
 export default function ReorderPages() {
   const {
@@ -266,7 +261,7 @@ export default function ReorderPages() {
       )}
 
       {/* UPLOAD SCREEN */}
-      {status === 'idle' && (
+      {(status === 'idle' || status === 'error') && (
         <div style={{ maxWidth: '720px', margin: '0 auto', width: '100%' }}>
           <UploadBox
             onFileSelect={selectFile}

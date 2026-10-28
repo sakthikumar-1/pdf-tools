@@ -14,14 +14,24 @@ function compressDir(dir) {
       compressDir(fullPath);
     } else if (entry.isFile()) {
       const ext = path.extname(entry.name).toLowerCase();
-      if (['.js', '.css', '.html', '.svg', '.json', '.wasm'].includes(ext) && !entry.name.endsWith('.gz')) {
+      if (['.js', '.css', '.html', '.svg', '.json', '.wasm'].includes(ext) && !entry.name.endsWith('.gz') && !entry.name.endsWith('.br')) {
         const content = fs.readFileSync(fullPath);
+        
+        // 1. Gzip Level 9
         const gzipped = zlib.gzipSync(content, { level: 9 });
         fs.writeFileSync(`${fullPath}.gz`, gzipped);
+
+        // 2. Brotli Quality 11 (Max compression)
+        const brotli = zlib.brotliCompressSync(content, {
+          params: {
+            [zlib.constants.BROTLI_PARAM_QUALITY]: 11,
+          },
+        });
+        fs.writeFileSync(`${fullPath}.br`, brotli);
       }
     }
   }
 }
 
 compressDir(distDir);
-console.log('✓ Pre-compressed all dist assets with gzip (level 9).');
+console.log('✓ Pre-compressed all dist assets with Gzip (level 9) and Brotli (level 11).');

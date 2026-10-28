@@ -11,8 +11,7 @@ import {
   faWandMagicSparkles,
   faArrowLeft
 } from '@fortawesome/free-solid-svg-icons';
-import * as pdfjsDist from 'pdfjs-dist';
-const pdfjsLib = pdfjsDist.default || pdfjsDist;
+import { pdfjsLib } from '../utils/pdfjsConfig';
 import JSZip from 'jszip';
 import UploadBox from '../components/UploadBox';
 import FileUploader from '../components/FileUploader';
@@ -22,11 +21,6 @@ import { useFileUpload } from '../hooks/useFileUpload';
 import { convertPdfToJpgPython } from '../services/api';
 import { downloadFile } from '../utils/fileUtils';
 import './PDFToJPG.css';
-
-// Set up PDF.js worker source
-if (pdfjsLib.GlobalWorkerOptions) {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version || '4.0.379'}/pdf.worker.min.js`;
-}
 
 function PDFToJPGInner() {
   useEffect(() => {
@@ -212,7 +206,7 @@ function PDFToJPGInner() {
       {/* WORKFLOW VIEW CONTROLLER */}
       <div className="tool-workspace">
         {/* STEP 1: Idle / Upload State */}
-        {status === 'idle' && (
+        {(status === 'idle' || status === 'error') && (
           <UploadBox
             onFileSelect={selectFile}
             isDragging={isDragging}

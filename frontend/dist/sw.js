@@ -1,4 +1,4 @@
-const CACHE_NAME = 'simatrix-pdf-cache-v5';
+const CACHE_NAME = 'simatrix-pdf-cache-v6';
 
 // Fast critical assets to precache immediately on install (lightweight only)
 const PRECACHE_ASSETS = [
