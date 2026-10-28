@@ -53,19 +53,24 @@ export function validatePdfFile(file, acceptType = '.pdf') {
   return { valid: true };
 }
 
+import { addHistoryItem } from './historyManager.js';
+
 /**
- * Triggers a browser file download for a given Blob or Data URL.
+ * Triggers a browser file download for a given Blob or Data URL and logs to history.
  * @param {Blob|string} content 
  * @param {string} filename 
+ * @param {string} [toolName] - Optional name of the tool creating this download
  */
-export function downloadFile(content, filename) {
+export function downloadFile(content, filename, toolName) {
   const link = document.createElement('a');
   let url = '';
+  let fileSize = 0;
 
   if (typeof content === 'string') {
     url = content;
   } else if (content instanceof Blob) {
     url = URL.createObjectURL(content);
+    fileSize = content.size;
   }
 
   link.href = url;
@@ -73,6 +78,35 @@ export function downloadFile(content, filename) {
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
+
+  // Auto-record to user's history
+  try {
+    let resolvedToolName = toolName;
+    if (!resolvedToolName) {
+      // Derive tool from filename or active pathname
+      const path = typeof window !== 'undefined' ? window.location.pathname.replace('/', '') : '';
+      if (path.includes('reorder')) resolvedToolName = 'Reorder PDF';
+      else if (path.includes('remove')) resolvedToolName = 'Remove Pages';
+      else if (path.includes('crop')) resolvedToolName = 'Crop PDF';
+      else if (path.includes('merge')) resolvedToolName = 'Merge PDF';
+      else if (path.includes('split')) resolvedToolName = 'Split PDF';
+      else if (path.includes('compress')) resolvedToolName = 'Compress PDF';
+      else if (path.includes('word')) resolvedToolName = 'PDF to Word';
+      else if (path.includes('jpg')) resolvedToolName = 'PDF to JPG';
+      else if (path.includes('protect')) resolvedToolName = 'Protect PDF';
+      else if (path.includes('watermark')) resolvedToolName = 'Watermark PDF';
+      else resolvedToolName = 'PDF Utility';
+    }
+
+    addHistoryItem({
+      fileName: filename,
+      fileSize: fileSize,
+      toolName: resolvedToolName,
+      status: 'Completed'
+    });
+  } catch (e) {
+    console.warn('[downloadFile] History record error:', e);
+  }
 
   if (content instanceof Blob) {
     setTimeout(() => URL.revokeObjectURL(url), 120000);

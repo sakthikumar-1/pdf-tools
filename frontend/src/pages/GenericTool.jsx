@@ -369,7 +369,7 @@ export default function GenericTool({
 
   const handleDownload = () => {
     if (processedResult) {
-      downloadFile(processedResult.blob, processedResult.filename);
+      downloadFile(processedResult.blob, processedResult.filename, title);
     }
   };
 

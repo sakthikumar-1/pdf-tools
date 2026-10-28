@@ -8,6 +8,7 @@ const PDFToJPG = lazy(() => import('./pages/PDFToJPG'));
 const GenericTool = lazy(() => import('./pages/GenericTool'));
 const RemovePages = lazy(() => import('./pages/RemovePages'));
 const ReorderPages = lazy(() => import('./pages/ReorderPages'));
+const CropPDF = lazy(() => import('./pages/CropPDF'));
 const AISummarizer = lazy(() => import('./pages/AISummarizer'));
 const Login = lazy(() => import('./pages/Login'));
 const Account = lazy(() => import('./pages/Account'));
@@ -164,7 +165,7 @@ export default function App() {
               />
               <Route 
                 path="/crop-pdf" 
-                element={<GenericTool title="Crop PDF" description="Trim margins and adjust document boundary boxes across selected or all pages." icon={faCropSimple} actionLabel="Crop PDF Pages Now" />} 
+                element={<CropPDF />} 
               />
               <Route 
                 path="/edit-metadata" 

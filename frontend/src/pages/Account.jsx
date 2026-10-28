@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
@@ -15,10 +15,13 @@ import {
   faArrowRightToBracket,
   faLanguage,
   faBell,
-  faArrowLeft
+  faArrowLeft,
+  faFilePdf,
+  faArrowRight
 } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { getHistoryItems } from '../utils/historyManager';
 import './Account.css';
 
 export default function Account() {
@@ -28,7 +31,19 @@ export default function Account() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [selectedLanguage, setSelectedLanguage] = useState('en');
   const [avatarError, setAvatarError] = useState(false);
+  const [recentFiles, setRecentFiles] = useState([]);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const items = getHistoryItems(user?.email);
+    setRecentFiles(items);
+
+    const handleUpdate = () => {
+      setRecentFiles(getHistoryItems(user?.email));
+    };
+    window.addEventListener('simatrix_history_updated', handleUpdate);
+    return () => window.removeEventListener('simatrix_history_updated', handleUpdate);
+  }, [user?.email]);
 
   const userInitial = user?.full_name ? user.full_name.charAt(0).toUpperCase() : (user?.email ? user.email.charAt(0).toUpperCase() : 'S');
   const userDisplayName = user?.full_name || (user?.email ? user.email.split('@')[0] : 'Simatrix User');
@@ -157,6 +172,105 @@ export default function Account() {
                   </Link>
                 )}
               </div>
+            </div>
+
+            {/* RECENT PROCESSED FILES SUMMARY */}
+            <div className="account-recent-card" style={{
+              marginTop: '1.5rem',
+              backgroundColor: 'var(--color-surface)',
+              border: '1px solid var(--color-border)',
+              borderRadius: 'var(--radius-md)',
+              padding: '1.25rem 1.5rem'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                  <FontAwesomeIcon icon={faClockRotateLeft} style={{ color: 'var(--color-primary)' }} />
+                  <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: 'var(--color-heading)' }}>
+                    Recent File Activity
+                  </h3>
+                  <span style={{
+                    fontSize: '0.72rem',
+                    fontWeight: 700,
+                    padding: '0.15rem 0.5rem',
+                    borderRadius: '9999px',
+                    background: 'var(--color-primary-light)',
+                    color: 'var(--color-primary)'
+                  }}>
+                    {recentFiles.length} {recentFiles.length === 1 ? 'file' : 'files'}
+                  </span>
+                </div>
+                <Link to="/history" style={{
+                  fontSize: '0.85rem',
+                  fontWeight: 600,
+                  color: 'var(--color-primary)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                  textDecoration: 'none'
+                }}>
+                  <span>View All History</span>
+                  <FontAwesomeIcon icon={faArrowRight} style={{ fontSize: '0.75rem' }} />
+                </Link>
+              </div>
+
+              {recentFiles.length === 0 ? (
+                <div style={{
+                  textAlign: 'center',
+                  padding: '1.5rem 1rem',
+                  color: 'var(--color-text-secondary)',
+                  fontSize: '0.88rem'
+                }}>
+                  <p style={{ margin: '0 0 0.5rem 0' }}>No files processed in this session yet.</p>
+                  <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
+                    Files you reorder, crop, convert, or compress will be tracked here.
+                  </p>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  {recentFiles.slice(0, 4).map((f, i) => (
+                    <div key={i} style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '0.65rem 0.85rem',
+                      borderRadius: 'var(--radius-sm)',
+                      background: 'var(--color-bg)',
+                      border: '1px solid var(--color-border)'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', overflow: 'hidden' }}>
+                        <FontAwesomeIcon icon={faFilePdf} style={{ color: '#E53935', fontSize: '1.1rem', flexShrink: 0 }} />
+                        <div style={{ overflow: 'hidden' }}>
+                          <div style={{
+                            fontSize: '0.88rem',
+                            fontWeight: 600,
+                            color: 'var(--color-heading)',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            maxWidth: '280px'
+                          }}>
+                            {f.fileName}
+                          </div>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
+                            {f.toolName} • {new Date(f.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </div>
+                        </div>
+                      </div>
+                      <span style={{
+                        fontSize: '0.72rem',
+                        fontWeight: 600,
+                        padding: '0.15rem 0.5rem',
+                        borderRadius: '9999px',
+                        background: 'rgba(16, 185, 129, 0.1)',
+                        color: '#10B981',
+                        border: '1px solid rgba(16, 185, 129, 0.25)'
+                      }}>
+                        Completed
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )}

@@ -218,7 +218,7 @@ export default function ReorderPages() {
 
   const handleDownload = () => {
     if (processedResult) {
-      downloadFile(processedResult.blob, processedResult.filename);
+      downloadFile(processedResult.blob, processedResult.filename, 'Reorder PDF');
     }
   };
 
@@ -233,15 +233,19 @@ export default function ReorderPages() {
   const isOrderChanged = pages.some((p, idx) => p.originalPage !== idx + 1 || p.rotation !== 0);
 
   return (
-    <div className="container reorder-pages-container">
-      {/* HEADER SECTION */}
-      <div className="reorder-pages-hero">
+    <div className="reorder-pages-container">
+      {/* Top Navigation Row with Back Button */}
+      <div className="tool-top-nav-row">
         <Link to="/" className="tool-back-link">
           <FontAwesomeIcon icon={faArrowLeft} />
           <span>Back to Tools</span>
         </Link>
+      </div>
+
+      {/* HEADER SECTION */}
+      <div className="reorder-pages-hero">
         <div className="reorder-pages-icon">
-          <FontAwesomeIcon icon={faUpDown} size="2x" />
+          <FontAwesomeIcon icon={faUpDown} />
         </div>
         <div className="capability-chip">
           <FontAwesomeIcon icon={faWandMagicSparkles} /> PyMuPDF Page Sequence Engine

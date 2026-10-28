@@ -11,6 +11,9 @@ import {
   faEllipsisVertical,
   faArrowLeft
 } from '@fortawesome/free-solid-svg-icons';
+import { useAuth } from '../context/AuthContext';
+import { getHistoryItems, removeHistoryItem, clearAllHistory } from '../utils/historyManager';
+import { formatFileSize } from '../utils/formatFileSize';
 import './History.css';
 
 function formatRelativeTime(timestamp) {
@@ -29,28 +32,30 @@ function formatRelativeTime(timestamp) {
 }
 
 export default function History() {
+  const { user, isAuthenticated } = useAuth();
   const [historyItems, setHistoryItems] = useState([]);
 
+  const refreshHistory = () => {
+    const items = getHistoryItems(user?.email);
+    setHistoryItems(items);
+  };
+
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem('simatrix_pdf_history');
-      if (stored) {
-        setHistoryItems(JSON.parse(stored));
-      }
-    } catch (e) {
-      console.warn('Failed to parse history from localStorage', e);
-    }
-  }, []);
+    refreshHistory();
+
+    const handleUpdate = () => refreshHistory();
+    window.addEventListener('simatrix_history_updated', handleUpdate);
+    return () => window.removeEventListener('simatrix_history_updated', handleUpdate);
+  }, [user?.email]);
 
   const handleClearHistory = () => {
-    localStorage.removeItem('simatrix_pdf_history');
+    clearAllHistory(user?.email);
     setHistoryItems([]);
   };
 
-  const handleDeleteItem = (index) => {
-    const updated = historyItems.filter((_, idx) => idx !== index);
-    setHistoryItems(updated);
-    localStorage.setItem('simatrix_pdf_history', JSON.stringify(updated));
+  const handleDeleteItem = (item, index) => {
+    removeHistoryItem(item.id || index, user?.email);
+    refreshHistory();
   };
 
   return (
@@ -64,9 +69,26 @@ export default function History() {
         {/* Header matching Reference */}
         <div className="recent-files-header">
           <div>
-            <h1 className="recent-files-title">Recent Files</h1>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.35rem' }}>
+              <h1 className="recent-files-title" style={{ margin: 0 }}>Recent Files</h1>
+              {isAuthenticated && (
+                <span style={{
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  padding: '0.2rem 0.6rem',
+                  borderRadius: '9999px',
+                  background: 'rgba(0, 163, 255, 0.12)',
+                  color: '#00A3FF',
+                  border: '1px solid rgba(0, 163, 255, 0.3)'
+                }}>
+                  {user?.email}
+                </span>
+              )}
+            </div>
             <p className="recent-files-subtitle">
-              Your recent processing history. Files are not stored on our servers.
+              {isAuthenticated 
+                ? 'Your recent document operations are saved to your verified Google session.'
+                : 'Your recent processing history is saved locally in this browser session.'}
             </p>
           </div>
 
@@ -137,7 +159,7 @@ export default function History() {
                         <button
                           type="button"
                           className="action-icon-btn"
-                          onClick={() => handleDeleteItem(idx)}
+                          onClick={() => handleDeleteItem(item, idx)}
                           title="Remove from history"
                         >
                           <FontAwesomeIcon icon={faTrashCan} />
