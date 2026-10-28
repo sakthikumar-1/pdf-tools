@@ -118,6 +118,7 @@ class GoogleAuthPayload(Schema):
     email: Optional[str] = None
     name: Optional[str] = None
     avatar_url: Optional[str] = None
+    is_guest: Optional[bool] = False
 
 
 class UserProfileOut(Schema):
@@ -1132,12 +1133,14 @@ def download_converted_file(request, token: str, inline: bool = False):
 @api.post("/auth/google", response=AuthResponse)
 def auth_google(request, payload: GoogleAuthPayload):
     """
-    Authenticate or register a user using Google OAuth token or verified identity profile.
+    Authenticate or register a user using Google OAuth token, email, custom name, or instant guest access.
     Issues a cryptographically signed 30-day session token.
     """
-    email = payload.email
-    full_name = payload.name or ''
-    avatar_url = payload.avatar_url or ''
+    import re
+    email = (payload.email or '').strip()
+    full_name = (payload.name or '').strip()
+    avatar_url = (payload.avatar_url or '').strip()
+    is_guest = bool(payload.is_guest)
 
     # If Google credential JWT is provided, verify via Google's tokeninfo API with payload decode fallback
     if payload.credential:
@@ -1170,8 +1173,21 @@ def auth_google(request, payload: GoogleAuthPayload):
             except Exception as jwt_err:
                 logger.warning(f"JWT payload decoding fallback warning: {jwt_err}")
 
-    if not email:
-        raise HttpError(400, "Valid email address is required for authentication.")
+    # Instant Guest / No-Email Access
+    if is_guest or not email:
+        guest_id = uuid.uuid4().hex[:6]
+        if full_name and full_name.lower() != 'guest user':
+            clean_slug = re.sub(r'[^a-zA-Z0-9_]', '', full_name.lower())[:15] or 'guest'
+            email = f"{clean_slug}_{guest_id}@simatrix.local"
+        else:
+            email = f"guest_{guest_id}@simatrix.local"
+            full_name = "Guest User"
+    elif '@' not in email:
+        # User typed just a name or handle into the sign-in input field
+        clean_slug = re.sub(r'[^a-zA-Z0-9_]', '', email.lower())[:20] or 'user'
+        if not full_name:
+            full_name = email
+        email = f"{clean_slug}@simatrix.local"
 
     email = email.lower().strip()
     user = User.objects.filter(email__iexact=email).first()
@@ -1183,12 +1199,13 @@ def auth_google(request, payload: GoogleAuthPayload):
             username = f"{base_username}_{counter}"
             counter += 1
 
+        is_verified_flag = bool(payload.credential or (not is_guest and '@' in (payload.email or '') and not email.endswith('@simatrix.local')))
         user = User.objects.create(
             email=email,
             username=username,
             full_name=full_name or username,
             avatar_url=avatar_url or None,
-            is_verified=True,
+            is_verified=is_verified_flag,
             role='user'
         )
         user.set_unusable_password()

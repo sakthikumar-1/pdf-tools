@@ -7,7 +7,8 @@ import {
   faWandMagicSparkles, 
   faClockRotateLeft,
   faSpinner,
-  faCircleCheck
+  faCircleCheck,
+  faBolt
 } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '../context/AuthContext';
 import { GOOGLE_CLIENT_ID } from '../config/auth';
@@ -15,7 +16,7 @@ import './Login.css';
 
 export default function Login() {
   const navigate = useNavigate();
-  const { loginWithGoogle, isAuthenticated, user } = useAuth();
+  const { loginWithGoogle, loginAsGuest, isAuthenticated, user } = useAuth();
   const [emailInput, setEmailInput] = useState('');
   const [nameInput, setNameInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -33,7 +34,11 @@ export default function Login() {
             callback: async (tokenResponse) => {
               if (tokenResponse.error) {
                 console.error('Google OAuth error:', tokenResponse);
-                setError('Google sign-in was cancelled or encountered an error.');
+                if (tokenResponse.error === 'popup_closed_by_user') {
+                  setError('Google popup was closed. You can also sign in instantly as Guest or use email below.');
+                } else {
+                  setError(`Google sign-in error (${tokenResponse.error}). You can continue as Guest below.`);
+                }
                 setIsLoading(false);
                 return;
               }
@@ -61,13 +66,22 @@ export default function Login() {
                   setSuccess(true);
                   setTimeout(() => {
                     navigate('/account');
-                  }, 800);
+                  }, 700);
                 } catch (err) {
                   setError(err.message || 'Authentication failed. Please try again.');
                 } finally {
                   setIsLoading(false);
                 }
               }
+            },
+            error_callback: (err) => {
+              console.warn('Google Identity error_callback:', err);
+              if (err.type === 'origin_mismatch') {
+                setError('Google OAuth Error 400: origin_mismatch for local address. Use 1-Click Guest Sign-In or register your origin in Google Cloud Console.');
+              } else {
+                setError('Google Sign-In encountered an issue. You can sign in instantly as Guest below.');
+              }
+              setIsLoading(false);
             }
           });
         } catch (err) {
@@ -92,10 +106,10 @@ export default function Login() {
   const handleGoogleSignInClick = () => {
     setIsLoading(true);
     setError(null);
-    if (tokenClientRef.current) {
-      tokenClientRef.current.requestAccessToken({ prompt: 'select_account' });
-    } else if (window.google?.accounts?.oauth2) {
-      try {
+    try {
+      if (tokenClientRef.current) {
+        tokenClientRef.current.requestAccessToken({ prompt: 'select_account' });
+      } else if (window.google?.accounts?.oauth2) {
         const client = window.google.accounts.oauth2.initTokenClient({
           client_id: GOOGLE_CLIENT_ID,
           scope: 'email profile openid',
@@ -111,41 +125,69 @@ export default function Login() {
                 avatar_url: info.picture
               });
               setSuccess(true);
-              setTimeout(() => { navigate('/account'); }, 800);
+              setTimeout(() => { navigate('/account'); }, 700);
             }
+          },
+          error_callback: (err) => {
+            setError('Google Sign-In was closed or encountered an origin mismatch. Use 1-Click Guest Sign-In below.');
+            setIsLoading(false);
           }
         });
         client.requestAccessToken({ prompt: 'select_account' });
-      } catch (e) {
-        setError('Could not connect to Google. Please check popup permissions.');
+      } else {
+        setError('Google Sign-In is still connecting. You can sign in instantly as Guest below.');
         setIsLoading(false);
       }
-    } else {
-      setError('Google Sign-In is still connecting. Please try again in a moment or enter email.');
+    } catch (e) {
+      setError('Could not connect to Google. Use 1-Click Guest Sign-In below.');
+      setIsLoading(false);
+    }
+  };
+
+  const handleGuestSignIn = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      await loginAsGuest();
+      setSuccess(true);
+      setTimeout(() => {
+        navigate('/account');
+      }, 700);
+    } catch (err) {
+      setError(err.message || 'Guest sign-in failed. Please try again.');
+    } finally {
       setIsLoading(false);
     }
   };
 
   const handleCustomSubmit = async (e) => {
-    e.preventDefault();
-    if (!emailInput || !emailInput.includes('@')) {
-      setError('Please provide a valid email address.');
-      return;
-    }
+    if (e && e.preventDefault) e.preventDefault();
     setIsLoading(true);
     setError(null);
     try {
-      const cleanEmail = emailInput.trim();
-      const cleanName = nameInput.trim() || cleanEmail.split('@')[0];
-      await loginWithGoogle({
-        email: cleanEmail,
-        name: cleanName,
-        avatar_url: ''
-      });
+      const cleanInput = (emailInput || '').trim();
+      if (!cleanInput) {
+        // Empty input -> Instant Guest login
+        await loginAsGuest();
+      } else if (cleanInput.includes('@')) {
+        await loginWithGoogle({
+          email: cleanInput,
+          name: nameInput.trim() || cleanInput.split('@')[0],
+          avatar_url: ''
+        });
+      } else {
+        // Username without @
+        await loginWithGoogle({
+          email: `${cleanInput.toLowerCase().replace(/[^a-z0-9_]/g, '')}@simatrix.local`,
+          name: cleanInput,
+          avatar_url: '',
+          is_guest: true
+        });
+      }
       setSuccess(true);
       setTimeout(() => {
         navigate('/account');
-      }, 800);
+      }, 700);
     } catch (err) {
       setError(err.message || 'Authentication failed. Please try again.');
     } finally {
@@ -214,6 +256,21 @@ export default function Login() {
             )}
 
             <div className="login-actions">
+              {/* 1-Click Instant Guest Sign-In */}
+              <button
+                type="button"
+                className="guest-signin-btn"
+                onClick={handleGuestSignIn}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <FontAwesomeIcon icon={faSpinner} spin />
+                ) : (
+                  <FontAwesomeIcon icon={faBolt} className="guest-bolt-icon" />
+                )}
+                <span>Continue as Guest (No Email Needed)</span>
+              </button>
+
               <button 
                 type="button" 
                 className="google-signin-btn"
@@ -235,18 +292,17 @@ export default function Login() {
 
               <div style={{ display: 'flex', alignItems: 'center', textAlign: 'center', color: 'var(--color-text-muted)', fontSize: '0.8rem', margin: '0.5rem 0' }}>
                 <span style={{ flex: 1, borderBottom: '1px solid var(--color-border)' }}></span>
-                <span style={{ padding: '0 0.65rem' }}>or specify Google email</span>
+                <span style={{ padding: '0 0.65rem' }}>or enter email or nickname</span>
                 <span style={{ flex: 1, borderBottom: '1px solid var(--color-border)' }}></span>
               </div>
 
               <form onSubmit={handleCustomSubmit} style={{ display: 'flex', gap: '0.5rem' }}>
                 <input
-                  type="email"
+                  type="text"
                   value={emailInput}
                   onChange={(e) => setEmailInput(e.target.value)}
-                  placeholder="your.email@gmail.com"
+                  placeholder="your.email@gmail.com or nickname"
                   style={{ flex: 1, padding: '0.75rem 1rem', background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '8px', color: 'var(--color-heading)', fontSize: '0.92rem', outline: 'none' }}
-                  required
                 />
                 <button
                   type="submit"
@@ -263,7 +319,7 @@ export default function Login() {
                 className="continue-anonymous-btn"
                 onClick={() => navigate('/')}
               >
-                <span>Continue as Guest (No Account Needed)</span>
+                <span>Continue browsing without signing in &rarr;</span>
               </button>
             </div>
 

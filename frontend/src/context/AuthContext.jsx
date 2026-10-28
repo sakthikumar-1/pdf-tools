@@ -67,7 +67,7 @@ export function AuthProvider({ children }) {
 
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.detail || 'Google sign-in failed. Please try again.');
+        throw new Error(errData.detail || 'Sign-in failed. Please try again or use 1-Click Guest access.');
       }
 
       const data = await res.json();
@@ -80,6 +80,13 @@ export function AuthProvider({ children }) {
       console.error('Login error:', err);
       throw err;
     }
+  };
+
+  const loginAsGuest = async (customName = '') => {
+    return loginWithGoogle({
+      is_guest: true,
+      name: customName || 'Guest User'
+    });
   };
 
   const logout = async () => {
@@ -101,6 +108,7 @@ export function AuthProvider({ children }) {
         isAuthenticated: !!user,
         isLoading,
         loginWithGoogle,
+        loginAsGuest,
         logout
       }}
     >

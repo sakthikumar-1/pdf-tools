@@ -203,7 +203,7 @@ export default function Header({ onToggleSidebar, onOpenAuth }) {
                   <div className="user-dropdown-name">{userDisplayName}</div>
                   <div className="user-dropdown-email">{user?.email || 'user@example.com'}</div>
                   <span className="user-verified-badge">
-                    <FontAwesomeIcon icon={faCircleCheck} /> Verified with Google
+                    <FontAwesomeIcon icon={faCircleCheck} /> {user?.is_verified ? 'Verified with Google' : 'Active Workspace'}
                   </span>
                 </div>
               </div>

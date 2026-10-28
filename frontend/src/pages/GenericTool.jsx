@@ -393,13 +393,6 @@ export default function GenericTool({
         <Link to="/" className="tool-back-link">
           <FontAwesomeIcon icon={faArrowLeft} /> Back to Tools
         </Link>
-        <nav className="tool-breadcrumb" aria-label="Breadcrumb">
-          <Link to="/" className="breadcrumb-link">
-            Home
-          </Link>
-          <span className="breadcrumb-separator">/</span>
-          <span className="breadcrumb-current">{title}</span>
-        </nav>
       </div>
 
       {/* Tool Header */}
