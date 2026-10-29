@@ -122,12 +122,13 @@ class OllamaClient:
             or 35
         )
 
-    def check_health(self) -> Dict[str, Any]:
+    def check_health(self, override_url: Optional[str] = None) -> Dict[str, Any]:
+        target_base = (override_url or self.base_url).rstrip("/")
         """
         Checks if the local Ollama runtime is reachable and whether the target model is installed.
         Returns status dictionary without throwing exceptions.
         """
-        tags_url = f"{self.base_url}/api/tags"
+        tags_url = f"{target_base}/api/tags"
         req = urllib.request.Request(
             tags_url,
             headers={"User-Agent": "Simatrix-PDF-Tools/1.0"}
@@ -147,7 +148,7 @@ class OllamaClient:
                         "model": self.model,
                         "model_installed": has_model,
                         "models_found": models,
-                        "base_url": self.base_url
+                        "base_url": target_base
                     }
         except Exception as e:
             logger.debug(f"Ollama health check unreachable: {e}")
@@ -156,17 +157,18 @@ class OllamaClient:
                 "model": self.model,
                 "model_installed": False,
                 "error": str(e),
-                "base_url": self.base_url
+                "base_url": target_base
             }
 
         return {
             "available": False,
             "model": self.model,
             "model_installed": False,
-            "base_url": self.base_url
+            "base_url": target_base
         }
 
-    def interpret_intent(self, instruction: str) -> Dict[str, Any]:
+    def interpret_intent(self, instruction: str, override_url: Optional[str] = None) -> Dict[str, Any]:
+        target_base = (override_url or self.base_url).rstrip("/")
         """
         Interprets natural language instruction via Ollama `llama3.2:3b`.
         Strictly parses and validates output against the Phase 1 allowlist.
@@ -197,7 +199,7 @@ class OllamaClient:
                 "model": self.model
             }
 
-        endpoint = f"{self.base_url}/api/generate"
+        endpoint = f"{target_base}/api/generate"
         payload = {
             "model": self.model,
             "system": SYSTEM_INTENT_PROMPT,

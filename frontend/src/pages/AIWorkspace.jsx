@@ -21,9 +21,14 @@ import {
   faTrashCan,
   faSpinner,
   faClock,
-  faBookOpen
+  faBookOpen,
+  faGear,
+  faLink,
+  faTerminal,
+  faCircleQuestion,
+  faXmark
 } from '@fortawesome/free-solid-svg-icons';
-import { checkOllamaStatus, interpretAIIntent, executeAITool } from '../services/api';
+import { checkOllamaStatus, interpretAIIntent, executeAITool, getSavedOllamaUrl, setSavedOllamaUrl } from '../services/api';
 import './AIWorkspace.css';
 
 const QUICK_PROMPTS = [
@@ -57,6 +62,12 @@ export default function AIWorkspace() {
   const [ollamaStatus, setOllamaStatus] = useState(null);
   const [error, setError] = useState(null);
   const [copiedSummary, setCopiedSummary] = useState(false);
+
+  // Custom Ollama endpoint configuration state
+  const [isConfigOpen, setIsConfigOpen] = useState(false);
+  const [configUrl, setConfigUrl] = useState(() => getSavedOllamaUrl() || '');
+  const [isTestingUrl, setIsTestingUrl] = useState(false);
+  const [testResult, setTestResult] = useState(null);
 
   // Check Ollama status on initial mount
   useEffect(() => {
@@ -114,6 +125,56 @@ export default function AIWorkspace() {
   const handleQuickPrompt = (promptText) => {
     setInstruction(promptText);
     handleAnalyzeIntent(promptText);
+  };
+
+
+  // Test and save custom endpoint
+  const handleTestAndSaveConfig = async (urlToSave) => {
+    const clean = (urlToSave !== undefined ? urlToSave : configUrl).trim();
+    setIsTestingUrl(true);
+    setTestResult(null);
+    try {
+      const status = await checkOllamaStatus(clean);
+      setOllamaStatus(status);
+      if (status.available) {
+        setSavedOllamaUrl(clean);
+        setTestResult({
+          success: true,
+          message: `Connected successfully! Model '${status.model}' is ready.`
+        });
+      } else {
+        setTestResult({
+          success: false,
+          message: status.error || `Ollama unreachable at ${clean || 'default endpoint'}.`
+        });
+      }
+    } catch (err) {
+      setTestResult({
+        success: false,
+        message: err.message || 'Connection test failed.'
+      });
+    } finally {
+      setIsTestingUrl(false);
+    }
+  };
+
+  const handleResetToDefault = async () => {
+    setConfigUrl('');
+    setSavedOllamaUrl('');
+    setIsTestingUrl(true);
+    setTestResult(null);
+    try {
+      const status = await checkOllamaStatus('');
+      setOllamaStatus(status);
+      setTestResult({
+        success: status.available,
+        message: status.available
+          ? 'Reset to default. Connected to local Ollama!'
+          : 'Reset to default (http://127.0.0.1:11434).'
+      });
+    } finally {
+      setIsTestingUrl(false);
+    }
   };
 
   // File selection
@@ -245,25 +306,34 @@ export default function AIWorkspace() {
           <span className="breadcrumb-current">AI Workspace</span>
         </nav>
 
-        {/* Runtime Status Badge */}
-        <div className="runtime-status-pill">
-          <FontAwesomeIcon icon={faServer} className="status-icon" />
-          <span className="status-label">Local Ollama:</span>
-          {ollamaStatus ? (
-            ollamaStatus.available ? (
-              <span className="status-badge available" title={`Model: ${ollamaStatus.model}`}>
-                <span className="status-dot green" /> {ollamaStatus.model} Online
-              </span>
+        {/* Runtime Status Badge & Endpoint Settings */}
+        <div className="runtime-status-container">
+          <button
+            type="button"
+            className="runtime-status-pill clickable"
+            onClick={() => { setIsConfigOpen(true); setTestResult(null); }}
+            title="Click to configure Ollama connection endpoint (e.g. for live site)"
+            aria-label="Configure Ollama connection"
+          >
+            <FontAwesomeIcon icon={faServer} className="status-icon" />
+            <span className="status-label">Local Ollama:</span>
+            {ollamaStatus ? (
+              ollamaStatus.available ? (
+                <span className="status-badge available" title={`Model: ${ollamaStatus.model}`}>
+                  <span className="status-dot green" /> {ollamaStatus.model} Online
+                </span>
+              ) : (
+                <span className="status-badge unavailable" title={ollamaStatus.error || 'Ollama offline'}>
+                  <span className="status-dot red" /> Offline
+                </span>
+              )
             ) : (
-              <span className="status-badge unavailable" title={ollamaStatus.error || 'Ollama offline'}>
-                <span className="status-dot red" /> Offline
+              <span className="status-badge checking">
+                <FontAwesomeIcon icon={faSpinner} spin /> Checking...
               </span>
-            )
-          ) : (
-            <span className="status-badge checking">
-              <FontAwesomeIcon icon={faSpinner} spin /> Checking...
-            </span>
-          )}
+            )}
+            <FontAwesomeIcon icon={faGear} className="status-gear-icon" />
+          </button>
         </div>
       </div>
 
@@ -687,6 +757,120 @@ export default function AIWorkspace() {
           </div>
         )}
       </div>
+
+      {/* OLLAMA CONNECTION CONFIGURATION MODAL */}
+      {isConfigOpen && (
+        <div className="ollama-modal-overlay" onClick={() => setIsConfigOpen(false)} role="dialog" aria-modal="true">
+          <div className="ollama-modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="ollama-modal-header">
+              <div className="modal-title-row">
+                <FontAwesomeIcon icon={faServer} className="modal-title-icon" />
+                <h3 className="modal-title">Ollama Connection Settings</h3>
+              </div>
+              <button
+                type="button"
+                className="modal-close-btn"
+                onClick={() => setIsConfigOpen(false)}
+                aria-label="Close"
+              >
+                <FontAwesomeIcon icon={faXmark} />
+              </button>
+            </div>
+
+            <div className="ollama-modal-body">
+              <p className="modal-description">
+                Simatrix AI Workspace uses your local <strong>llama3.2:3b</strong> model.
+                On local environments, it connects automatically to <code>http://127.0.0.1:11434</code>.
+              </p>
+
+              {/* Endpoint Input */}
+              <div className="config-form-group">
+                <label className="config-label" htmlFor="ollama-endpoint-input">
+                  <FontAwesomeIcon icon={faLink} /> Ollama Service URL
+                </label>
+                <div className="config-input-wrapper">
+                  <input
+                    id="ollama-endpoint-input"
+                    type="url"
+                    className="config-text-input"
+                    placeholder="http://127.0.0.1:11434 or https://xxxx.ngrok-free.app"
+                    value={configUrl}
+                    onChange={(e) => setConfigUrl(e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    className="btn-reset-default"
+                    onClick={handleResetToDefault}
+                    title="Reset to local default (http://127.0.0.1:11434)"
+                  >
+                    Reset Local
+                  </button>
+                </div>
+              </div>
+
+              {/* Test Status Feedback */}
+              {testResult && (
+                <div className={`config-feedback-alert ${testResult.success ? 'success' : 'error'}`}>
+                  <FontAwesomeIcon icon={testResult.success ? faCircleCheck : faCircleExclamation} />
+                  <span>{testResult.message}</span>
+                </div>
+              )}
+
+              {/* Live Site Instructions Accordion */}
+              <div className="live-site-help-card">
+                <div className="help-card-title">
+                  <FontAwesomeIcon icon={faTerminal} /> Connecting to Live Site (e.g. Render / Cloud)
+                </div>
+                <div className="help-card-content">
+                  <p>
+                    Because live cloud servers cannot access <code>127.0.0.1</code> inside your laptop directly,
+                    expose your local Ollama port using a free tunnel:
+                  </p>
+                  <ol className="help-steps-list">
+                    <li>Open PowerShell or Command Prompt on your computer.</li>
+                    <li>Run: <code className="code-snippet">ngrok http 11434</code> (or use Cloudflare Tunnel)</li>
+                    <li>Copy the generated <code>https://...ngrok-free.app</code> URL and paste it into the field above.</li>
+                    <li>Click <strong>Test & Save Connection</strong> below!</li>
+                  </ol>
+                  <p className="help-note">
+                    <strong>Local Tip:</strong> If you are testing locally, open{' '}
+                    <a href="http://localhost:3000/ai-workspace" target="_blank" rel="noopener noreferrer">
+                      http://localhost:3000/ai-workspace
+                    </a>{' '}
+                    which connects to your local Ollama with zero setup.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="ollama-modal-footer">
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => setIsConfigOpen(false)}
+              >
+                Close
+              </button>
+              <button
+                type="button"
+                className="btn-primary-action"
+                onClick={() => handleTestAndSaveConfig(configUrl)}
+                disabled={isTestingUrl}
+              >
+                {isTestingUrl ? (
+                  <>
+                    <FontAwesomeIcon icon={faSpinner} spin /> Testing Connection...
+                  </>
+                ) : (
+                  <>
+                    <FontAwesomeIcon icon={faBolt} /> Test & Save Connection
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

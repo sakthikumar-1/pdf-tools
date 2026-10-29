@@ -1116,11 +1116,13 @@ def summarize_document_endpoint(
     response={200: AIOllamaStatusResponse},
     tags=["AI Workspace"]
 )
-def get_ollama_status_endpoint(request):
+def get_ollama_status_endpoint(request, ollama_url: Optional[str] = None):
     """
-    Checks if the local Ollama instance is accessible and model llama3.2:3b is ready.
+    Checks if the Ollama instance is accessible and model llama3.2:3b is ready.
+    Supports custom override URL via query param or X-Ollama-Url header.
     """
-    return ollama_client.check_health()
+    url = ollama_url or request.headers.get("X-Ollama-Url")
+    return ollama_client.check_health(override_url=url)
 
 
 @api.post(
@@ -1146,7 +1148,8 @@ def interpret_instruction_endpoint(request, payload: AIInterpretPayload):
         raise HttpError(400, "Instruction cannot be empty.")
 
     try:
-        result = ollama_client.interpret_intent(instruction)
+        override_url = request.headers.get("X-Ollama-Url")
+        result = ollama_client.interpret_intent(instruction, override_url=override_url)
         return 200, result
 
     except OllamaUnavailableError as err:

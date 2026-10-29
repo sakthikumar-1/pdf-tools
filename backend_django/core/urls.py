@@ -91,7 +91,8 @@ def direct_ai_interpret_view(request):
         return JsonResponse({"detail": "Instruction cannot be empty."}, status=400)
 
     try:
-        result = ollama_client.interpret_intent(instruction)
+        override_url = request.headers.get("X-Ollama-Url") or body.get("ollama_url")
+        result = ollama_client.interpret_intent(instruction, override_url=override_url)
         return JsonResponse(result, status=200)
     except OllamaUnavailableError as err:
         return JsonResponse({"detail": str(err)}, status=503)

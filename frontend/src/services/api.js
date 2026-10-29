@@ -541,24 +541,84 @@ export async function summarizePdf(file, mode = 'quick', onProgress) {
 
 
 /**
- * Checks local Ollama runtime and llama3.2:3b model availability.
- * @returns {Promise<{ available: boolean, model: string, model_installed: boolean, base_url: string, error?: string }>}
+ * Get or set custom Ollama endpoint (e.g. for live site with ngrok/tunnel or custom IP)
  */
-export async function checkOllamaStatus() {
+export function getSavedOllamaUrl() {
+  if (typeof window !== 'undefined') {
+    return localStorage.getItem('simatrix_ollama_url') || '';
+  }
+  return '';
+}
+
+export function setSavedOllamaUrl(url) {
+  if (typeof window !== 'undefined') {
+    if (url && url.trim()) {
+      localStorage.setItem('simatrix_ollama_url', url.trim().replace(/\/+$/, ''));
+    } else {
+      localStorage.removeItem('simatrix_ollama_url');
+    }
+  }
+}
+
+/**
+ * Checks local Ollama runtime and llama3.2:3b model availability.
+ * Tests via backend proxy with optional custom tunnel URL, and falls back to direct client ping.
+ * @param {string} [customUrl]
+ * @returns {Promise<{ available: boolean, model: string, model_installed: boolean, base_url: string, error?: string, isDirectClient?: boolean }>}
+ */
+export async function checkOllamaStatus(customUrl) {
+  const targetUrl = customUrl !== undefined ? customUrl : getSavedOllamaUrl();
+  const headers = {};
+  if (targetUrl) {
+    headers['X-Ollama-Url'] = targetUrl;
+  }
+
+  // 1. Try checking via backend endpoint
   try {
-    const res = await fetch(`${API_BASE_URL}/ai/ollama-status`);
+    const query = targetUrl ? `?ollama_url=${encodeURIComponent(targetUrl)}` : '';
+    const res = await fetch(`${API_BASE_URL}/ai/ollama-status${query}`, { headers });
     if (res.ok) {
-      return await res.json();
+      const data = await res.json();
+      if (data.available) {
+        return data;
+      }
     }
   } catch (err) {
-    console.warn('[API Service] Ollama status check failed:', err);
+    console.warn('[API Service] Backend Ollama status check failed:', err);
   }
+
+  // 2. Direct browser ping to local Ollama (if running on same machine or HTTP)
+  const clientPingUrls = targetUrl ? [targetUrl] : ['http://127.0.0.1:11434', 'http://localhost:11434'];
+  for (const pingBase of clientPingUrls) {
+    try {
+      const pingRes = await fetch(`${pingBase}/api/tags`, {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' }
+      });
+      if (pingRes.ok) {
+        const pingData = await pingRes.json();
+        const models = (pingData.models || []).map(m => m.name || m.model || '');
+        const hasModel = models.some(m => m.includes('llama3.2:3b') || m.startsWith('llama3.2'));
+        return {
+          available: true,
+          model: 'llama3.2:3b',
+          model_installed: hasModel,
+          base_url: pingBase,
+          isDirectClient: true,
+          error: hasModel ? null : 'Model llama3.2:3b not yet pulled in Ollama.'
+        };
+      }
+    } catch (clientErr) {
+      // Ignore mixed content or CORS blocks and proceed to fallback return
+    }
+  }
+
   return {
     available: false,
     model: 'llama3.2:3b',
     model_installed: false,
-    base_url: 'http://127.0.0.1:11434',
-    error: 'Unable to reach backend service.'
+    base_url: targetUrl || 'http://127.0.0.1:11434',
+    error: 'Ollama is unreachable. On live sites, enter your public tunnel URL (e.g. ngrok).'
   };
 }
 
@@ -582,10 +642,14 @@ export async function interpretAIIntent(instruction) {
 
   let res;
   try {
+    const customUrl = getSavedOllamaUrl();
+    const headers = { 'Content-Type': 'application/json' };
+    if (customUrl) headers['X-Ollama-Url'] = customUrl;
+
     res = await fetch(`${API_BASE_URL}/ai/interpret`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
+      headers,
+      body: JSON.stringify({ ...payload, ollama_url: customUrl }),
     });
   } catch (fetchErr) {
     try {
