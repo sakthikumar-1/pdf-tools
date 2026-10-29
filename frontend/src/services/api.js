@@ -538,3 +538,144 @@ export async function summarizePdf(file, mode = 'quick', onProgress) {
   };
 }
 
+
+
+/**
+ * Checks local Ollama runtime and llama3.2:3b model availability.
+ * @returns {Promise<{ available: boolean, model: string, model_installed: boolean, base_url: string, error?: string }>}
+ */
+export async function checkOllamaStatus() {
+  try {
+    const res = await fetch(`${API_BASE_URL}/ai/ollama-status`);
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch (err) {
+    console.warn('[API Service] Ollama status check failed:', err);
+  }
+  return {
+    available: false,
+    model: 'llama3.2:3b',
+    model_installed: false,
+    base_url: 'http://127.0.0.1:11434',
+    error: 'Unable to reach backend service.'
+  };
+}
+
+/**
+ * Interprets a natural language instruction using local Ollama llama3.2:3b.
+ * @param {string} instruction
+ * @returns {Promise<{
+ *   success: boolean,
+ *   tool: string | null,
+ *   requires_file: boolean,
+ *   confidence: number,
+ *   explanation: string,
+ *   parameters: Object,
+ *   is_supported: boolean,
+ *   suggested_action: string | null,
+ *   model: string
+ * }>}
+ */
+export async function interpretAIIntent(instruction) {
+  const payload = { instruction: (instruction || '').trim() };
+
+  let res;
+  try {
+    res = await fetch(`${API_BASE_URL}/ai/interpret`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+  } catch (fetchErr) {
+    try {
+      res = await fetch('/api/ai/interpret/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+    } catch (e) {
+      throw new Error('Unable to connect to AI service. Please verify backend and Ollama are running.');
+    }
+  }
+
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    const message = errData.detail || errData.message || `AI interpretation failed with status ${res.status}`;
+    throw new Error(message);
+  }
+
+  return await res.json();
+}
+
+/**
+ * Executes a confirmed AI tool operation for an uploaded PDF file.
+ * @param {File} file
+ * @param {string} tool
+ * @param {Object} parameters
+ * @param {Function} onProgress
+ * @returns {Promise<{
+ *   success: boolean,
+ *   tool: string,
+ *   filename: string,
+ *   download_url: string,
+ *   download_token: string,
+ *   page_count: number,
+ *   size_bytes: number,
+ *   is_zip: boolean,
+ *   images: Array,
+ *   summary: Object,
+ *   execution_time_ms: number
+ * }>}
+ */
+export async function executeAITool(file, tool, parameters = {}, onProgress) {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('tool', tool);
+  formData.append('parameters', JSON.stringify(parameters));
+
+  const xhr = new XMLHttpRequest();
+  const url = `${API_BASE_URL}/ai/execute`;
+
+  const data = await new Promise((resolve, reject) => {
+    xhr.upload.addEventListener('progress', (e) => {
+      if (e.lengthComputable && onProgress) {
+        const percent = Math.round((e.loaded / e.total) * 40);
+        onProgress(percent, 'Uploading document...');
+      }
+    });
+
+    xhr.addEventListener('load', () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          resolve(JSON.parse(xhr.responseText));
+        } catch (err) {
+          reject(new Error('Invalid response received from document execution engine.'));
+        }
+      } else {
+        try {
+          const errData = JSON.parse(xhr.responseText);
+          const message = errData.detail || errData.message || `Server returned error ${xhr.status}`;
+          reject(new Error(message));
+        } catch (e) {
+          reject(new Error(`Server error (${xhr.status}): ${xhr.statusText || 'Execution failed'}`));
+        }
+      }
+    });
+
+    xhr.addEventListener('error', () => {
+      reject(new Error('Network error: Unable to connect to PDF processing backend.'));
+    });
+
+    xhr.addEventListener('timeout', () => {
+      reject(new Error('Request timed out while executing document operation.'));
+    });
+
+    xhr.timeout = 120000;
+    xhr.open('POST', url, true);
+    xhr.send(formData);
+  });
+
+  if (onProgress) onProgress(100, 'Processing complete');
+  return data;
+}

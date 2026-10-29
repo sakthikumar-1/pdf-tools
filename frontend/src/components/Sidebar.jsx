@@ -239,6 +239,18 @@ export default function Sidebar({
           <ul className="sidebar-menu-list">
             <li>
               <NavLink
+                to="/ai-workspace"
+                className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
+                onClick={handleNavClick}
+                title="Explore AI Workspace"
+                data-tooltip={isCollapsed ? "Explore AI Workspace" : undefined}
+              >
+                <FontAwesomeIcon icon={faWandMagicSparkles} className="link-fa-icon" />
+                {!isCollapsed && <span className="link-text">AI Workspace</span>}
+              </NavLink>
+            </li>
+            <li>
+              <NavLink
                 to="/ai-summarizer"
                 className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
                 onClick={handleNavClick}

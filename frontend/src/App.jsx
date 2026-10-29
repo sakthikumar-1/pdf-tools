@@ -10,6 +10,7 @@ const RemovePages = lazy(() => import('./pages/RemovePages'));
 const ReorderPages = lazy(() => import('./pages/ReorderPages'));
 const CropPDF = lazy(() => import('./pages/CropPDF'));
 const AISummarizer = lazy(() => import('./pages/AISummarizer'));
+const AIWorkspace = lazy(() => import('./pages/AIWorkspace'));
 const Login = lazy(() => import('./pages/Login'));
 const Account = lazy(() => import('./pages/Account'));
 const History = lazy(() => import('./pages/History'));
@@ -182,6 +183,10 @@ export default function App() {
               <Route 
                 path="/ai-summarizer" 
                 element={<AISummarizer />} 
+              />
+              <Route 
+                path="/ai-workspace" 
+                element={<AIWorkspace />} 
               />
 
               {/* Authentication & User Workspace Routes */}
