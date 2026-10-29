@@ -1,11 +1,20 @@
 import os
 import mimetypes
+import json
 from pathlib import Path
 from django.contrib import admin
 from django.urls import path, re_path
-from django.http import HttpResponse, FileResponse
+from django.http import HttpResponse, FileResponse, JsonResponse
+from django.views.decorators.csrf import csrf_exempt
 from django.views.static import serve
 from .api import api
+from ai.ollama_client import (
+    ollama_client,
+    OllamaUnavailableError,
+    OllamaTimeoutError,
+    OllamaModelNotFoundError,
+    OllamaResponseError
+)
 
 # Project root directory (e:/pdf-tools)
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent
@@ -64,8 +73,41 @@ def serve_immutable_asset(request, path):
     return response
 
 
+@csrf_exempt
+def direct_ai_interpret_view(request):
+    """
+    Direct alias endpoint for /api/ai/interpret/ supporting exact prompt specification
+    in addition to Django Ninja's /api/v1/ai/interpret.
+    """
+    if request.method != 'POST':
+        return JsonResponse({"detail": "Method not allowed. Use POST."}, status=405)
+    try:
+        body = json.loads(request.body.decode('utf-8'))
+    except Exception:
+        return JsonResponse({"detail": "Invalid JSON body payload."}, status=400)
+
+    instruction = (body.get('instruction') or '').strip()
+    if not instruction:
+        return JsonResponse({"detail": "Instruction cannot be empty."}, status=400)
+
+    try:
+        result = ollama_client.interpret_intent(instruction)
+        return JsonResponse(result, status=200)
+    except OllamaUnavailableError as err:
+        return JsonResponse({"detail": str(err)}, status=503)
+    except OllamaTimeoutError as err:
+        return JsonResponse({"detail": str(err)}, status=504)
+    except (OllamaModelNotFoundError, OllamaResponseError) as err:
+        return JsonResponse({"detail": str(err)}, status=502)
+    except Exception as exc:
+        return JsonResponse({"detail": f"AI interpretation error: {str(exc)}"}, status=500)
+
+
 urlpatterns = [
     path('admin/', admin.site.urls),
+    # Alias exact prompt specification /api/ai/interpret/
+    path('api/ai/interpret/', direct_ai_interpret_view),
+    path('api/ai/interpret', direct_ai_interpret_view),
     path('api/v1/', api.urls),
     # Serve Vite compiled assets with 1-year immutable caching
     re_path(r'^assets/(?P<path>.*)$', serve_immutable_asset),

@@ -18,7 +18,6 @@ import {
   faXmark
 } from '@fortawesome/free-solid-svg-icons';
 import { TOOL_CATEGORIES, TOOLS_DATA } from '../utils/toolsData';
-import SidebarToggleIcon from './SidebarToggleIcon';
 import './Sidebar.css';
 
 export default function Sidebar({
@@ -281,19 +280,7 @@ export default function Sidebar({
             </li>
           </ul>
 
-          {/* Expand Toggle Button in Collapsed Rail */}
-          {isCollapsed && onToggleCollapse && (
-            <button
-              type="button"
-              className="sidebar-rail-expand-btn"
-              onClick={onToggleCollapse}
-              aria-label="Expand sidebar"
-              title="Expand sidebar"
-              data-tooltip="Expand sidebar"
-            >
-              <SidebarToggleIcon isCollapsed={true} />
-            </button>
-          )}
+
         </div>
       </aside>
     </>

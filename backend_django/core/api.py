@@ -62,6 +62,14 @@ from engines.summarizer_engine import (
     FileLimitExceededError
 )
 import requests
+from ai.ollama_client import (
+    ollama_client,
+    ALLOWED_TOOLS,
+    OllamaUnavailableError,
+    OllamaTimeoutError,
+    OllamaModelNotFoundError,
+    OllamaResponseError
+)
 from apps.authentication.models import User
 from core.rate_limiter import ai_rate_limiter, get_client_ip
 
@@ -134,6 +142,44 @@ class AuthResponse(Schema):
     success: bool
     token: str
     user: UserProfileOut
+
+
+class AIInterpretPayload(Schema):
+    instruction: str
+
+
+class AIInterpretResponse(Schema):
+    success: bool
+    tool: Optional[str] = None
+    requires_file: bool = True
+    confidence: float = 0.0
+    explanation: str
+    parameters: Dict[str, Any] = {}
+    is_supported: bool = False
+    suggested_action: Optional[str] = None
+    model: str = "llama3.2:3b"
+
+
+class AIOllamaStatusResponse(Schema):
+    available: bool
+    model: str
+    model_installed: bool
+    base_url: str
+    error: Optional[str] = None
+
+
+class AIExecuteResponse(Schema):
+    success: bool
+    tool: str
+    filename: Optional[str] = None
+    download_url: Optional[str] = None
+    download_token: Optional[str] = None
+    page_count: Optional[int] = None
+    size_bytes: Optional[int] = None
+    is_zip: Optional[bool] = False
+    images: Optional[List[Dict[str, Any]]] = None
+    summary: Optional[Dict[str, Any]] = None
+    execution_time_ms: int = 0
 
 
 class ConversionSuccessResponse(Schema):
@@ -1061,6 +1107,245 @@ def summarize_document_endpoint(
 
 
 # ==============================================================================
+# ==============================================================================
+# AI WORKSPACE (LOCAL OLLAMA + PDF EXECUTION) ENDPOINTS
+# ==============================================================================
+
+@api.get(
+    "/ai/ollama-status",
+    response={200: AIOllamaStatusResponse},
+    tags=["AI Workspace"]
+)
+def get_ollama_status_endpoint(request):
+    """
+    Checks if the local Ollama instance is accessible and model llama3.2:3b is ready.
+    """
+    return ollama_client.check_health()
+
+
+@api.post(
+    "/ai/interpret",
+    response={
+        200: AIInterpretResponse,
+        400: ErrorResponse,
+        502: ErrorResponse,
+        503: ErrorResponse,
+        504: ErrorResponse,
+        500: ErrorResponse
+    },
+    tags=["AI Workspace"]
+)
+def interpret_instruction_endpoint(request, payload: AIInterpretPayload):
+    """
+    Interprets natural language instruction via local Ollama LLM (llama3.2:3b).
+    Strictly validates against server-side allowlist:
+    ['pdf_to_jpg', 'pdf_to_word', 'summarize_pdf'].
+    """
+    instruction = (payload.instruction or "").strip()
+    if not instruction:
+        raise HttpError(400, "Instruction cannot be empty.")
+
+    try:
+        result = ollama_client.interpret_intent(instruction)
+        return 200, result
+
+    except OllamaUnavailableError as err:
+        raise HttpError(503, str(err))
+    except OllamaTimeoutError as err:
+        raise HttpError(504, str(err))
+    except OllamaModelNotFoundError as err:
+        raise HttpError(502, str(err))
+    except OllamaResponseError as err:
+        raise HttpError(502, str(err))
+    except Exception as exc:
+        logger.error(f"Unexpected intent interpretation failure: {exc}", exc_info=True)
+        raise HttpError(500, f"AI interpretation error: {str(exc)}")
+
+
+@api.post(
+    "/ai/execute",
+    response={
+        200: AIExecuteResponse,
+        400: ErrorResponse,
+        413: ErrorResponse,
+        500: ErrorResponse
+    },
+    tags=["AI Workspace"]
+)
+def execute_ai_tool_endpoint(
+    request,
+    file: UploadedFile = File(...),
+    tool: str = Form(...),
+    parameters: Optional[str] = Form(None)
+):
+    """
+    Executes a confirmed tool operation for an uploaded PDF file.
+    Reuses existing processing engines:
+    - pdf_to_jpg: convert_pdf_to_jpg
+    - pdf_to_word: convert_pdf_to_docx
+    - summarize_pdf: summarize_pdf
+    Enforces strict server-side allowlist.
+    """
+    clean_tool = (tool or "").strip().lower()
+    if clean_tool not in ALLOWED_TOOLS:
+        raise HttpError(
+            400,
+            f"Unsupported tool '{clean_tool}'. Allowed tools in Phase 1 are: {', '.join(sorted(ALLOWED_TOOLS))}."
+        )
+
+    # Size limits: 25MB for AI summarizer, 50MB for conversions
+    max_size = 25 * 1024 * 1024 if clean_tool == "summarize_pdf" else 50 * 1024 * 1024
+    if file.size > max_size:
+        limit_mb = max_size // (1024 * 1024)
+        raise HttpError(400, f"File size exceeds maximum allowed limit of {limit_mb}MB.")
+
+    orig_name = file.name or "document.pdf"
+    if not orig_name.lower().endswith(".pdf"):
+        raise HttpError(400, "Only PDF files are supported.")
+
+    # Parse optional parameters JSON
+    parsed_params = {}
+    if parameters and parameters.strip():
+        try:
+            import json
+            parsed_params = json.loads(parameters.strip())
+            if not isinstance(parsed_params, dict):
+                parsed_params = {}
+        except Exception:
+            parsed_params = {}
+
+    job_uuid = uuid.uuid4().hex
+    input_filename = f"{job_uuid}.pdf"
+    input_path = settings.UPLOADS_DIR / input_filename
+    start_time = time.time()
+
+    try:
+        with open(input_path, "wb") as dest:
+            for chunk in file.chunks():
+                dest.write(chunk)
+
+        # 1. PDF TO JPG EXECUTION
+        if clean_tool == "pdf_to_jpg":
+            raw_dpi = parsed_params.get("dpi", 150)
+            try:
+                dpi_val = max(72, min(300, int(raw_dpi)))
+            except (ValueError, TypeError):
+                dpi_val = 150
+
+            result = convert_pdf_to_jpg(
+                input_pdf_path=str(input_path),
+                output_dir=str(settings.OUTPUTS_DIR),
+                output_basename=job_uuid,
+                dpi=dpi_val
+            )
+
+            base_name = Path(orig_name).stem
+            primary_file_on_disk = result["output_file"]
+            download_as_name = f"{base_name}.zip" if result["is_zip"] else f"{base_name}_page_1.jpg"
+
+            signed_token = token_signer.sign_object({
+                "file": primary_file_on_disk,
+                "name": download_as_name,
+                "t": int(time.time())
+            })
+
+            images_meta = []
+            for img in result.get("images", []):
+                img_token = token_signer.sign_object({
+                    "file": img["filename"],
+                    "name": f"{base_name}_page_{img['page']}.jpg",
+                    "t": int(time.time())
+                })
+                images_meta.append({
+                    "page": img["page"],
+                    "filename": img["filename"],
+                    "size_bytes": img["size_bytes"],
+                    "download_url": f"/api/v1/download/{img_token}"
+                })
+
+            return 200, {
+                "success": True,
+                "tool": "pdf_to_jpg",
+                "filename": download_as_name,
+                "download_url": f"/api/v1/download/{signed_token}",
+                "download_token": signed_token,
+                "page_count": result["page_count"],
+                "size_bytes": result["size_bytes"],
+                "is_zip": result["is_zip"],
+                "images": images_meta,
+                "summary": None,
+                "execution_time_ms": result["execution_time_ms"]
+            }
+
+        # 2. PDF TO WORD EXECUTION
+        elif clean_tool == "pdf_to_word":
+            output_filename = f"{job_uuid}.docx"
+            output_path = settings.OUTPUTS_DIR / output_filename
+
+            result = convert_pdf_to_docx(str(input_path), str(output_path))
+            base_name = Path(orig_name).stem
+            download_filename = f"{base_name}_converted.docx"
+
+            signed_token = token_signer.sign_object({
+                "file": output_filename,
+                "name": download_filename,
+                "t": int(time.time())
+            })
+
+            return 200, {
+                "success": True,
+                "tool": "pdf_to_word",
+                "filename": download_filename,
+                "download_url": f"/api/v1/download/{signed_token}",
+                "download_token": signed_token,
+                "page_count": result["page_count"],
+                "size_bytes": result["size_bytes"],
+                "is_zip": False,
+                "images": None,
+                "summary": None,
+                "execution_time_ms": result["execution_time_ms"]
+            }
+
+        # 3. SUMMARIZE PDF EXECUTION
+        elif clean_tool == "summarize_pdf":
+            raw_mode = (parsed_params.get("mode") or "quick").lower().strip()
+            valid_modes = ("quick", "detailed", "key_points", "section_by_section")
+            clean_mode = raw_mode if raw_mode in valid_modes else "quick"
+
+            result = summarize_pdf(str(input_path), mode=clean_mode)
+            elapsed_ms = int((time.time() - start_time) * 1000)
+
+            return 200, {
+                "success": True,
+                "tool": "summarize_pdf",
+                "filename": orig_name,
+                "download_url": None,
+                "download_token": None,
+                "page_count": result.get("page_count"),
+                "size_bytes": file.size,
+                "is_zip": False,
+                "images": None,
+                "summary": result,
+                "execution_time_ms": elapsed_ms
+            }
+
+    except (InvalidPdfError, PasswordProtectedPdfError, SummarizerInvalidPdfError,
+            SummarizerPasswordProtectedPdfError, ScannedPdfError, EmptyPdfError,
+            FileLimitExceededError) as client_err:
+        raise HttpError(400, str(client_err))
+    except (WordEngineException, ImageEngineException, SummarizerEngineException) as engine_err:
+        raise HttpError(500, f"Processing failed: {str(engine_err)}")
+    except AIProviderNotConfiguredError as err:
+        raise HttpError(503, str(err))
+    except AIProviderTimeoutError as err:
+        raise HttpError(504, f"AI analysis timed out: {str(err)}")
+    except Exception as exc:
+        logger.error(f"AI tool execution failure: {exc}", exc_info=True)
+        raise HttpError(500, f"Execution failed: {str(exc)}")
+    finally:
+        safe_unlink(input_path)
+
+
 # SECURE DOWNLOAD STREAMING ENDPOINT
 # ==============================================================================
 
