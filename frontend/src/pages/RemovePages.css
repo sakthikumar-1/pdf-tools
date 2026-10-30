@@ -1,16 +1,17 @@
 /* ==============================================================================
    SIMATRIX COMPACT REMOVE PAGES STYLES
-   Clean Red & White Theme inspired by iLovePDF
+   Grey Professional Theme with interactive 2-column workspace
    ============================================================================== */
 
 .remove-pages-container {
-  max-width: 1140px;
-  margin: 0 auto;
-  padding: 1.5rem 1.5rem 3.5rem;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 1.5rem 2rem 3.5rem;
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
-  width: 100%;
+  gap: 1.5rem;
+  box-sizing: border-box;
 }
 
 .remove-pages-hero {
@@ -37,8 +38,15 @@
   flex-shrink: 0;
 }
 
+.remove-pages-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
 .capability-chip {
   display: inline-flex;
+  align-self: flex-start;
   align-items: center;
   gap: 0.35rem;
   padding: 0.12rem 0.5rem;
@@ -68,76 +76,287 @@
   margin: 0;
 }
 
-.remove-pages-workspace {
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
+.tool-workspace {
   width: 100%;
+  margin-top: 0.25rem;
 }
 
-.remove-pages-topbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  padding: 0.85rem 1rem;
+/* 2-Column Responsive Workspace */
+.remove-pages-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 350px;
+  gap: 1.75rem;
+  width: 100%;
+  align-items: start;
+}
+
+@media (max-width: 960px) {
+  .remove-pages-layout {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+}
+
+/* Left: Page Thumbnails Grid Wrapper */
+.pages-grid-wrapper {
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  min-height: 380px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.rendering-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  gap: 1rem;
+  color: var(--color-text-secondary);
 }
 
 .pages-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
   gap: 1rem;
-  padding: 1rem;
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
+  width: 100%;
 }
 
-.page-thumbnail-card {
+.page-card {
   position: relative;
-  background: var(--color-bg);
+  background: #FFFFFF;
   border: 1.5px solid var(--color-border);
-  border-radius: var(--radius-xs);
+  border-radius: var(--radius-sm);
   padding: 0.5rem;
   cursor: pointer;
   display: flex;
   flex-direction: column;
   align-items: center;
   transition: all var(--transition-fast);
+  user-select: none;
+  box-shadow: var(--shadow-sm);
 }
 
-.page-thumbnail-card:hover {
+[data-theme="dark"] .page-card {
+  background: var(--color-bg);
+}
+
+.page-card:hover {
   border-color: var(--color-border-hover);
-  background-color: var(--color-surface-hover);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }
 
-.page-thumbnail-card.marked-for-removal {
+.page-card.removed {
   border-color: var(--color-error);
-  background-color: var(--color-error-bg);
-  opacity: 0.65;
+  background: rgba(224, 49, 49, 0.05);
 }
 
-.page-number-tag {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--color-text-secondary);
-  margin-top: 0.35rem;
-}
-
-.page-removal-overlay {
-  position: absolute;
-  inset: 0;
-  background: rgba(220, 38, 38, 0.45);
+.page-thumbnail-box {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1.414;
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
+  background: #FFFFFF;
+  border-radius: 3px;
+}
+
+.page-thumbnail-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.remove-overlay-badge {
+  position: absolute;
+  inset: 0;
+  background: rgba(224, 49, 49, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(1px);
+}
+
+.remove-x-icon {
   color: #FFFFFF;
-  font-size: 1.5rem;
-  border-radius: var(--radius-xs);
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.page-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: 0.4rem;
+  width: 100%;
+}
+
+.page-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.page-card.removed .page-label {
+  color: var(--color-error);
+  font-weight: 700;
+}
+
+/* Right: Options & Remove Control Panel */
+.remove-control-panel {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+  box-sizing: border-box;
+  position: sticky;
+  top: 1.5rem;
+}
+
+@media (max-width: 960px) {
+  .remove-control-panel {
+    position: static;
+  }
+}
+
+.control-panel-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-heading);
+  margin: 0;
+}
+
+.info-callout-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  padding: 0.75rem 0.85rem;
+  background-color: var(--color-hover-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+}
+
+.info-icon {
+  color: var(--color-heading);
+  margin-top: 0.15rem;
+  flex-shrink: 0;
+}
+
+.total-pages-counter {
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+}
+
+.total-pages-counter strong {
+  color: var(--color-heading);
+}
+
+.pages-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.pages-input-label {
+  font-size: 0.825rem;
+  font-weight: 600;
+  color: var(--color-heading);
+}
+
+.pages-text-input {
+  width: 100%;
+  height: 38px;
+  padding: 0 0.85rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: #FFFFFF;
+  color: var(--color-heading);
+  font-size: 0.85rem;
+  box-sizing: border-box;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+[data-theme="dark"] .pages-text-input {
+  background: var(--color-bg);
+}
+
+.pages-text-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: var(--focus-ring);
+}
+
+.remove-error-box {
+  padding: 0.65rem 0.85rem;
+  background-color: var(--color-error-bg);
+  border: 1px solid var(--color-error-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-error);
+  font-size: 0.8rem;
+}
+
+.remove-action-btn {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.remove-action-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Success Card */
+.success-result-card {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  max-width: 620px;
+  margin: 1.5rem auto;
+  box-sizing: border-box;
+}
+
+.success-icon-badge {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background-color: var(--color-success-bg);
+  color: var(--color-success);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-success-border);
+}
+
+.success-actions {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 0.5rem;
 }
 
 @media (max-width: 600px) {

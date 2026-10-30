@@ -15,6 +15,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import UploadBox from '../components/UploadBox';
 import FileUploader from '../components/FileUploader';
+import DemoPaperPreview from '../components/DemoPaperPreview';
 import ProgressBar from '../components/ProgressBar';
 import ProtectPasswordPanel from '../components/ProtectPasswordPanel';
 import { useFileUpload } from '../hooks/useFileUpload';
@@ -440,23 +441,53 @@ export default function GenericTool({
         {/* Step 2: Selected File State + Custom Options */}
         {status === 'selected' && (
           <div className="selected-workspace">
-            <FileUploader
-              file={file}
-              files={files}
-              onRemove={handleReset}
-              onRemoveIndex={removeFileAtIndex}
-              onReorderFiles={setFiles}
-              onMoveFile={reorderFiles}
-              onAddMore={isMultipleTool ? (newFiles) => selectMultipleFiles(newFiles, accept) : null}
-              onProcess={handleProcess}
-              isProcessing={false}
-              isProcessDisabled={
-                (titleLower.includes('protect') && (!isPassValid || password !== confirmPassword)) ||
-                (titleLower.includes('merge') && ((files ? files.length : (file ? 1 : 0)) < 2))
-              }
-              actionText={actionLabel}
-              acceptedTypes={accept}
-            />
+            <div className="workspace-file-column">
+              <FileUploader
+                file={file}
+                files={files}
+                onRemove={handleReset}
+                onRemoveIndex={removeFileAtIndex}
+                onReorderFiles={setFiles}
+                onMoveFile={reorderFiles}
+                onAddMore={isMultipleTool ? (newFiles) => selectMultipleFiles(newFiles, accept) : null}
+                onProcess={handleProcess}
+                isProcessing={false}
+                isProcessDisabled={
+                  (titleLower.includes('protect') && (!isPassValid || password !== confirmPassword)) ||
+                  (titleLower.includes('merge') && ((files ? files.length : (file ? 1 : 0)) < 2))
+                }
+                actionText={actionLabel}
+                acceptedTypes={accept}
+              />
+
+              {/* Interactive Demo Paper Preview (occupies the whitespace) */}
+              <DemoPaperPreview
+                file={file || (files && files[0])}
+                title={title}
+                // Watermark Props
+                wmText={wmText}
+                wmOpacity={wmOpacity}
+                wmRotation={wmRotation}
+                wmFontSize={wmFontSize}
+                wmColor={wmColor}
+                wmPosition={wmPosition}
+                onWmPositionChange={(newPos) => setWmPosition(newPos)}
+                // Page Numbers Props
+                startNumber={startNumber}
+                numFormat={numFormat}
+                numPosition={numPosition}
+                numFontSize={numFontSize}
+                numFontColor={numFontColor}
+                numMarginPt={numMarginPt}
+                onNumPositionChange={(newPos) => setNumPosition(newPos)}
+                // Rotate Props
+                rotateAngle={rotateAngle}
+                onRotateChange={(newAngle) => setRotateAngle(newAngle)}
+                // Split & Doc Stats
+                splitRange={splitRange}
+                docPageCount={docPageCount}
+              />
+            </div>
 
             {/* Custom Tool Processing Options */}
             <div className="options-panel">

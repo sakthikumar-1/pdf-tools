@@ -4,13 +4,14 @@
    ============================================================================== */
 
 .tool-page-wrapper {
-  max-width: 1140px;
-  margin: 0 auto;
-  padding: 1.5rem 1.5rem 3.5rem;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 1.5rem 2rem 3.5rem;
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
-  width: 100%;
+  gap: 1.5rem;
+  box-sizing: border-box;
 }
 
 .tool-header {
@@ -59,16 +60,24 @@
 
 .selected-workspace {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1.5rem;
+  grid-template-columns: minmax(360px, 1.15fr) minmax(340px, 1fr);
+  gap: 2rem;
   width: 100%;
   align-items: start;
 }
 
-@media (max-width: 860px) {
+.workspace-file-column {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  width: 100%;
+  min-width: 0;
+}
+
+@media (max-width: 960px) {
   .selected-workspace {
     grid-template-columns: 1fr;
-    gap: 1.25rem;
+    gap: 1.5rem;
   }
 }
 

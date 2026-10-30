@@ -3,10 +3,11 @@
    ============================================================================== */
 
 .ai-summarizer-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 1.5rem 2rem 4rem;
   width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 1.5rem 2rem 4rem;
+  box-sizing: border-box;
 }
 
 /* Tool Header matching Reference */
@@ -695,8 +696,9 @@
   color: var(--color-text);
   line-height: 1.75;
   font-size: 0.98rem;
-  max-width: 860px;
-  margin: 0 auto;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
 }
 
 .summary-h3 {

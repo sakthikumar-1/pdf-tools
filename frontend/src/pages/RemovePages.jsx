@@ -200,13 +200,15 @@ export default function RemovePages() {
         <div className="remove-pages-icon">
           <FontAwesomeIcon icon={faTrashCan} size="2x" />
         </div>
-        <div className="capability-chip">
-          <FontAwesomeIcon icon={faWandMagicSparkles} /> AVAILABLE: Client WebWorker Engine
+        <div className="remove-pages-info">
+          <div className="capability-chip">
+            <FontAwesomeIcon icon={faWandMagicSparkles} /> AVAILABLE: Client WebWorker Engine
+          </div>
+          <h1 className="remove-pages-title">Remove PDF Pages</h1>
+          <p className="remove-pages-desc">
+            Delete unwanted pages from your PDF document easily. Click thumbnails to mark pages for removal.
+          </p>
         </div>
-        <h1 className="remove-pages-title">Remove PDF Pages</h1>
-        <p className="remove-pages-desc">
-          Delete unwanted pages from your PDF document easily. Click thumbnails to mark pages for removal.
-        </p>
       </div>
 
       {/* Main Workspace Area */}

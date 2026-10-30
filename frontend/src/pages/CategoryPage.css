@@ -4,9 +4,9 @@
 
 .category-page-container {
   width: 100%;
-  max-width: var(--container-max-width);
-  margin: 0 auto;
-  padding: 1.5rem;
+  max-width: 100%;
+  margin: 0;
+  padding: 1.5rem 2rem;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;

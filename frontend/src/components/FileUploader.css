@@ -89,8 +89,8 @@
 /* Double-Click Move Selection State */
 .selected-file-card.selected-for-move {
   border: 2px solid var(--color-primary) !important;
-  background-color: var(--color-primary-light);
-  box-shadow: 0 0 0 3px rgba(229, 57, 53, 0.2);
+  background-color: var(--color-hover-bg);
+  box-shadow: var(--focus-ring);
   cursor: pointer;
 }
 

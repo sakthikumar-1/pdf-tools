@@ -258,7 +258,7 @@ export default function ReorderPages() {
 
       {/* ERROR BANNER */}
       {error && (
-        <div className="error-alert" style={{ maxWidth: '800px', margin: '0 auto', width: '100%' }}>
+        <div className="error-alert" style={{ width: '100%' }}>
           <FontAwesomeIcon icon={faCircleExclamation} />
           <span>{error}</span>
         </div>
@@ -266,7 +266,7 @@ export default function ReorderPages() {
 
       {/* UPLOAD SCREEN */}
       {(status === 'idle' || status === 'error') && (
-        <div style={{ maxWidth: '720px', margin: '0 auto', width: '100%' }}>
+        <div style={{ width: '100%' }}>
           <UploadBox
             onFileSelect={selectFile}
             accept=".pdf"

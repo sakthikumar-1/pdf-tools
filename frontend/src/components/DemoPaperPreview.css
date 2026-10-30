@@ -1,0 +1,519 @@
+/* ==============================================================================
+   SIMATRIX INTERACTIVE DEMO PAPER PREVIEW STYLES
+   Realistic Document Sheet, Direct Access Controls & Position Pins
+   ============================================================================== */
+
+.demo-paper-card {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+/* Header Bar */
+.demo-paper-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-bottom: 0.65rem;
+  border-bottom: 1px solid var(--color-border-subtle);
+  flex-wrap: wrap;
+}
+
+.preview-title-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--color-heading);
+}
+
+.preview-badge-icon {
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+}
+
+/* Page Switcher Navigation */
+.preview-page-navigator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background-color: #FFFFFF;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0.2rem 0.5rem;
+  font-size: 0.78rem;
+  color: var(--color-heading);
+}
+
+[data-theme="dark"] .preview-page-navigator {
+  background-color: var(--color-bg);
+}
+
+.page-nav-arrow {
+  background: none;
+  border: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  padding: 0.15rem 0.35rem;
+  border-radius: var(--radius-xs);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: color var(--transition-fast), background-color var(--transition-fast);
+}
+
+.page-nav-arrow:hover:not(:disabled) {
+  color: var(--color-heading);
+  background-color: var(--color-hover-bg);
+}
+
+.page-nav-arrow:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.page-nav-indicator {
+  font-size: 0.76rem;
+  color: var(--color-text-secondary);
+  user-select: none;
+}
+
+.page-nav-indicator strong {
+  color: var(--color-heading);
+}
+
+/* Rotation Bar */
+.paper-rotation-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  background-color: var(--color-hover-bg);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+}
+
+.rotation-status-label {
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+}
+
+.rotation-status-label strong {
+  color: var(--color-heading);
+}
+
+.rotation-actions-group {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.paper-rotate-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background-color: #FFFFFF;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xs);
+  padding: 0.25rem 0.6rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-heading);
+  cursor: pointer;
+  transition: background-color var(--transition-fast), border-color var(--transition-fast);
+}
+
+[data-theme="dark"] .paper-rotate-btn {
+  background-color: var(--color-surface);
+}
+
+.paper-rotate-btn:hover {
+  background-color: var(--color-hover-bg);
+  border-color: var(--color-border-hover);
+}
+
+/* The Viewport Container */
+.demo-paper-viewport {
+  position: relative;
+  width: 100%;
+  background-color: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 1.5rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  box-sizing: border-box;
+  min-height: 440px;
+}
+
+/* The Physical Paper Sheet */
+.demo-paper-sheet {
+  position: relative;
+  width: 100%;
+  max-width: clamp(280px, 28vw, 380px);
+  aspect-ratio: 1 / 1.414;
+  /* A4 standard ratio */
+  background-color: #FFFFFF;
+  border: 1px solid #D4D9DF;
+  border-radius: 4px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  box-sizing: border-box;
+  user-select: none;
+}
+
+/* Rendered Canvas on Sheet */
+.pdf-rendered-canvas {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.pdf-rendered-canvas.is-hidden {
+  display: none;
+}
+
+.pdf-rendered-canvas.is-visible {
+  display: block;
+}
+
+/* Fallback Skeleton Document Layout */
+.paper-skeleton-layout {
+  position: absolute;
+  inset: 0;
+  padding: 1.5rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  background-color: #FFFFFF;
+  opacity: 0.65;
+  pointer-events: none;
+}
+
+.skeleton-line {
+  height: 7px;
+  background-color: #E2E8F0;
+  border-radius: 3px;
+  width: 100%;
+}
+
+.skeleton-line.title {
+  height: 12px;
+  width: 65%;
+  background-color: #CBD5E1;
+  margin-bottom: 0.35rem;
+}
+
+.skeleton-line.subtitle {
+  height: 8px;
+  width: 45%;
+  background-color: #E2E8F0;
+  margin-bottom: 0.65rem;
+}
+
+.skeleton-paragraph {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.skeleton-line.short {
+  width: 40%;
+}
+
+.skeleton-box {
+  height: 60px;
+  background-color: #F1F5F9;
+  border: 1px dashed #CBD5E1;
+  border-radius: 4px;
+  margin: 0.35rem 0;
+}
+
+/* ==============================================================================
+   1. WATERMARK INTERACTIVE LAYER
+   ============================================================================== */
+.watermark-interactive-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  pointer-events: auto;
+}
+
+/* The Live Rendered Watermark Text */
+.watermark-rendered-text {
+  position: absolute;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  pointer-events: none;
+  white-space: nowrap;
+  user-select: none;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: all var(--transition-normal);
+  z-index: 12;
+}
+
+.watermark-rendered-text.position-center {
+  top: 50%;
+  left: 50%;
+}
+
+.watermark-rendered-text.position-top-left {
+  top: 14%;
+  left: 14%;
+}
+
+.watermark-rendered-text.position-top-right {
+  top: 14%;
+  right: 14%;
+}
+
+.watermark-rendered-text.position-bottom-left {
+  bottom: 14%;
+  left: 14%;
+}
+
+.watermark-rendered-text.position-bottom-right {
+  bottom: 14%;
+  right: 14%;
+}
+
+/* Clickable Watermark Position Hotspots */
+.wm-position-hotspot {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px dashed #94A3B8;
+  border-radius: var(--radius-full);
+  padding: 0.2rem 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  cursor: pointer;
+  z-index: 15;
+  transition: all var(--transition-fast);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.wm-position-hotspot:hover {
+  background: #FFFFFF;
+  border-color: var(--color-primary);
+  border-style: solid;
+  transform: scale(1.05);
+}
+
+.wm-position-hotspot.is-active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  border-style: solid;
+  color: #FFFFFF;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.hotspot-pin-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #64748B;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wm-position-hotspot.is-active .hotspot-pin-dot {
+  background-color: transparent;
+  width: auto;
+  height: auto;
+}
+
+.hotspot-check {
+  font-size: 0.65rem;
+  color: #FFFFFF;
+}
+
+.hotspot-pin-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--color-heading);
+  white-space: nowrap;
+}
+
+.wm-position-hotspot.is-active .hotspot-pin-label {
+  color: #FFFFFF;
+}
+
+/* ==============================================================================
+   2. ADD PAGE NUMBERS INTERACTIVE LAYER
+   ============================================================================== */
+.pagenum-interactive-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+}
+
+.pagenum-position-hotspot {
+  position: absolute;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  z-index: 15;
+}
+
+.active-page-number-badge {
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-xs);
+  font-weight: 700;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.12);
+  white-space: nowrap;
+}
+
+.inactive-pagenum-target {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.15rem 0.4rem;
+  background: rgba(255, 255, 255, 0.65);
+  border: 1px dashed #94A3B8;
+  border-radius: var(--radius-xs);
+  opacity: 0.65;
+  transition: all var(--transition-fast);
+}
+
+.inactive-pagenum-target:hover {
+  opacity: 1;
+  background: #FFFFFF;
+  border-color: var(--color-primary);
+  border-style: solid;
+}
+
+.target-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #94A3B8;
+}
+
+.target-label {
+  font-size: 0.65rem;
+  color: var(--color-text-secondary);
+  font-weight: 600;
+}
+
+/* ==============================================================================
+   3. SPLIT PDF STATUS LAYER
+   ============================================================================== */
+.split-page-indicator-layer {
+  position: absolute;
+  bottom: 1rem;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  z-index: 12;
+  pointer-events: none;
+}
+
+.split-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.75rem;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.split-status-badge.included {
+  background-color: #10B981;
+  color: #FFFFFF;
+}
+
+.split-status-badge.skipped {
+  background-color: #64748B;
+  color: #FFFFFF;
+}
+
+/* ==============================================================================
+   4. PROTECT PDF SECURITY LAYER
+   ============================================================================== */
+.protect-security-layer {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(1px);
+  z-index: 12;
+  pointer-events: none;
+}
+
+.security-watermark-stamp {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 1.25rem 1.5rem;
+  border: 2px dashed #64748B;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--color-heading);
+}
+
+.security-shield-icon {
+  font-size: 1.85rem;
+  color: var(--color-primary);
+}
+
+.security-stamp-title {
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+}
+
+.security-stamp-sub {
+  font-size: 0.72rem;
+  color: var(--color-text-secondary);
+}
+
+/* Footer Hint */
+.demo-paper-footer {
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+.interactive-hint-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.775rem;
+  color: var(--color-text-secondary);
+  line-height: 1.35;
+}
+
+.hint-icon {
+  font-size: 0.8rem;
+  color: var(--color-heading);
+  flex-shrink: 0;
+}

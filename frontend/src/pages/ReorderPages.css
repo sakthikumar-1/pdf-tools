@@ -4,13 +4,14 @@
    ============================================================================== */
 
 .reorder-pages-container {
-  max-width: 1240px;
-  margin: 0 auto;
-  padding: 1.5rem 1.5rem 4rem;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 1.5rem 2rem 4rem;
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
-  width: 100%;
+  box-sizing: border-box;
 }
 
 /* Tool Top Navigation */
@@ -58,20 +59,20 @@
   width: 52px;
   height: 52px;
   border-radius: var(--radius-md);
-  background: linear-gradient(135deg, rgba(229, 57, 53, 0.15) 0%, rgba(244, 63, 94, 0.08) 100%);
-  border: 1px solid rgba(229, 57, 53, 0.3);
+  background-color: var(--color-hover-bg);
+  border: 1px solid var(--color-border);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--color-primary);
+  color: var(--color-heading);
   font-size: 1.5rem;
   margin-bottom: 0.25rem;
 }
 
 [data-theme="dark"] .reorder-pages-icon {
-  background: linear-gradient(135deg, rgba(0, 163, 255, 0.15) 0%, rgba(168, 0, 255, 0.12) 100%);
-  border: 1px solid rgba(0, 163, 255, 0.3);
-  color: #00A3FF;
+  background-color: var(--color-surface);
+  border-color: var(--color-border);
+  color: var(--color-heading);
 }
 
 .capability-chip {
@@ -112,8 +113,8 @@
 
 .reorder-pages-layout {
   display: grid;
-  grid-template-columns: 1fr 340px;
-  gap: 1.5rem;
+  grid-template-columns: minmax(0, 1fr) 350px;
+  gap: 1.75rem;
   align-items: start;
   width: 100%;
 }
@@ -412,12 +413,19 @@
   gap: 0.6rem;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 12px rgba(229, 57, 53, 0.25);
+  background-color: var(--color-primary);
+  color: var(--color-primary-text);
+  border: 1px solid var(--color-primary);
+}
+
+.btn-process-action:hover {
+  background-color: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
 }
 
 [data-theme="dark"] .btn-process-action {
-  background: linear-gradient(135deg, #00A3FF 0%, #0077CC 100%);
-  box-shadow: 0 4px 12px rgba(0, 163, 255, 0.3);
+  background-color: var(--color-primary);
+  color: var(--color-primary-text);
 }
 
 .btn-process-action:hover:not(:disabled) {

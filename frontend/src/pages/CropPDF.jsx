@@ -382,14 +382,14 @@ export default function CropPDF() {
 
       {/* ERROR ALERT */}
       {error && (
-        <div className="error-alert" style={{ maxWidth: '820px', margin: '0 auto', width: '100%' }}>
+        <div className="error-alert" style={{ width: '100%' }}>
           <span>{error}</span>
         </div>
       )}
 
       {/* UPLOAD SCREEN */}
       {(status === 'idle' || (status === 'error' && !file)) && (
-        <div style={{ maxWidth: '720px', margin: '0 auto', width: '100%' }}>
+        <div style={{ width: '100%' }}>
           <UploadBox
             onFileSelect={selectFile}
             accept=".pdf"

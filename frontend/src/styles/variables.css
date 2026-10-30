@@ -34,7 +34,7 @@
   --color-warning-border: rgba(230, 119, 0, 0.25);
 
   /* Layout & Geometry Scale - Clean, Professional Radii */
-  --container-max-width: 1400px;
+  --container-max-width: 100%;
   --header-height: 56px;
   --radius-xs: 4px;
   --radius-sm: 6px;

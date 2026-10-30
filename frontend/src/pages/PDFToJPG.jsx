@@ -13,6 +13,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { pdfjsLib } from '../utils/pdfjsConfig';
 import JSZip from 'jszip';
+import DemoPaperPreview from '../components/DemoPaperPreview';
 import UploadBox from '../components/UploadBox';
 import FileUploader from '../components/FileUploader';
 import ProgressBar from '../components/ProgressBar';
@@ -222,12 +223,16 @@ function PDFToJPGInner() {
         {/* STEP 2: Selected File State + Quality Options */}
         {status === 'selected' && (
           <div className="selected-workspace">
+            <div className="workspace-file-column">
             <FileUploader
               file={file}
               onRemove={reset}
               onProcess={processPdfToJpg}
               isProcessing={false}
+              actionText="Convert PDF to JPG Now"
             />
+            <DemoPaperPreview file={file} title="PDF to JPG" />
+          </div>
 
             {/* Conversion Quality Options */}
             <div className="options-panel">
