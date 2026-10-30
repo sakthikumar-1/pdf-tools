@@ -23,7 +23,7 @@ services:
       - key: STORAGE_ROOT
         value: storage
       - key: CORS_ALLOWED_ORIGINS
-        value: https://simatrix-pdf-frontend.onrender.com,http://localhost:3000
+        value: https://simatrix-pdf-frontend.onrender.com,https://pdf-tools-2-g8im.onrender.com,http://localhost:3000
 
   # ==============================================================================
   # 2. Frontend Static Site (React 18 + Vite + Font Awesome)

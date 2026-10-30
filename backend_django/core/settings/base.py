@@ -12,13 +12,26 @@ load_dotenv(BASE_DIR / '.env')
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'simatrix-pdf-tools-fallback-dev-secret-key-change-me')
 DEBUG = os.getenv('DJANGO_DEBUG', 'True').lower() in ('true', '1', 'yes')
 
-ALLOWED_HOSTS = [
-    host.strip()
-    for host in os.getenv('DJANGO_ALLOWED_HOSTS', '127.0.0.1,localhost').split(',')
-    if host.strip()
-]
-if DEBUG and 'testserver' not in ALLOWED_HOSTS:
-    ALLOWED_HOSTS.append('testserver')
+# Allowed Hosts (Permissive for Render and Local Development)
+raw_hosts = os.getenv('DJANGO_ALLOWED_HOSTS', '*').strip()
+if raw_hosts and raw_hosts != '*':
+    ALLOWED_HOSTS = [h.strip() for h in raw_hosts.split(',') if h.strip()]
+else:
+    ALLOWED_HOSTS = ['*']
+
+render_host = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
+for host in [
+    render_host,
+    '.onrender.com',
+    'pdf-tools-2-g8im.onrender.com',
+    'pdf-tools-4-idi2.onrender.com',
+    '127.0.0.1',
+    'localhost',
+    '0.0.0.0',
+    'testserver',
+]:
+    if host and host not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(host)
 
 # Application definition
 INSTALLED_APPS = [
@@ -134,11 +147,45 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # CORS Settings for React Frontend
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOWED_ORIGINS = [
+raw_cors = os.getenv('CORS_ALLOWED_ORIGINS', '').strip()
+if raw_cors:
+    CORS_ALLOWED_ORIGINS = [origin.strip() for origin in raw_cors.split(',') if origin.strip()]
+else:
+    CORS_ALLOWED_ORIGINS = [
+        'http://localhost:3000',
+        'http://127.0.0.1:3000',
+        'http://localhost:5173',
+        'http://127.0.0.1:5173',
+        'https://pdf-tools-2-g8im.onrender.com',
+        'https://pdf-tools-4-idi2.onrender.com',
+    ]
+
+# Permit all Render frontend deployment URLs dynamically
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r'^https:\/\/.*\.onrender\.com$',
+    r'^http:\/\/localhost:[0-9]+$',
+    r'^http:\/\/127\.0\.0\.1:[0-9]+$',
+]
+
+# CSRF Trusted Origins (Render and local)
+CSRF_TRUSTED_ORIGINS = [
     origin.strip()
-    for origin in os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:3000,http://127.0.0.1:3000').split(',')
+    for origin in os.getenv('CSRF_TRUSTED_ORIGINS', '').split(',')
     if origin.strip()
 ]
+for origin in [
+    'https://*.onrender.com',
+    'https://pdf-tools-2-g8im.onrender.com',
+    'https://pdf-tools-4-idi2.onrender.com',
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
+    'http://localhost:8001',
+    'http://127.0.0.1:8001',
+]:
+    if origin not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(origin)
 
 # Allow Google Identity Services OAuth popup to communicate with opener
 SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin-allow-popups'

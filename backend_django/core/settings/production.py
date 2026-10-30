@@ -18,7 +18,15 @@ else:
 
 # Always ensure Render domain and local probe addresses are included
 RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
-for host in [RENDER_EXTERNAL_HOSTNAME, '.onrender.com', '127.0.0.1', 'localhost', '0.0.0.0']:
+for host in [
+    RENDER_EXTERNAL_HOSTNAME,
+    '.onrender.com',
+    'pdf-tools-2-g8im.onrender.com',
+    'pdf-tools-4-idi2.onrender.com',
+    '127.0.0.1',
+    'localhost',
+    '0.0.0.0',
+]:
     if host and host not in ALLOWED_HOSTS:
         ALLOWED_HOSTS.append(host)
 
@@ -30,7 +38,15 @@ CSRF_TRUSTED_ORIGINS = [
 ]
 if RENDER_EXTERNAL_HOSTNAME:
     CSRF_TRUSTED_ORIGINS.append(f'https://{RENDER_EXTERNAL_HOSTNAME}')
-for origin in ['https://*.onrender.com', 'http://127.0.0.1:10000', 'http://localhost:10000', 'http://localhost:3000']:
+for origin in [
+    'https://*.onrender.com',
+    'https://pdf-tools-2-g8im.onrender.com',
+    'https://pdf-tools-4-idi2.onrender.com',
+    'http://127.0.0.1:10000',
+    'http://localhost:10000',
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+]:
     if origin not in CSRF_TRUSTED_ORIGINS:
         CSRF_TRUSTED_ORIGINS.append(origin)
 
