@@ -9,22 +9,18 @@ from .base import *
 # Explicitly disable debug in production
 DEBUG = False
 
-# Allowed hosts strictly from environment
-ALLOWED_HOSTS = [
-    host.strip()
-    for host in os.getenv('DJANGO_ALLOWED_HOSTS', '').split(',')
-    if host.strip()
-]
+# Allowed hosts from environment or default to permissive on Render
+raw_allowed = os.getenv('DJANGO_ALLOWED_HOSTS', '').strip()
+if raw_allowed:
+    ALLOWED_HOSTS = [host.strip() for host in raw_allowed.split(',') if host.strip()]
+else:
+    ALLOWED_HOSTS = ['*']
 
-# Auto-detect Render hosting hostname
+# Always ensure Render domain and local probe addresses are included
 RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
-if RENDER_EXTERNAL_HOSTNAME:
-    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
-    ALLOWED_HOSTS.append('.onrender.com')
-
-# Ensure at least localhost / 127.0.0.1 for local health checks if not configured
-if not ALLOWED_HOSTS:
-    ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '.onrender.com']
+for host in [RENDER_EXTERNAL_HOSTNAME, '.onrender.com', '127.0.0.1', 'localhost', '0.0.0.0']:
+    if host and host not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(host)
 
 # CSRF Trusted Origins for Render and custom domains
 CSRF_TRUSTED_ORIGINS = [
@@ -33,10 +29,10 @@ CSRF_TRUSTED_ORIGINS = [
     if origin.strip()
 ]
 if RENDER_EXTERNAL_HOSTNAME:
-    CSRF_TRUSTED_ORIGINS.extend([
-        f'https://{RENDER_EXTERNAL_HOSTNAME}',
-        'https://*.onrender.com',
-    ])
+    CSRF_TRUSTED_ORIGINS.append(f'https://{RENDER_EXTERNAL_HOSTNAME}')
+for origin in ['https://*.onrender.com', 'http://127.0.0.1:10000', 'http://localhost:10000', 'http://localhost:3000']:
+    if origin not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(origin)
 
 # Whitenoise Static Files Middleware & Storage for production
 try:
@@ -64,8 +60,15 @@ STORAGES = {
 }
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-# Security Headers & Cookie Flags
-SECURE_SSL_REDIRECT = os.getenv('DJANGO_SECURE_SSL_REDIRECT', 'True').lower() in ('true', '1', 'yes')
+# Tell Django that Render reverse proxy terminates SSL and forwards X-Forwarded-Proto
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# On Render, SSL is handled at the cloud router/CDN level.
+# Internal container port scans (like Render's Go-http-client on 127.0.0.1) connect over HTTP.
+# Default SECURE_SSL_REDIRECT to False inside container to avoid 301 on internal health checks.
+SECURE_SSL_REDIRECT = os.getenv('DJANGO_SECURE_SSL_REDIRECT', 'False').lower() in ('true', '1', 'yes')
+SECURE_REDIRECT_EXEMPT = [r'^api/v1/health', r'^$']
+
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 SECURE_BROWSER_XSS_FILTER = True

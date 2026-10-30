@@ -1,30 +1,21 @@
 """
-Gunicorn Configuration for Render and High-Concurrency Production Deployments.
-Optimized for low-latency streaming, parallel asset downloads, and multi-threaded throughput.
+Gunicorn configuration for Simatrix PDF Tools on Render / production.
+Automatically binds to $PORT (Render standard) with high-capacity timeout.
 """
-import multiprocessing
 import os
 
-# Port binding
-port = os.environ.get("PORT", "10000")
+# Render injects the PORT environment variable (e.g. 10000)
+port = os.environ.get("PORT", "8000")
 bind = f"0.0.0.0:{port}"
 
-# Concurrency: Use threaded workers to handle concurrent static asset streaming and API requests
-# 2 workers x 4 threads = 8 concurrent request slots, preventing queue head-of-line blocking
-workers = int(os.environ.get("WEB_CONCURRENCY", 2))
-threads = int(os.environ.get("GUNICORN_THREADS", 4))
+# Concurrency & Performance
+workers = int(os.environ.get("WEB_CONCURRENCY", "2"))
+threads = 4
 worker_class = "gthread"
-
-# HTTP Keep-Alive allows browsers to reuse TCP/TLS connections for multiple assets
-keepalive = 65
-
-# Worker timeouts & memory management
 timeout = 120
-graceful_timeout = 30
-max_requests = 1000
-max_requests_jitter = 50
+keepalive = 5
 
 # Logging
 accesslog = "-"
 errorlog = "-"
-loglevel = os.environ.get("GUNICORN_LOG_LEVEL", "info")
+loglevel = "info"
