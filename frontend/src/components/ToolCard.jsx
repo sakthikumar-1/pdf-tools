@@ -8,47 +8,38 @@ export default function ToolCard({
   title,
   description,
   icon,
-  iconColor,
   path,
+  variant = 'compact', // 'compact' for All Utilities, 'popular' for Popular Tools
   badge,
-  badgeType = 'primary',
 }) {
   const toolId = `tool-${title.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
 
+  if (variant === 'popular') {
+    return (
+      <Link to={path} className="tool-card-popular" id={toolId}>
+        <div className="popular-icon-box" aria-hidden="true">
+          {icon && <FontAwesomeIcon icon={icon} className="popular-icon-glyph" />}
+        </div>
+        <h3 className="popular-card-title">{title}</h3>
+        <p className="popular-card-desc">{description}</p>
+        <span className="popular-card-arrow" aria-hidden="true">
+          <FontAwesomeIcon icon={faArrowRight} />
+        </span>
+      </Link>
+    );
+  }
+
   return (
-    <Link to={path} className="tool-card" id={toolId}>
-      <div className="tool-card-header">
-        <div 
-          className="tool-icon-badge" 
-          style={{ 
-            backgroundColor: iconColor ? `${iconColor}18` : 'rgba(229, 57, 53, 0.12)',
-            color: iconColor || 'var(--color-primary)'
-          }}
-        >
-          {icon && <FontAwesomeIcon icon={icon} className="tool-icon-glyph" />}
-        </div>
-
-        <div className="tool-card-action">
-          {badge && (
-            <span className={`badge badge-${badgeType}`}>
-              {badge}
-            </span>
-          )}
-          <span className="tool-arrow-circle">
-            <FontAwesomeIcon icon={faArrowRight} />
-          </span>
-        </div>
+    <Link to={path} className="tool-card-compact" id={toolId} title={`${title}: ${description}`}>
+      <div className="compact-icon-box" aria-hidden="true">
+        {icon && <FontAwesomeIcon icon={icon} className="compact-icon-glyph" />}
       </div>
-
-      <div className="tool-card-body">
-        <h3 className="tool-card-title">{title}</h3>
-        <p className="tool-card-desc">{description}</p>
+      <div className="compact-text-box">
+        <span className="compact-tool-title">{title}</span>
       </div>
-
-      <div className="tool-card-footer">
-        <span className="tool-card-link-text">Open tool</span>
-        <FontAwesomeIcon icon={faArrowRight} className="tool-card-arrow-icon" />
-      </div>
+      <span className="compact-tool-arrow" aria-hidden="true">
+        <FontAwesomeIcon icon={faArrowRight} />
+      </span>
     </Link>
   );
 }

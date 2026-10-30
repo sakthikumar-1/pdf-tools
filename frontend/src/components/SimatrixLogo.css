@@ -1,0 +1,51 @@
+.simatrix-logo-link {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+  color: inherit;
+  user-select: none;
+}
+
+.simatrix-logo-link:hover {
+  text-decoration: none;
+}
+
+.simatrix-brand-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.simatrix-logo-mark {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.simatrix-logo-mark .logo-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.simatrix-brand-name {
+  font-family: var(--font-family-primary);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-heading);
+  letter-spacing: -0.015em;
+  line-height: 1;
+}
+
+.simatrix-brand-name .simatrix-brand-sub {
+  font-weight: 700;
+  color: var(--color-heading);
+}
+
+[data-theme="dark"] .simatrix-brand-name {
+  color: #F8FAFC;
+}
+

@@ -13,8 +13,7 @@ export default function MainLayout({ children }) {
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
 
   const handleToggleSidebar = () => {
-    // If on mobile/tablet screen, toggle mobile drawer
-    if (window.innerWidth <= 1024) {
+    if (typeof window !== 'undefined' && window.innerWidth <= 1024) {
       setMobileDrawerOpen(prev => !prev);
     } else {
       setSidebarCollapsed(prev => !prev);
@@ -23,29 +22,31 @@ export default function MainLayout({ children }) {
 
   return (
     <div className={`app-shell ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
-      {/* Persistent Left Sidebar */}
-      <Sidebar
-        isCollapsed={sidebarCollapsed}
-        onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
-        isMobileOpen={mobileDrawerOpen}
-        onCloseMobile={() => setMobileDrawerOpen(false)}
+      {/* Top Sticky Header */}
+      <Header 
+        onToggleSidebar={handleToggleSidebar}
+        onOpenAuth={() => setAuthModalOpen(true)}
         onOpenSearch={() => setSearchModalOpen(true)}
+        isCollapsed={sidebarCollapsed}
       />
 
-      {/* Main Content Workspace Area */}
-      <div className="main-wrapper">
-        <Header 
-          onToggleSidebar={handleToggleSidebar}
-          onOpenAuth={() => setAuthModalOpen(true)}
-          onOpenSearch={() => setSearchModalOpen(true)}
+      {/* Main Container: Persistent Sidebar + Content */}
+      <div className="app-body">
+        <Sidebar
           isCollapsed={sidebarCollapsed}
+          onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+          isMobileOpen={mobileDrawerOpen}
+          onCloseMobile={() => setMobileDrawerOpen(false)}
+          onOpenSearch={() => setSearchModalOpen(true)}
         />
-        
-        <main className="main-content-area">
-          {children}
-        </main>
 
-        <Footer />
+        <div className="main-wrapper">
+          <main className="main-content-area">
+            {children}
+          </main>
+
+          <Footer />
+        </div>
       </div>
 
       {/* Global Modals */}

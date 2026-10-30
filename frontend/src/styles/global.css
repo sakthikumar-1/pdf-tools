@@ -26,7 +26,7 @@ body {
   max-width: 100vw;
   display: flex;
   flex-direction: column;
-  line-height: 1.6;
+  line-height: 1.5;
   overflow-x: clip;
   box-sizing: border-box;
   transition: background-color var(--transition-normal), color var(--transition-normal);
@@ -47,26 +47,26 @@ h1, h2, h3, h4, h5, h6 {
   color: var(--color-heading);
   font-weight: 700;
   line-height: 1.25;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.015em;
 }
 
-h1 { font-size: 2.5rem; }
-h2 { font-size: 1.875rem; }
-h3 { font-size: 1.35rem; }
-h4 { font-size: 1.125rem; }
+h1 { font-size: 2.25rem; }
+h2 { font-size: 1.5rem; }
+h3 { font-size: 1.25rem; }
+h4 { font-size: 1.05rem; }
 
 p {
   color: var(--color-text-secondary);
 }
 
 a {
-  color: var(--color-primary);
+  color: var(--color-text);
   text-decoration: none;
   transition: color var(--transition-fast);
 }
 
 a:hover {
-  color: var(--color-primary-hover);
+  color: var(--color-heading);
 }
 
 button, input, select, textarea {
@@ -93,8 +93,8 @@ button, input, select, textarea {
 
 @media (max-width: 640px) {
   .container {
-    padding-left: 0.85rem;
-    padding-right: 0.85rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
   }
 }
 
@@ -105,8 +105,8 @@ button, input, select, textarea {
   flex-wrap: wrap;
   gap: 0.35rem;
   font-size: 0.85rem;
-  color: var(--color-text-muted);
-  margin-bottom: 1.5rem;
+  color: var(--color-text-secondary);
+  margin-bottom: 1.25rem;
 }
 
 .breadcrumb-link {
@@ -120,7 +120,7 @@ button, input, select, textarea {
 }
 
 .breadcrumb-link:hover {
-  color: var(--color-primary);
+  color: var(--color-heading);
 }
 
 .breadcrumb-separator {
@@ -135,9 +135,7 @@ button, input, select, textarea {
   font-weight: 600;
 }
 
-/* ==============================================================================
-   STANDARDIZED PAGE BACK LINK
-   ============================================================================== */
+/* Page Back Link */
 .tool-top-nav-row {
   display: flex;
   align-items: center;
@@ -155,28 +153,28 @@ button, input, select, textarea {
   font-size: 0.82rem;
   font-weight: 600;
   text-decoration: none;
-  padding: 0.35rem 0.75rem;
-  border-radius: var(--radius-xs);
+  padding: 0.4rem 0.75rem;
+  border-radius: var(--radius-sm);
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
-  transition: all var(--transition-fast);
+  transition: background-color var(--transition-fast), border-color var(--transition-fast);
   width: fit-content;
   user-select: none;
 }
 
 .tool-back-link:hover {
-  color: var(--color-primary);
+  color: var(--color-heading);
   border-color: var(--color-border-hover);
-  background-color: var(--color-primary-light);
+  background-color: var(--color-hover-bg);
 }
 
 .tool-back-link svg {
   font-size: 0.78rem;
-  color: var(--color-primary);
+  color: var(--color-text-secondary);
 }
 
 /* ==============================================================================
-   BUTTON SYSTEM (Standardized Red & White Palette — iLovePDF inspired)
+   BUTTON SYSTEM (Grey & Charcoal Professional)
    ============================================================================== */
 .btn {
   display: inline-flex;
@@ -185,14 +183,14 @@ button, input, select, textarea {
   gap: 0.5rem;
   padding: 0.55rem 1.15rem;
   font-weight: 600;
-  font-size: 0.9rem;
-  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  border-radius: var(--radius-md);
   border: 1px solid transparent;
   cursor: pointer;
-  transition: background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
+  transition: background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
   user-select: none;
   text-decoration: none;
-  line-height: 1.25;
+  line-height: 1.3;
 }
 
 .btn:focus-visible {
@@ -201,13 +199,13 @@ button, input, select, textarea {
   box-shadow: var(--focus-ring);
 }
 
-/* Primary Button: Solid #E53935 with white text */
+/* Primary Button: Charcoal #303840 with white text */
 .btn-primary,
 a.btn-primary,
 button.btn-primary {
   background-color: var(--color-primary) !important;
   color: #FFFFFF !important;
-  font-weight: 700;
+  font-weight: 600;
   border: 1px solid var(--color-primary) !important;
 }
 
@@ -238,7 +236,7 @@ button.btn-primary:active:not(:disabled) {
   cursor: not-allowed;
 }
 
-/* Secondary Button: White background with neutral borders */
+/* Secondary Button: Clean light surface with #D4D9DF border */
 .btn-secondary,
 a.btn-secondary,
 button.btn-secondary {
@@ -256,31 +254,30 @@ button.btn-secondary * {
 .btn-secondary:hover:not(:disabled),
 a.btn-secondary:hover:not(:disabled),
 button.btn-secondary:hover:not(:disabled) {
-  background-color: var(--color-primary-light) !important;
+  background-color: var(--color-hover-bg) !important;
   border-color: var(--color-border-hover) !important;
-  color: var(--color-primary) !important;
+  color: var(--color-heading) !important;
 }
 
 .btn-secondary:active:not(:disabled),
 a.btn-secondary:active:not(:disabled),
 button.btn-secondary:active:not(:disabled) {
-  background-color: #FDE8E7 !important;
-  border-color: var(--color-primary) !important;
+  background-color: var(--color-border) !important;
 }
 
 /* Tertiary / Outline Button */
 .btn-outline,
 .btn-tertiary {
   background: transparent !important;
-  color: var(--color-text-secondary) !important;
+  color: var(--color-text) !important;
   border: 1px solid var(--color-border) !important;
 }
 
 .btn-outline:hover:not(:disabled),
 .btn-tertiary:hover:not(:disabled) {
   border-color: var(--color-border-hover) !important;
-  color: var(--color-primary) !important;
-  background-color: var(--color-primary-light) !important;
+  color: var(--color-heading) !important;
+  background-color: var(--color-hover-bg) !important;
 }
 
 /* Ghost Button */
@@ -291,8 +288,8 @@ button.btn-secondary:active:not(:disabled) {
 }
 
 .btn-ghost:hover:not(:disabled) {
-  background-color: var(--color-primary-light) !important;
-  color: var(--color-primary) !important;
+  background-color: var(--color-hover-bg) !important;
+  color: var(--color-heading) !important;
 }
 
 /* Destructive Button */
@@ -305,27 +302,27 @@ button.btn-secondary:active:not(:disabled) {
 
 .btn-destructive:hover:not(:disabled),
 .btn-danger:hover:not(:disabled) {
-  background-color: rgba(220, 38, 38, 0.2) !important;
-  color: #B91C1C !important;
+  background-color: rgba(224, 49, 49, 0.18) !important;
+  color: #C92A2A !important;
 }
 
-/* Button Sizing — Compact & Consistent */
+/* Button Sizing */
 .btn-sm {
-  padding: 0.38rem 0.8rem;
-  font-size: 0.82rem;
-  border-radius: var(--radius-xs);
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+  border-radius: var(--radius-sm);
 }
 
 .btn-md {
   padding: 0.55rem 1.15rem;
-  font-size: 0.9rem;
-  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  border-radius: var(--radius-md);
 }
 
 .btn-lg {
   padding: 0.65rem 1.35rem;
   font-size: 0.95rem;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
 }
 
 .btn:disabled {
@@ -348,9 +345,9 @@ button.btn-secondary:active:not(:disabled) {
 }
 
 .badge-primary {
-  background: var(--color-primary-light);
-  color: var(--color-primary);
-  border: 1px solid var(--color-primary-border);
+  background: var(--color-hover-bg);
+  color: var(--color-heading);
+  border: 1px solid var(--color-border);
 }
 
 .badge-success {
@@ -360,8 +357,8 @@ button.btn-secondary:active:not(:disabled) {
 }
 
 .badge-muted {
-  background: rgba(100, 112, 120, 0.08);
-  color: var(--color-text-muted);
+  background: var(--color-hover-bg);
+  color: var(--color-text-secondary);
   border: 1px solid var(--color-border);
 }
 
@@ -369,15 +366,14 @@ button.btn-secondary:active:not(:disabled) {
 .card {
   background-color: var(--color-surface-card);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
-  transition: border-color var(--transition-fast), background-color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
+  transition: border-color var(--transition-fast), background-color var(--transition-fast);
 }
 
 .card:hover {
   background-color: var(--color-surface-hover);
   border-color: var(--color-border-hover);
-  box-shadow: var(--shadow-md);
 }
 
 /* Custom Scrollbar */
@@ -391,19 +387,17 @@ button.btn-secondary:active:not(:disabled) {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #D1D5DB;
+  background: var(--color-border);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-primary);
+  background: var(--color-text-secondary);
 }
 
 /* ==============================================================================
    STANDARDIZED SUCCESS / RESULT ACTION BUTTON LAYOUT ACROSS ALL TOOLS
-   Ensures harmonious side-by-side buttons on desktop and balanced stacking on mobile
    ============================================================================== */
-
 .success-actions,
 .result-actions,
 .success-action-group,
@@ -422,17 +416,17 @@ button.btn-secondary:active:not(:disabled) {
 .result-actions .btn,
 .success-action-group .btn,
 .main-download-box .btn {
-  min-height: 48px !important;
-  padding: 0.85rem 1.6rem !important;
-  font-size: 0.95rem !important;
-  font-weight: 700 !important;
-  border-radius: var(--radius-sm) !important;
+  min-height: 44px !important;
+  padding: 0.75rem 1.4rem !important;
+  font-size: 0.9rem !important;
+  font-weight: 600 !important;
+  border-radius: var(--radius-md) !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  gap: 0.6rem !important;
+  gap: 0.5rem !important;
   text-decoration: none !important;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  transition: background-color var(--transition-fast), border-color var(--transition-fast) !important;
   margin: 0 !important;
 }
 
@@ -441,18 +435,11 @@ button.btn-secondary:active:not(:disabled) {
 .success-action-group .btn-primary,
 .main-download-box .main-download-btn {
   flex: 0 1 auto !important;
-  min-width: 240px !important;
-  max-width: 420px !important;
-  box-shadow: 0 4px 14px rgba(229, 57, 53, 0.25) !important;
-}
-
-[data-theme="dark"] .success-actions .btn-primary,
-[data-theme="dark"] .result-actions .btn-primary,
-[data-theme="dark"] .success-action-group .btn-primary,
-[data-theme="dark"] .main-download-box .main-download-btn {
-  background: linear-gradient(135deg, #00A3FF 0%, #0077CC 100%) !important;
-  border-color: #00A3FF !important;
-  box-shadow: 0 4px 16px rgba(0, 163, 255, 0.3) !important;
+  min-width: 220px !important;
+  max-width: 400px !important;
+  background-color: var(--color-primary) !important;
+  color: #FFFFFF !important;
+  border: 1px solid var(--color-primary) !important;
 }
 
 .success-actions .btn-secondary,
@@ -460,8 +447,11 @@ button.btn-secondary:active:not(:disabled) {
 .success-action-group .btn-secondary,
 .main-download-box .convert-another-btn {
   flex: 0 1 auto !important;
-  min-width: 200px !important;
-  max-width: 320px !important;
+  min-width: 180px !important;
+  max-width: 300px !important;
+  background-color: var(--color-surface) !important;
+  color: var(--color-text) !important;
+  border: 1px solid var(--color-border) !important;
 }
 
 @media (max-width: 640px) {

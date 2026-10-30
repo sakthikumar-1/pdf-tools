@@ -134,15 +134,14 @@
   gap: 0.75rem;
   width: 100%;
   padding: 0.85rem 1.25rem;
-  border-radius: var(--radius-sm);
-  background-color: #E53935 !important;
-  border: 1px solid #E53935 !important;
+  border-radius: var(--radius-md);
+  background-color: var(--color-primary) !important;
+  border: 1px solid var(--color-primary) !important;
   color: #FFFFFF !important;
   font-size: 0.95rem;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(229, 57, 53, 0.35);
-  transition: all var(--transition-fast);
+  transition: background-color var(--transition-fast), border-color var(--transition-fast);
 }
 
 .guest-signin-btn * {
@@ -155,14 +154,12 @@
 }
 
 .guest-signin-btn:hover:not(:disabled) {
-  background-color: #C62828 !important;
-  border-color: #C62828 !important;
-  transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(229, 57, 53, 0.5);
+  background-color: var(--color-primary-hover) !important;
+  border-color: var(--color-primary-hover) !important;
 }
 
 .guest-signin-btn:disabled {
-  background-color: #E53935 !important;
+  background-color: var(--color-primary) !important;
   opacity: 0.65 !important;
   color: #FFFFFF !important;
   cursor: not-allowed;
@@ -314,7 +311,7 @@
 
 [data-theme="dark"] .google-signin-btn:hover:not(:disabled) {
   background-color: #2D3B4F !important;
-  border-color: #E53935 !important;
+  border-color: var(--color-border-hover) !important;
   color: #FFFFFF !important;
 }
 
@@ -329,13 +326,13 @@
 }
 
 [data-theme="dark"] .login-text-input:focus {
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(229, 57, 53, 0.25);
+  border-color: var(--color-border-focus);
+  box-shadow: var(--focus-ring);
 }
 
 [data-theme="dark"] .login-privacy-callout {
-  background-color: rgba(229, 57, 53, 0.08);
-  border: 1px solid rgba(229, 57, 53, 0.25);
+  background-color: var(--color-hover-bg);
+  border: 1px solid var(--color-border);
   color: #94A3B8;
 }
 

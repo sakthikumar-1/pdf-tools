@@ -1,90 +1,184 @@
 /* ==============================================================================
-   SIMATRIX COMPACT TOPBAR STYLES (50px Height, Clean Red & White Theme)
+   SIMATRIX GREY PROFESSIONAL HEADER STYLES
    ============================================================================== */
 
 .top-nav-bar {
-  height: 50px;
+  height: 56px;
   position: sticky;
   top: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 1.25rem;
-  background-color: var(--color-bg);
+  padding: 0 1.5rem;
+  background-color: var(--color-header-bg);
   border-bottom: 1px solid var(--color-border);
   z-index: 90;
   flex-shrink: 0;
+  box-sizing: border-box;
+  width: 100%;
 }
 
 /* Left Group */
 .top-nav-left {
   display: flex;
   align-items: center;
-  gap: 0.85rem;
-  min-width: 0;
+  gap: 1rem;
+  flex-shrink: 0;
 }
 
-.top-nav-toggle-btn,
-.header-icon-btn {
+.header-toggle-btn {
   background: transparent;
   border: 1px solid var(--color-border);
   color: var(--color-text-secondary);
   cursor: pointer;
   width: 32px;
   height: 32px;
-  border-radius: var(--radius-xs);
+  border-radius: var(--radius-sm);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: all var(--transition-fast);
+  transition: background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
 }
 
-.top-nav-toggle-btn:hover,
-.header-icon-btn:hover {
-  color: var(--color-primary);
+.header-toggle-btn:hover {
+  color: var(--color-heading);
   border-color: var(--color-border-hover);
-  background-color: var(--color-surface-hover);
+  background-color: var(--color-hover-bg);
 }
 
-.sidebar-toggle-svg {
-  display: block;
-  transition: transform var(--transition-fast);
+/* Center Group: Wide PDF Tool Search Field */
+.top-nav-center {
+  flex: 1;
+  max-width: 580px;
+  margin: 0 1.5rem;
+  position: relative;
 }
 
-.mobile-toggle-btn {
-  display: none;
-}
-
-/* Breadcrumbs */
-.top-nav-breadcrumbs {
+.header-search-form {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 0.45rem;
-  font-size: 0.82rem;
+  width: 100%;
+}
+
+.header-search-icon {
+  position: absolute;
+  left: 0.85rem;
+  color: var(--color-text-secondary);
+  font-size: 0.85rem;
+  pointer-events: none;
+}
+
+.header-search-input {
+  width: 100%;
+  height: 38px;
+  padding: 0 4rem 0 2.4rem;
+  background-color: #FFFFFF;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-heading);
+  font-size: 0.875rem;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+[data-theme="dark"] .header-search-input {
+  background-color: var(--color-surface);
+}
+
+.header-search-input::placeholder {
+  color: var(--color-text-secondary);
+  font-size: 0.825rem;
+}
+
+.header-search-input:focus {
+  outline: none;
+  border-color: var(--color-border-focus);
+  box-shadow: var(--focus-ring);
+}
+
+.header-search-kbd {
+  position: absolute;
+  right: 0.65rem;
+  background-color: var(--color-header-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xs);
+  padding: 0.15rem 0.4rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  pointer-events: none;
+  font-family: var(--font-family-mono);
+}
+
+/* Search Suggestions Dropdown */
+.header-search-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-dropdown);
+  overflow: hidden;
+  z-index: 100;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.header-search-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.65rem 1rem;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--color-border-subtle);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+}
+
+.header-search-item:last-child {
+  border-bottom: none;
+}
+
+.header-search-item:hover {
+  background-color: var(--color-hover-bg);
+}
+
+.search-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.search-item-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-heading);
+}
+
+.search-item-desc {
+  font-size: 0.775rem;
+  color: var(--color-text-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  max-width: 440px;
 }
 
-.breadcrumb-separator-icon {
-  font-size: 0.6rem;
-  color: var(--color-text-muted);
-}
-
-.breadcrumb-link-item {
+.search-item-arrow {
   color: var(--color-text-secondary);
-  text-decoration: none;
-  font-weight: 500;
-  transition: color var(--transition-fast);
+  font-size: 0.8rem;
 }
 
-.breadcrumb-link-item:hover {
-  color: var(--color-primary);
-}
-
-.breadcrumb-current-item {
-  color: var(--color-heading);
-  font-weight: 600;
+.header-search-empty {
+  padding: 1rem;
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
 }
 
 /* Right Group */
@@ -92,48 +186,73 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  flex-shrink: 0;
 }
 
-/* Offline Network Status Indicator */
 .network-offline-badge {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  padding: 0.22rem 0.65rem;
+  padding: 0.2rem 0.6rem;
   font-size: 0.75rem;
-  font-weight: 700;
-  border-radius: 100px;
+  font-weight: 600;
+  border-radius: var(--radius-full);
   background-color: var(--color-warning-bg);
   border: 1px solid var(--color-warning-border);
   color: var(--color-warning);
-  letter-spacing: 0.02em;
-  user-select: none;
 }
 
-.network-offline-badge svg {
-  font-size: 0.72rem;
-}
-
-/* Theme Switch Button */
-.theme-switch-btn {
+.header-icon-action {
   background: transparent;
   border: 1px solid var(--color-border);
   color: var(--color-text-secondary);
-  font-size: 0.85rem;
   cursor: pointer;
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius-xs);
-  display: flex;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-sm);
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: all var(--transition-fast);
+  font-size: 0.9rem;
+  transition: background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
 }
 
-.theme-switch-btn:hover {
-  color: var(--color-primary);
+.header-icon-action:hover {
+  color: var(--color-heading);
   border-color: var(--color-border-hover);
-  background-color: var(--color-surface-hover);
+  background-color: var(--color-hover-bg);
+}
+
+.header-divider {
+  width: 1px;
+  height: 22px;
+  background-color: var(--color-border);
+  margin: 0 0.25rem;
+}
+
+/* Sign In Button */
+.header-signin-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  background-color: var(--color-primary);
+  color: var(--color-primary-text);
+  border: 1px solid var(--color-primary);
+  cursor: pointer;
+  transition: background-color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.header-signin-btn:hover {
+  background-color: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
+}
+
+.signin-icon {
+  font-size: 0.8rem;
 }
 
 /* User Menu & Profile */
@@ -145,39 +264,36 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background: none;
-  border: none;
+  background: transparent;
+  border: 1px solid var(--color-border);
   cursor: pointer;
-  padding: 0.2rem 0.4rem;
-  border-radius: var(--radius-xs);
+  padding: 0.25rem 0.6rem 0.25rem 0.35rem;
+  border-radius: var(--radius-md);
   transition: background-color var(--transition-fast);
 }
 
 .user-profile-btn:hover {
-  background-color: var(--color-surface);
+  background-color: var(--color-hover-bg);
 }
 
 .user-avatar-circle {
-  width: 32px;
-  height: 32px;
-  border-radius: 50% !important;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
   background-color: var(--color-primary);
   color: #FFFFFF;
-  font-weight: 800;
-  font-size: 0.82rem;
+  font-weight: 700;
+  font-size: 0.8rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
   overflow: hidden;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
 }
 
 .user-avatar-circle img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: 50% !important;
   display: block;
 }
 
@@ -185,47 +301,16 @@
   width: 44px;
   height: 44px;
   font-size: 1.1rem;
-  border-radius: 50% !important;
 }
 
 .user-name-text {
-  font-size: 0.82rem;
+  font-size: 0.825rem;
   font-weight: 600;
   color: var(--color-heading);
-  max-width: 120px;
+  max-width: 110px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.sign-in-nav-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  padding: 0.38rem 0.9rem;
-  font-size: 0.82rem;
-  font-weight: 700;
-  border-radius: var(--radius-xs);
-  background-color: var(--color-primary);
-  color: #FFFFFF;
-  border: 1px solid var(--color-primary);
-  cursor: pointer;
-  transition: background-color var(--transition-fast), border-color var(--transition-fast);
-}
-
-.sign-in-nav-btn:hover {
-  background-color: var(--color-primary-hover);
-  border-color: var(--color-primary-hover);
-}
-
-.sign-in-nav-btn:active {
-  background-color: var(--color-primary-active);
-  border-color: var(--color-primary-active);
-}
-
-.sign-in-icon {
-  font-size: 0.78rem;
-  color: #FFFFFF;
 }
 
 /* User Dropdown */
@@ -233,34 +318,31 @@
   position: absolute;
   top: calc(100% + 6px);
   right: 0;
-  width: 240px;
+  width: 260px;
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-dropdown);
-  padding: 0.75rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-  z-index: 200;
+  padding: 0.75rem 0;
+  z-index: 100;
 }
 
 .user-dropdown-header {
   display: flex;
   align-items: center;
-  gap: 0.65rem;
-  padding: 0.25rem 0.1rem;
+  gap: 0.75rem;
+  padding: 0.5rem 1rem 0.75rem;
 }
 
 .user-dropdown-info {
   display: flex;
   flex-direction: column;
-  min-width: 0;
+  overflow: hidden;
 }
 
 .user-dropdown-name {
-  font-size: 0.88rem;
-  font-weight: 700;
+  font-size: 0.875rem;
+  font-weight: 600;
   color: var(--color-heading);
   white-space: nowrap;
   overflow: hidden;
@@ -268,7 +350,7 @@
 }
 
 .user-dropdown-email {
-  font-size: 0.74rem;
+  font-size: 0.75rem;
   color: var(--color-text-secondary);
   white-space: nowrap;
   overflow: hidden;
@@ -276,143 +358,79 @@
 }
 
 .user-verified-badge {
+  font-size: 0.7rem;
+  color: var(--color-success);
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
-  font-size: 0.68rem;
-  font-weight: 600;
-  color: var(--color-success);
-  margin-top: 0.15rem;
+  margin-top: 0.2rem;
 }
 
 .user-dropdown-divider {
   height: 1px;
   background-color: var(--color-border);
-  margin: 0.3rem 0;
+  margin: 0.5rem 0;
 }
 
 .user-dropdown-list {
   list-style: none;
-  margin: 0;
   padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
+  margin: 0;
 }
 
-.user-dropdown-link {
+.user-dropdown-item {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
-  padding: 0.45rem 0.55rem;
-  border-radius: var(--radius-xs);
-  color: var(--color-text);
-  font-size: 0.82rem;
-  font-weight: 500;
+  gap: 0.65rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.825rem;
+  color: var(--color-heading);
   text-decoration: none;
-  transition: all var(--transition-fast);
-}
-
-.user-dropdown-link:hover {
-  background-color: var(--color-surface-hover);
-  color: var(--color-primary);
-}
-
-.user-dropdown-signout {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  width: 100%;
-  padding: 0.45rem 0.55rem;
-  border-radius: var(--radius-xs);
-  border: none;
-  background: none;
-  color: var(--color-error);
-  font-size: 0.82rem;
-  font-weight: 600;
-  cursor: pointer;
-  text-align: left;
   transition: background-color var(--transition-fast);
 }
 
-.user-dropdown-signout:hover {
+.user-dropdown-item:hover {
+  background-color: var(--color-hover-bg);
+}
+
+.user-dropdown-footer {
+  padding: 0 0.5rem;
+}
+
+.user-dropdown-logout-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  background: none;
+  border: none;
+  font-size: 0.825rem;
+  color: var(--color-error);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: background-color var(--transition-fast);
+}
+
+.user-dropdown-logout-btn:hover {
   background-color: var(--color-error-bg);
 }
 
-@media (max-width: 768px) {
-  .top-nav-bar {
-    padding: 0 0.75rem;
-    box-sizing: border-box;
-  }
-
-  .top-nav-left {
-    flex: 1;
-    min-width: 0;
-    overflow: hidden;
-    gap: 0.6rem;
-  }
-
-  .top-nav-right {
-    flex-shrink: 0;
-    gap: 0.45rem;
-  }
-
-  .user-name-text {
-    display: none !important;
+/* Responsiveness */
+@media (max-width: 900px) {
+  .top-nav-center {
+    display: none;
   }
 }
 
 @media (max-width: 640px) {
-  .desktop-toggle-btn {
-    display: none !important;
+  .top-nav-bar {
+    padding: 0 1rem;
   }
-
-  .mobile-toggle-btn {
-    display: inline-flex !important;
+  .header-divider {
+    display: none;
   }
-
-  .header-icon-btn {
-    width: 30px;
-    height: 30px;
-    font-size: 0.8rem;
-  }
-
-  .top-nav-breadcrumbs .breadcrumb-link-item,
-  .top-nav-breadcrumbs .breadcrumb-separator-icon {
-    display: none !important;
-  }
-
-  .top-nav-breadcrumbs {
-    flex: 1;
-    min-width: 0;
-    overflow: hidden;
-  }
-
-  .breadcrumb-current-item {
-    display: block;
-    font-size: 0.88rem;
-    font-weight: 700;
-    max-width: 130px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .sign-in-nav-btn {
-    padding: 0.35rem 0.65rem;
-    font-size: 0.78rem;
-    gap: 0.35rem;
-  }
-
-  .theme-switch-btn {
-    width: 30px;
-    height: 30px;
-    font-size: 0.8rem;
-  }
-
-  .user-avatar-circle {
-    width: 30px;
-    height: 30px;
-    font-size: 0.78rem;
+  .header-signin-btn span {
+    display: none;
   }
 }

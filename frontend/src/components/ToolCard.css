@@ -1,190 +1,136 @@
 /* ==============================================================================
-   SIMATRIX COMPACT TOOL CARD STYLES
-   Clean Red & White Theme inspired by iLovePDF
-   Hover: #FFF8F7 background, #F2B8B5 border, subtle elevation, emphasized arrow
+   SIMATRIX GREY PROFESSIONAL TOOL CARDS
    ============================================================================== */
 
-.tool-card {
+/* 1. Popular Tools Cards (4 in a row) */
+.tool-card-popular {
   display: flex;
   flex-direction: column;
-  padding: 1.15rem 1.25rem;
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
   text-decoration: none;
-  color: inherit;
-  transition: border-color var(--transition-fast), background-color var(--transition-fast), box-shadow var(--transition-fast);
-  position: relative;
-}
-
-.tool-card:hover,
-.tool-card:focus-visible {
-  border-color: var(--color-border-hover);
-  background-color: var(--color-surface-hover);
-  box-shadow: 0 4px 14px rgba(229, 57, 53, 0.08);
-  outline: none;
-}
-
-.tool-card:focus-visible {
-  outline: 2px solid var(--color-primary);
-  outline-offset: 2px;
-}
-
-/* Header & Icon */
-.tool-card-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 0.75rem;
-}
-
-.tool-icon-badge {
-  width: 38px;
-  height: 38px;
-  border-radius: var(--radius-xs);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.1rem;
-  transition: transform var(--transition-fast);
-}
-
-.tool-card:hover .tool-icon-badge,
-.tool-card:focus-visible .tool-icon-badge {
-  transform: scale(1.04);
-}
-
-.tool-card-action {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-}
-
-.tool-arrow-circle {
-  width: 24px;
-  height: 24px;
-  border-radius: var(--radius-xs);
-  background-color: var(--color-surface-hover);
-  color: var(--color-text-muted);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.7rem;
-  transition: all var(--transition-fast);
-}
-
-.tool-card:hover .tool-arrow-circle,
-.tool-card:focus-visible .tool-arrow-circle {
-  background-color: var(--color-primary);
-  color: #FFFFFF;
-}
-
-/* Body */
-.tool-card-body {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.tool-card-title {
-  font-size: 0.98rem;
-  font-weight: 700;
   color: var(--color-heading);
-  letter-spacing: -0.01em;
+  position: relative;
+  transition: background-color var(--transition-fast), border-color var(--transition-fast);
+  user-select: none;
+  min-height: 160px;
 }
 
-.tool-card-desc {
-  font-size: 0.84rem;
-  color: var(--color-text-secondary);
-  line-height: 1.45;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-/* Badges */
-.badge {
-  font-size: 0.65rem;
-  font-weight: 700;
-  padding: 0.12rem 0.5rem;
-  border-radius: var(--radius-xs);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.badge-primary {
-  background-color: var(--color-primary-light);
-  color: var(--color-primary);
-  border: 1px solid var(--color-primary-border);
-}
-
-.badge-success {
-  background-color: rgba(22, 163, 74, 0.1);
-  color: var(--color-success);
-  border: 1px solid rgba(22, 163, 74, 0.25);
-}
-
-.badge-muted {
+.tool-card-popular:hover {
   background-color: var(--color-surface-hover);
-  color: var(--color-text-muted);
-  border: 1px solid var(--color-border);
+  border-color: var(--color-border-hover);
 }
 
-/* Card Footer Action */
-.tool-card-footer {
+.popular-icon-box {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background-color: #FFFFFF;
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-  margin-top: 1rem;
-  padding-top: 0.65rem;
-  border-top: 1px solid var(--color-border-subtle);
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: var(--color-primary);
-  transition: color var(--transition-fast);
+  justify-content: center;
+  margin-bottom: 0.85rem;
+  color: var(--color-heading);
+  font-size: 1.1rem;
 }
 
-.tool-card-arrow-icon {
-  font-size: 0.72rem;
-  transition: transform var(--transition-fast);
-}
-
-.tool-card:hover .tool-card-footer,
-.tool-card:focus-visible .tool-card-footer {
-  color: var(--color-primary-hover);
-}
-
-.tool-card:hover .tool-card-arrow-icon,
-.tool-card:focus-visible .tool-card-arrow-icon {
-  transform: translateX(4px);
-}
-
-/* ==============================================================================
-   DARK THEME SPECIFIC STYLES
-   ============================================================================== */
-[data-theme="dark"] .tool-card {
-  background-color: var(--color-surface);
+[data-theme="dark"] .popular-icon-box {
+  background-color: var(--color-bg);
   border-color: var(--color-border);
 }
 
-[data-theme="dark"] .tool-card:hover,
-[data-theme="dark"] .tool-card:focus-visible {
-  border-color: var(--color-primary);
-  background-color: var(--color-surface-hover);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45), 0 0 15px rgba(229, 57, 53, 0.15);
+.popular-card-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--color-heading);
+  margin-bottom: 0.35rem;
+  line-height: 1.2;
 }
 
-[data-theme="dark"] .tool-card-title {
+.popular-card-desc {
+  font-size: 0.775rem;
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+  margin-bottom: 0.75rem;
+  flex: 1;
+}
+
+.popular-card-arrow {
+  align-self: flex-end;
+  color: var(--color-text-secondary);
+  font-size: 0.825rem;
+  transition: color var(--transition-fast);
+}
+
+.tool-card-popular:hover .popular-card-arrow {
   color: var(--color-heading);
 }
 
-[data-theme="dark"] .tool-card-desc {
+/* 2. Compact Grid Cards (All PDF Utilities) */
+.tool-card-compact {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 0.65rem 0.85rem;
+  text-decoration: none;
+  color: var(--color-heading);
+  transition: background-color var(--transition-fast), border-color var(--transition-fast);
+  user-select: none;
+  min-height: 46px;
+}
+
+.tool-card-compact:hover {
+  background-color: var(--color-surface-hover);
+  border-color: var(--color-border-hover);
+}
+
+.compact-icon-box {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background-color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-heading);
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+[data-theme="dark"] .compact-icon-box {
+  background-color: var(--color-bg);
+}
+
+.compact-text-box {
+  flex: 1;
+  min-width: 0;
+}
+
+.compact-tool-title {
+  font-size: 0.825rem;
+  font-weight: 600;
+  color: var(--color-heading);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
+
+.compact-tool-arrow {
   color: var(--color-text-secondary);
+  font-size: 0.75rem;
+  flex-shrink: 0;
+  transition: color var(--transition-fast);
 }
 
-[data-theme="dark"] .tool-card-footer {
-  border-top-color: var(--color-border-subtle);
-  color: var(--color-primary-hover);
+.tool-card-compact:hover .compact-tool-arrow {
+  color: var(--color-heading);
 }
-

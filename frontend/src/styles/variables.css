@@ -1,150 +1,162 @@
 :root {
-  /* Brand Typography */
-  --font-family-primary: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  /* Brand Typography - Prefer Inter */
+  --font-family-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-family-mono: 'JetBrains Mono', 'Fira Code', monospace;
 
-  /* Universal Brand Identity Colors - Modern High-Contrast Red (iLovePDF style) */
-  --color-primary: #E53935;
-  --color-primary-hover: #C62828;
-  --color-primary-active: #B71C1C;
-  --color-primary-light: #FFF0EF;
-  --color-primary-border: #F2B8B5;
+  /* Universal Brand Identity Colors - Simatrix Red Accent */
+  --color-primary: #303840;          /* Charcoal for primary UI actions */
+  --color-primary-hover: #21272D;
+  --color-primary-active: #171C24;
   --color-primary-text: #FFFFFF;
 
-  /* Legacy variable alias mapped to new primary red so any remaining variable references resolve cleanly */
-  --color-gold: #E53935;
-  --color-gold-hover: #C62828;
-  --color-gold-active: #B71C1C;
-  --color-gold-muted: #FFF0EF;
-  --color-gold-border: #F2B8B5;
+  --color-brand-red: #E03131;        /* Simatrix Red Brand Accent */
+  --color-brand-red-hover: #C92A2A;
+  --color-brand-red-light: #FFF5F5;
+
+  /* Legacy variable alias */
+  --color-gold: #303840;
+  --color-gold-hover: #21272D;
+  --color-gold-active: #171C24;
+  --color-gold-muted: #E9ECEF;
+  --color-gold-border: #D4D9DF;
 
   /* Status Colors */
-  --color-success: #16A34A;
-  --color-success-bg: rgba(22, 163, 74, 0.1);
-  --color-success-border: rgba(22, 163, 74, 0.25);
+  --color-success: #2B8A3E;
+  --color-success-bg: rgba(43, 138, 62, 0.1);
+  --color-success-border: rgba(43, 138, 62, 0.25);
   
-  --color-error: #DC2626;
-  --color-error-bg: rgba(220, 38, 38, 0.1);
-  --color-error-border: rgba(220, 38, 38, 0.25);
+  --color-error: #E03131;
+  --color-error-bg: rgba(224, 49, 49, 0.1);
+  --color-error-border: rgba(224, 49, 49, 0.25);
 
-  --color-warning: #F59E0B;
-  --color-warning-bg: rgba(245, 158, 11, 0.1);
-  --color-warning-border: rgba(245, 158, 11, 0.25);
+  --color-warning: #E67700;
+  --color-warning-bg: rgba(230, 119, 0, 0.1);
+  --color-warning-border: rgba(230, 119, 0, 0.25);
 
-  /* Layout & Geometry Scale - Compact & Moderate Radii */
-  --container-max-width: 1200px;
-  --header-height: 52px;
+  /* Layout & Geometry Scale - Clean, Professional Radii */
+  --container-max-width: 1400px;
+  --header-height: 56px;
   --radius-xs: 4px;
-  --radius-sm: 8px;
-  --radius-md: 10px;
-  --radius-lg: 12px;
-  --radius-xl: 14px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 12px;
   --radius-full: 9999px;
 
-  /* Standard Transitions */
-  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-normal: 200ms cubic-bezier(0.16, 1, 0.3, 1);
-  --transition-slow: 300ms cubic-bezier(0.16, 1, 0.3, 1);
+  /* Subtle Transitions - No Bouncing or Scaling */
+  --transition-fast: 120ms ease;
+  --transition-normal: 180ms ease;
+  --transition-slow: 240ms ease;
 }
 
 /* ==============================================================================
-   CLEAN RED & WHITE WORKING THEME (Default Application Experience)
+   GREY PROFESSIONAL UI THEME (Light Mode - Primary Reference)
    ============================================================================== */
 :root, [data-theme="light"], :root:not([data-theme="dark"]) {
   color-scheme: light;
 
-  /* Backgrounds & Surfaces */
-  --color-bg: #FFFFFF;               /* Main background: #FFFFFF */
-  --color-bg-alt: #F8F9FA;           /* Inset / Alt surfaces */
-  --color-sidebar-bg: #F8F9FA;       /* Sidebar background: #F8F9FA */
-  --color-header-bg: #FFFFFF;        /* Top Navigation Header: #FFFFFF */
-  --color-surface: #FFFFFF;          /* Cards and panels: #FFFFFF */
-  --color-surface-hover: #FFF8F7;    /* Card hover background: #FFF8F7 */
-  --color-surface-active: #FFF0EF;   /* Soft red background: #FFF0EF */
-  --color-surface-card: #FFFFFF;     /* Cards: #FFFFFF */
-  --color-surface-card-hover: #FFF8F7;
-  --color-surface-inset: #F8F9FA;
+  /* Core Palette */
+  --color-bg: #E9ECEF;               /* Main background: #E9ECEF */
+  --color-header-bg: #F1F3F5;        /* Header background: #F1F3F5 */
+  --color-sidebar-bg: #F1F3F5;       /* Sidebar background: #F1F3F5 */
+  --color-surface: #F8F9FA;          /* Card background: #F8F9FA */
+  --color-surface-hover: #FFFFFF;    /* Subtle hover: #FFFFFF */
+  --color-surface-active: #E1E5E9;
+  --color-surface-card: #F8F9FA;     /* Card background: #F8F9FA */
+  --color-surface-card-hover: #FFFFFF;
+  --color-surface-inset: #E9ECEF;
+  --color-bg-alt: #F1F3F5;
 
   /* Borders */
-  --color-border: #E5E7EB;           /* Border: #E5E7EB */
-  --color-border-subtle: #F3F4F6;
-  --color-border-hover: #F2B8B5;     /* Border hover: #F2B8B5 */
-  --color-border-focus: #E53935;
+  --color-border: #D4D9DF;           /* Borders: #D4D9DF */
+  --color-border-subtle: #E2E6EA;
+  --color-border-hover: #A6AFB8;
+  --color-border-focus: #303840;
 
-  /* Primary Brand Action (High-Contrast Red) */
-  --color-primary: #E53935;
-  --color-primary-hover: #C62828;
-  --color-primary-active: #B71C1C;
-  --color-primary-text: #FFFFFF;     /* White text on red buttons */
-  --color-primary-light: #FFF0EF;
-  --color-primary-border: #F2B8B5;
+  /* Buttons & Actions */
+  --color-primary: #303840;          /* Primary buttons: #303840 */
+  --color-primary-hover: #21272D;
+  --color-primary-active: #171C24;
+  --color-primary-text: #FFFFFF;     /* Button text: #FFFFFF */
+  --color-primary-light: #E1E5E9;
+  --color-primary-border: #D4D9DF;
+
+  /* Hover Background */
+  --color-hover-bg: #E1E5E9;         /* Hover background: #E1E5E9 */
 
   /* Typography */
-  --color-heading: #17212B;          /* Main text: #17212B */
-  --color-text: #17212B;             /* Main text: #17212B */
-  --color-text-secondary: #64748B;   /* Secondary text: #64748B */
-  --color-text-muted: #94A3B8;       /* Muted text: #94A3B8 */
+  --color-heading: #171C24;          /* Primary text: #171C24 */
+  --color-text: #171C24;             /* Primary text: #171C24 */
+  --color-text-secondary: #667085;   /* Secondary text: #667085 */
+  --color-text-muted: #8A94A6;       /* Muted text */
   --color-text-inverse: #FFFFFF;
 
-  /* Elevation Shadows - Crisp & Clean on White */
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
-  --shadow-md: 0 4px 12px rgba(229, 57, 53, 0.06), 0 1px 3px rgba(0, 0, 0, 0.03);
-  --shadow-lg: 0 10px 24px rgba(229, 57, 53, 0.1), 0 2px 6px rgba(0, 0, 0, 0.04);
-  --shadow-dropdown: 0 12px 28px rgba(0, 0, 0, 0.08), 0 0 0 1px #E5E7EB;
+  /* Minimal Crisp Shadows (No heavy drops or color glows) */
+  --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.04);
+  --shadow-md: 0 2px 6px rgba(16, 24, 40, 0.06);
+  --shadow-lg: 0 6px 16px rgba(16, 24, 40, 0.08);
+  --shadow-dropdown: 0 8px 24px rgba(16, 24, 40, 0.12), 0 0 0 1px #D4D9DF;
 
   /* Focus Indicator */
-  --focus-ring: 0 0 0 2px rgba(229, 57, 53, 0.35);
-  --logo-text: #17212B;
-  --logo-accent: #E53935;
+  --focus-ring: 0 0 0 2px rgba(48, 56, 64, 0.25);
+  
+  /* Brand Logos */
+  --logo-text: #171C24;
+  --logo-accent: #E03131;            /* Simatrix Red */
 }
 
 /* ==============================================================================
-   DEEP MIDNIGHT THEME (Optional Dark Mode with High-Contrast Red)
+   CHARCOAL PROFESSIONAL THEME (Optional Dark Mode)
    ============================================================================== */
 [data-theme="dark"] {
   color-scheme: dark;
 
-  /* Backgrounds & Surfaces */
-  --color-bg: #0F141C;               /* Main background */
-  --color-bg-alt: #161D26;           /* Secondary / Sidebar background */
-  --color-sidebar-bg: #161D26;       /* Sidebar */
-  --color-header-bg: #0F141C;        /* Header */
-  --color-surface: #1A222D;          /* Cards & surfaces */
-  --color-surface-hover: #222C3A;    /* Elevated surfaces */
-  --color-surface-active: #2C3849;
-  --color-surface-card: #1A222D;     /* Cards */
-  --color-surface-card-hover: #222C3A;
-  --color-surface-inset: #161D26;
+  /* Core Palette */
+  --color-bg: #12161A;               /* Deep charcoal background */
+  --color-header-bg: #181E24;        /* Header background */
+  --color-sidebar-bg: #181E24;       /* Sidebar */
+  --color-surface: #1E252D;          /* Card background */
+  --color-surface-hover: #262E38;
+  --color-surface-active: #2E3844;
+  --color-surface-card: #1E252D;     /* Card background */
+  --color-surface-card-hover: #262E38;
+  --color-surface-inset: #12161A;
+  --color-bg-alt: #181E24;
 
   /* Borders */
-  --color-border: #283546;
-  --color-border-subtle: #1E2937;
-  --color-border-hover: #E53935;
-  --color-border-focus: #E53935;
+  --color-border: #2D3742;
+  --color-border-subtle: #222B34;
+  --color-border-hover: #485666;
+  --color-border-focus: #F1F5F9;
 
-  /* Primary Brand Action (High-Contrast Red) */
-  --color-primary: #E53935;
-  --color-primary-hover: #EF5350;
-  --color-primary-active: #C62828;
-  --color-primary-text: #FFFFFF;     /* White text on red buttons */
-  --color-primary-light: rgba(229, 57, 53, 0.15);
-  --color-primary-border: rgba(229, 57, 53, 0.35);
+  /* Buttons & Actions */
+  --color-primary: #384350;
+  --color-primary-hover: #455262;
+  --color-primary-active: #2C3540;
+  --color-primary-text: #FFFFFF;
+  --color-primary-light: #222B34;
+  --color-primary-border: #3D4A58;
+
+  /* Hover Background */
+  --color-hover-bg: #28323D;
 
   /* Typography */
-  --color-heading: #F8FAFC;          /* Primary text */
-  --color-text: #F1F5F9;             /* Primary text */
-  --color-text-secondary: #94A3B8;   /* Secondary text */
-  --color-text-muted: #64748B;       /* Muted text */
-  --color-text-inverse: #0F141C;
+  --color-heading: #F8FAFC;
+  --color-text: #F1F5F9;
+  --color-text-secondary: #94A3B8;
+  --color-text-muted: #64748B;
+  --color-text-inverse: #12161A;
 
   /* Elevation Shadows */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.5);
-  --shadow-lg: 0 8px 28px rgba(0, 0, 0, 0.65);
-  --shadow-dropdown: 0 12px 28px rgba(0, 0, 0, 0.75), 0 0 0 1px #283546;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --shadow-dropdown: 0 10px 28px rgba(0, 0, 0, 0.6), 0 0 0 1px #2D3742;
 
   /* Focus Indicator */
-  --focus-ring: 0 0 0 2px rgba(229, 57, 53, 0.5);
+  --focus-ring: 0 0 0 2px rgba(241, 245, 249, 0.3);
+  
+  /* Brand Logos */
   --logo-text: #F8FAFC;
-  --logo-accent: #E53935;
+  --logo-accent: #E03131;
 }

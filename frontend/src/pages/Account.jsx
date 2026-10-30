@@ -75,7 +75,7 @@ export default function Account() {
             <FontAwesomeIcon icon={faGear} />
             <span>Preferences</span>
           </button>
-          <Link to="/history" className="account-tab-link">
+          <Link to="/recent-files" className="account-tab-link">
             <FontAwesomeIcon icon={faClockRotateLeft} />
             <span>Recent Files</span>
           </Link>

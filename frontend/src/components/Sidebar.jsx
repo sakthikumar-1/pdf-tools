@@ -4,52 +4,75 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faHouse,
   faClockRotateLeft,
-  faStar,
-  faFileCirclePlus,
   faLayerGroup,
+  faArrowRightArrowLeft,
   faCompress,
   faShieldHalved,
   faWandMagicSparkles,
   faGear,
-  faCircleQuestion,
   faChevronRight,
   faChevronDown,
-  faMagnifyingGlass,
   faXmark
 } from '@fortawesome/free-solid-svg-icons';
 import { TOOL_CATEGORIES, TOOLS_DATA } from '../utils/toolsData';
 import './Sidebar.css';
 
+// Category monochrome icons mapping
+const CATEGORY_ICONS = {
+  'organize-pdf': faLayerGroup,
+  'convert-pdf': faArrowRightArrowLeft,
+  'compress-pdf': faCompress,
+  'security-protect': faShieldHalved,
+  'ai-tools': faWandMagicSparkles,
+};
+
 export default function Sidebar({
   isCollapsed,
   onToggleCollapse,
   isMobileOpen,
-  onCloseMobile,
-  onOpenSearch
+  onCloseMobile
 }) {
   const location = useLocation();
+  const navigate = useNavigate();
 
-  // Track which category accordion is open in sidebar
-  const [openCategories, setOpenCategories] = useState({
-    'convert-pdf': false,
+  // Track which categories are expanded in sidebar
+  const [expandedCategories, setExpandedCategories] = useState({
     'organize-pdf': false,
+    'convert-pdf': false,
     'compress-pdf': false,
     'security-protect': false,
     'ai-tools': false
   });
 
-  // Automatically open category containing current tool route
+  // Auto-expand category if active route is inside it
   useEffect(() => {
-    const activeTool = TOOLS_DATA.find(t => t.path === location.pathname);
+    const currentPath = location.pathname;
+    
+    // Check if on category page
+    const matchedCategory = TOOL_CATEGORIES.find(c => c.path === currentPath);
+    if (matchedCategory && matchedCategory.id !== 'all') {
+      setExpandedCategories(prev => ({
+        ...prev,
+        [matchedCategory.id]: true
+      }));
+      return;
+    }
+
+    // Check if on a tool page
+    const activeTool = TOOLS_DATA.find(t => 
+      t.path === currentPath || 
+      t.legacyPath === currentPath ||
+      currentPath.endsWith(`/${t.id}`)
+    );
     if (activeTool && activeTool.category) {
-      setOpenCategories(prev => ({
+      setExpandedCategories(prev => ({
         ...prev,
         [activeTool.category]: true
       }));
     }
   }, [location.pathname]);
 
-  // Lock body scroll on mobile when drawer is active
+  // Lock body scroll on mobile
   useEffect(() => {
     if (isMobileOpen) {
       const originalOverflow = document.body.style.overflow;
@@ -60,10 +83,10 @@ export default function Sidebar({
     }
   }, [isMobileOpen]);
 
-  const toggleCategory = (catId, e) => {
+  const toggleExpand = (catId, e) => {
     e.preventDefault();
     e.stopPropagation();
-    setOpenCategories(prev => ({
+    setExpandedCategories(prev => ({
       ...prev,
       [catId]: !prev[catId]
     }));
@@ -72,6 +95,8 @@ export default function Sidebar({
   const handleNavClick = () => {
     if (onCloseMobile) onCloseMobile();
   };
+
+  const sidebarCategories = TOOL_CATEGORIES.filter(c => c.id !== 'all');
 
   return (
     <>
@@ -88,141 +113,121 @@ export default function Sidebar({
         className={`app-sidebar ${isCollapsed ? 'collapsed' : ''} ${isMobileOpen ? 'mobile-open' : ''}`}
         aria-label="Application Sidebar"
       >
-        {/* Brand Header */}
-        <div className="sidebar-header">
-          <NavLink
-            to="/"
-            className="sidebar-brand"
-            onClick={handleNavClick}
-            data-tooltip={isCollapsed ? "Simatrix PDF Tools (Home)" : undefined}
-          >
-            <div className="brand-logo-icon">
-              <img src="/logo.png" alt="Simatrix Logo" className="brand-logo-img" />
-            </div>
-            {!isCollapsed && (
-              <div className="brand-info">
-                <span className="brand-title">Simatrix</span>
-                <span className="brand-tag">PDF Tools</span>
-              </div>
-            )}
-          </NavLink>
-
-          {isMobileOpen && (
+        {isMobileOpen && (
+          <div className="sidebar-mobile-header">
+            <span className="sidebar-mobile-title">Navigation</span>
             <button
               type="button"
               className="sidebar-close-btn"
               onClick={onCloseMobile}
-              aria-label="Close sidebar"
+              aria-label="Close navigation"
             >
               <FontAwesomeIcon icon={faXmark} />
             </button>
-          )}
-        </div>
-
-        {/* Quick Search Input */}
-        <div className="sidebar-search-box">
-          <button
-            type="button"
-            className="sidebar-search-btn"
-            onClick={onOpenSearch}
-            title="Search tools (Ctrl + K)"
-            data-tooltip={isCollapsed ? "Search tools (Ctrl+K)" : undefined}
-          >
-            <FontAwesomeIcon icon={faMagnifyingGlass} className="search-btn-icon" />
-            {!isCollapsed && (
-              <>
-                <span className="search-btn-placeholder">Search tools...</span>
-                <kbd className="search-btn-kbd">Ctrl K</kbd>
-              </>
-            )}
-          </button>
-        </div>
+          </div>
+        )}
 
         {/* Scrollable Navigation Area */}
         <div className="sidebar-scrollable">
-          {/* Main Navigation */}
-          <ul className="sidebar-menu-list">
+          {/* Main Top Navigation */}
+          <ul className="sidebar-nav-list">
             <li>
               <NavLink
                 to="/"
                 end
-                className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
+                className={({ isActive }) => `sidebar-nav-item ${isActive ? 'active' : ''}`}
                 onClick={handleNavClick}
-                title="Home Dashboard"
-                data-tooltip={isCollapsed ? "Home Dashboard" : undefined}
+                title="Home"
+                data-tooltip={isCollapsed ? "Home" : undefined}
               >
-                <FontAwesomeIcon icon={faHouse} className="link-fa-icon" />
-                {!isCollapsed && <span className="link-text">Home</span>}
+                <FontAwesomeIcon icon={faHouse} className="sidebar-icon" />
+                {!isCollapsed && <span className="sidebar-label">Home</span>}
               </NavLink>
             </li>
             <li>
               <NavLink
-                to="/history"
-                className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
+                to="/recent-files"
+                className={({ isActive }) => `sidebar-nav-item ${isActive ? 'active' : ''}`}
                 onClick={handleNavClick}
                 title="Recent Files"
                 data-tooltip={isCollapsed ? "Recent Files" : undefined}
               >
-                <FontAwesomeIcon icon={faClockRotateLeft} className="link-fa-icon" />
-                {!isCollapsed && <span className="link-text">Recent Files</span>}
+                <FontAwesomeIcon icon={faClockRotateLeft} className="sidebar-icon" />
+                {!isCollapsed && <span className="sidebar-label">Recent Files</span>}
               </NavLink>
             </li>
           </ul>
 
-          {/* Section: TOOLS */}
-          <div className="sidebar-section-divider">
-            {!isCollapsed && <span className="section-label">Tools</span>}
+          {/* Section: PDF Tools */}
+          <div className="sidebar-section-header">
+            {!isCollapsed && <span className="section-title-text">PDF Tools</span>}
           </div>
 
-          <div className="sidebar-categories">
-            {TOOL_CATEGORIES.filter(c => c.id !== 'all' && c.id !== 'ai-tools').map(cat => {
+          {/* Categories Navigation with Accordion Submenus */}
+          <div className="sidebar-categories-group">
+            {sidebarCategories.map(cat => {
               const toolsInCat = TOOLS_DATA.filter(t => t.category === cat.id);
-              const isOpen = openCategories[cat.id];
-              const isAnyChildActive = toolsInCat.some(t => t.path === location.pathname);
+              const isExpanded = expandedCategories[cat.id];
+              const isCategoryActive = location.pathname === cat.path;
+              const isAnyChildActive = toolsInCat.some(t => 
+                t.path === location.pathname || 
+                t.legacyPath === location.pathname ||
+                location.pathname.endsWith(`/${t.id}`)
+              );
+              const catIcon = CATEGORY_ICONS[cat.id] || cat.icon;
 
               return (
-                <div key={cat.id} className={`sidebar-cat-group ${isOpen ? 'open' : ''}`}>
-                  <button
-                    type="button"
-                    className={`sidebar-cat-btn ${isAnyChildActive ? 'child-active' : ''}`}
-                    onClick={(e) => {
-                      if (isCollapsed && onToggleCollapse) {
-                        onToggleCollapse();
-                        setOpenCategories(prev => ({ ...prev, [cat.id]: true }));
-                      } else {
-                        toggleCategory(cat.id, e);
-                      }
-                    }}
-                    title={cat.label}
-                    data-tooltip={isCollapsed ? cat.label : undefined}
-                    aria-expanded={isOpen}
-                  >
-                    <div className="cat-btn-left">
-                      <FontAwesomeIcon icon={cat.icon} className="link-fa-icon" />
-                      {!isCollapsed && <span className="cat-label">{cat.label}</span>}
-                    </div>
-                    {!isCollapsed && (
-                      <FontAwesomeIcon
-                        icon={isOpen ? faChevronDown : faChevronRight}
-                        className="cat-chevron"
-                      />
-                    )}
-                  </button>
+                <div key={cat.id} className={`sidebar-cat-wrapper ${isExpanded ? 'is-open' : ''}`}>
+                  <div className={`sidebar-cat-row ${isCategoryActive ? 'active' : ''} ${isAnyChildActive ? 'child-active' : ''}`}>
+                    <NavLink
+                      to={cat.path}
+                      className="cat-main-link"
+                      onClick={handleNavClick}
+                      title={cat.label}
+                      data-tooltip={isCollapsed ? cat.label : undefined}
+                    >
+                      <FontAwesomeIcon icon={catIcon} className="sidebar-icon" />
+                      {!isCollapsed && <span className="sidebar-label">{cat.label}</span>}
+                    </NavLink>
 
-                  {/* Submenu for Category */}
-                  {isOpen && !isCollapsed && (
-                    <ul className="sidebar-submenu">
-                      {toolsInCat.map(tool => (
-                        <li key={tool.id}>
-                          <NavLink
-                            to={tool.path}
-                            className={({ isActive }) => `sidebar-sublink ${isActive ? 'active' : ''}`}
-                            onClick={handleNavClick}
-                          >
-                            <span className="sublink-text">{tool.title}</span>
-                          </NavLink>
-                        </li>
-                      ))}
+                    {!isCollapsed && toolsInCat.length > 0 && (
+                      <button
+                        type="button"
+                        className="cat-expand-btn"
+                        onClick={(e) => toggleExpand(cat.id, e)}
+                        aria-label={isExpanded ? `Collapse ${cat.label}` : `Expand ${cat.label}`}
+                        title={isExpanded ? "Collapse" : "Expand tools"}
+                      >
+                        <FontAwesomeIcon
+                          icon={isExpanded ? faChevronDown : faChevronRight}
+                          className="cat-arrow-icon"
+                        />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Submenu for Individual Tools */}
+                  {isExpanded && !isCollapsed && toolsInCat.length > 0 && (
+                    <ul className="sidebar-submenu-list">
+                      {toolsInCat.map(tool => {
+                        const isToolActive = 
+                          location.pathname === tool.path || 
+                          location.pathname === tool.legacyPath ||
+                          location.pathname.endsWith(`/${tool.id}`);
+
+                        return (
+                          <li key={tool.id}>
+                            <NavLink
+                              to={tool.path}
+                              className={`sidebar-subitem ${isToolActive ? 'active' : ''}`}
+                              onClick={handleNavClick}
+                            >
+                              <span className="subitem-bullet">•</span>
+                              <span className="subitem-label">{tool.title}</span>
+                            </NavLink>
+                          </li>
+                        );
+                      })}
                     </ul>
                   )}
                 </div>
@@ -230,45 +235,40 @@ export default function Sidebar({
             })}
           </div>
 
-          {/* Section: AI */}
-          <div className="sidebar-section-divider">
-            {!isCollapsed && <span className="section-label">AI</span>}
-          </div>
-
-          <ul className="sidebar-menu-list">
+          {/* Standalone AI Feature */}
+          <div className="sidebar-section-divider" />
+          <ul className="sidebar-nav-list">
             <li>
               <NavLink
                 to="/ai-summarizer"
-                className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
+                className={({ isActive }) => `sidebar-nav-item ${isActive ? 'active' : ''}`}
                 onClick={handleNavClick}
-                title="AI PDF Summarizer"
-                data-tooltip={isCollapsed ? "AI PDF Summarizer" : undefined}
+                title="AI Summarizer"
+                data-tooltip={isCollapsed ? "AI Summarizer" : undefined}
               >
-                <FontAwesomeIcon icon={faWandMagicSparkles} className="link-fa-icon" />
-                {!isCollapsed && <span className="link-text">AI Summarizer</span>}
+                <FontAwesomeIcon icon={faWandMagicSparkles} className="sidebar-icon" />
+                {!isCollapsed && <span className="sidebar-label">AI Summarizer</span>}
               </NavLink>
             </li>
           </ul>
         </div>
 
-        {/* Bottom Settings & Support */}
-        <div className="sidebar-footer">
-          <ul className="sidebar-menu-list">
+        {/* Bottom Settings Link */}
+        <div className="sidebar-bottom-bar">
+          <ul className="sidebar-nav-list">
             <li>
               <NavLink
-                to="/account"
-                className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
+                to="/settings"
+                className={({ isActive }) => `sidebar-nav-item ${isActive || location.pathname === '/account' ? 'active' : ''}`}
                 onClick={handleNavClick}
                 title="Settings"
                 data-tooltip={isCollapsed ? "Settings" : undefined}
               >
-                <FontAwesomeIcon icon={faGear} className="link-fa-icon" />
-                {!isCollapsed && <span className="link-text">Settings</span>}
+                <FontAwesomeIcon icon={faGear} className="sidebar-icon" />
+                {!isCollapsed && <span className="sidebar-label">Settings</span>}
               </NavLink>
             </li>
           </ul>
-
-
         </div>
       </aside>
     </>
