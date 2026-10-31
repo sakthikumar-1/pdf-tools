@@ -2,6 +2,7 @@ import React, { useEffect, Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import MainLayout from './layouts/MainLayout';
 import ErrorBoundary from './components/ErrorBoundary';
+import { checkBackendHealth } from './services/api';
 
 const Home = lazy(() => import('./pages/Home'));
 const CategoryPage = lazy(() => import('./pages/CategoryPage'));
@@ -96,6 +97,11 @@ function ScrollToTop() {
 }
 
 export default function App() {
+  useEffect(() => {
+    // Pre-warm backend in background on initial page load to eliminate Render free-tier cold starts
+    checkBackendHealth().catch(() => {});
+  }, []);
+
   return (
     <Router>
       <ScrollToTop />

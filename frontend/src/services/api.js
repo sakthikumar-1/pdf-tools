@@ -324,8 +324,13 @@ export async function uploadAndConvertPdf(file, endpoint = '', onProgress) {
  */
 async function executePythonUtility(url, formData, file, defaultSuffix, onProgress) {
   const xhr = new XMLHttpRequest();
+  xhr.timeout = 25000;
 
   const data = await new Promise((resolve, reject) => {
+    xhr.ontimeout = () => {
+      reject(new Error('Backend processing timed out. Falling back to Instant In-Browser Engine.'));
+    };
+
     xhr.upload.addEventListener('progress', (e) => {
       if (e.lengthComputable && onProgress) {
         const percent = Math.round((e.loaded / e.total) * 60);

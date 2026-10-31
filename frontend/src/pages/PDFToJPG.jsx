@@ -51,6 +51,7 @@ function PDFToJPGInner() {
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [isZipping, setIsZipping] = useState(false);
+  const [jpgEngine, setJpgEngine] = useState('instant'); // 'instant' (~1s client canvas) or 'server' (Python cloud)
 
   // Convert PDF to JPG using PDF.js canvas rendering
   const processPdfToJpg = async () => {
@@ -63,33 +64,34 @@ function PDFToJPGInner() {
     setError(null);
 
     try {
-      // First attempt Python backend conversion if accessible
       let useClientRendering = true;
-      try {
-        const result = await convertPdfToJpgPython(file, qualityDpi, (percent) => {
-          setProgress(Math.min(90, Math.round(percent * 0.5)));
-        });
-        if (result && result.success && result.images && result.images.length > 0) {
-          if (result.isZip && result.downloadUrl) {
-            setBackendZipUrl(result.downloadUrl);
-          } else {
-            setBackendZipUrl(null);
+      if (jpgEngine === 'server') {
+        try {
+          const result = await convertPdfToJpgPython(file, qualityDpi, (percent) => {
+            setProgress(Math.min(90, Math.round(percent * 0.5)));
+          });
+          if (result && result.success && result.images && result.images.length > 0) {
+            if (result.isZip && result.downloadUrl) {
+              setBackendZipUrl(result.downloadUrl);
+            } else {
+              setBackendZipUrl(null);
+            }
+            const formatted = result.images.map((img) => ({
+              pageNumber: img.page,
+              fileName: img.filename,
+              url: img.download_url,
+              previewUrl: img.download_url ? `${img.download_url}?inline=1` : img.download_url,
+              size: img.size_bytes,
+            }));
+            setConvertedImages(formatted);
+            setTotalPages(result.pageCount || result.images.length);
+            setStatus('success');
+            setProgress(100);
+            useClientRendering = false;
           }
-          const formatted = result.images.map((img) => ({
-            pageNumber: img.page,
-            fileName: img.filename,
-            url: img.download_url,
-            previewUrl: img.download_url ? `${img.download_url}?inline=1` : img.download_url,
-            size: img.size_bytes,
-          }));
-          setConvertedImages(formatted);
-          setTotalPages(result.pageCount || result.images.length);
-          setStatus('success');
-          setProgress(100);
-          useClientRendering = false;
+        } catch (backendErr) {
+          console.log('[PDFToJPG] Python backend offline or timed out, executing instant client canvas fallback:', backendErr);
         }
-      } catch (backendErr) {
-        console.log('[PDFToJPG] Python backend offline or error, executing client canvas fallback:', backendErr);
       }
 
       // Fallback or Direct client-side PDF rendering
@@ -239,6 +241,58 @@ function PDFToJPGInner() {
               <div className="options-header">
                 <FontAwesomeIcon icon={faGear} className="options-icon" />
                 <h3 className="options-title">Image Quality Options</h3>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1.25rem' }}>
+                <button
+                  type="button"
+                  onClick={() => setJpgEngine('instant')}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.25rem',
+                    padding: '0.75rem 1rem',
+                    borderRadius: '8px',
+                    border: jpgEngine === 'instant' ? '2px solid #303840' : '1px solid #D4D9DF',
+                    backgroundColor: jpgEngine === 'instant' ? '#FFFFFF' : '#F8F9FA',
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                    <span style={{ fontWeight: 600, color: '#171C24', fontSize: '0.88rem' }}>⚡ Instant Canvas</span>
+                    <span style={{ fontSize: '0.68rem', padding: '2px 5px', background: '#e0f2fe', color: '#0369a1', borderRadius: '4px', fontWeight: 700 }}>~1 sec</span>
+                  </div>
+                  <span style={{ fontSize: '0.75rem', color: '#667085', lineHeight: '1.3' }}>
+                    Hardware-accelerated in-browser rendering.
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setJpgEngine('server')}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.25rem',
+                    padding: '0.75rem 1rem',
+                    borderRadius: '8px',
+                    border: jpgEngine === 'server' ? '2px solid #303840' : '1px solid #D4D9DF',
+                    backgroundColor: jpgEngine === 'server' ? '#FFFFFF' : '#F8F9FA',
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                    <span style={{ fontWeight: 600, color: '#171C24', fontSize: '0.88rem' }}>☁️ Cloud Zip</span>
+                    <span style={{ fontSize: '0.68rem', padding: '2px 5px', background: '#f1f5f9', color: '#475569', borderRadius: '4px', fontWeight: 600 }}>Server</span>
+                  </div>
+                  <span style={{ fontSize: '0.75rem', color: '#667085', lineHeight: '1.3' }}>
+                    Multi-page zip archiving on server.
+                  </span>
+                </button>
               </div>
 
               <div className="options-grid">

@@ -110,6 +110,7 @@ export default function GenericTool({
   const [scannedWarning, setScannedWarning] = useState(false);
   const [pptMode, setPptMode] = useState('editable');
   const [pptMeta, setPptMeta] = useState(null);
+  const [wordEngine, setWordEngine] = useState('instant'); // 'instant' (~1s in-browser) or 'server' (Python cloud)
 
   // Phase 2A: Add Page Numbers States
   const [startNumber, setStartNumber] = useState(1);
@@ -264,11 +265,17 @@ export default function GenericTool({
         filename = `${baseName}_converted.txt`;
       } else if (titleLower.includes('word')) {
         let res;
-        try {
-          res = await convertPdfToWordPython(primaryFile, (p) => setProgress(p));
-        } catch (backendErr) {
-          console.warn('[PDFToWord] Python backend error or offline, running client fallback:', backendErr);
+        if (wordEngine === 'instant') {
+          // Blazing-fast client-side conversion (~1s, private, zero wait)
           res = await pdfToDocx(primaryFile, (p) => setProgress(p));
+        } else {
+          // Cloud server engine with automatic fast fallback
+          try {
+            res = await convertPdfToWordPython(primaryFile, (p) => setProgress(p));
+          } catch (backendErr) {
+            console.warn('[PDFToWord] Server error or timeout, running instant fallback:', backendErr);
+            res = await pdfToDocx(primaryFile, (p) => setProgress(p));
+          }
         }
         blob = res.blob;
         filename = res.filename || `${baseName}_converted.docx`;
@@ -692,14 +699,70 @@ export default function GenericTool({
                   </div>
                 </div>
               ) : titleLower.includes('word') ? (
-                /* WORD CONVERSION INFO */
-                <div className="tool-feature-box" style={{ padding: '0.75rem 0', color: 'var(--color-text-muted)', fontSize: '0.9rem', lineHeight: '1.5' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.4rem', color: 'var(--color-text-main)', fontWeight: 600 }}>
-                    <FontAwesomeIcon icon={faCheck} style={{ color: "var(--color-success)" }} />
-                    <span>Structured Document & Table Conversion</span>
+                /* WORD CONVERSION ENGINE SELECTOR */
+                <div className="utility-options-form">
+                  <div className="utility-form-group">
+                    <label className="option-label" style={{ fontWeight: 600, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span>Conversion Engine:</span>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 600, color: wordEngine === 'instant' ? '#0284c7' : 'var(--color-text-secondary)' }}>
+                        {wordEngine === 'instant' ? '⚡ Instant (~1s)' : '☁️ Cloud Server'}
+                      </span>
+                    </label>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.75rem', marginTop: '0.5rem' }}>
+                      <button
+                        type="button"
+                        onClick={() => setWordEngine('instant')}
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '0.25rem',
+                          padding: '0.85rem 1rem',
+                          borderRadius: '8px',
+                          border: wordEngine === 'instant' ? '2px solid #303840' : '1px solid #D4D9DF',
+                          backgroundColor: wordEngine === 'instant' ? '#FFFFFF' : '#F8F9FA',
+                          textAlign: 'left',
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease'
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                          <span style={{ fontWeight: 600, color: '#171C24', fontSize: '0.9rem' }}>⚡ Instant Mode</span>
+                          <span style={{ fontSize: '0.7rem', padding: '2px 6px', background: '#e0f2fe', color: '#0369a1', borderRadius: '4px', fontWeight: 700 }}>~1 sec</span>
+                        </div>
+                        <span style={{ fontSize: '0.78rem', color: '#667085', lineHeight: '1.4' }}>
+                          Instant in-browser processing. Zero upload wait, 100% private.
+                        </span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setWordEngine('server')}
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '0.25rem',
+                          padding: '0.85rem 1rem',
+                          borderRadius: '8px',
+                          border: wordEngine === 'server' ? '2px solid #303840' : '1px solid #D4D9DF',
+                          backgroundColor: wordEngine === 'server' ? '#FFFFFF' : '#F8F9FA',
+                          textAlign: 'left',
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease'
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                          <span style={{ fontWeight: 600, color: '#171C24', fontSize: '0.9rem' }}>☁️ Cloud Engine</span>
+                          <span style={{ fontSize: '0.7rem', padding: '2px 6px', background: '#f1f5f9', color: '#475569', borderRadius: '4px', fontWeight: 600 }}>Server</span>
+                        </div>
+                        <span style={{ fontSize: '0.78rem', color: '#667085', lineHeight: '1.4' }}>
+                          Deep layout reconstruction with python-docx on Render.
+                        </span>
+                      </button>
+                    </div>
                   </div>
-                  <div>
-                    Converts PDF content into rich Microsoft Word (.docx) format preserving document hierarchy, bold headings, font sizing, page breaks, and genuine formatted Word tables with clean borders and cell padding.
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem', color: 'var(--color-text-secondary)', fontSize: '0.8rem' }}>
+                    <FontAwesomeIcon icon={faCheck} style={{ color: "var(--color-success)" }} />
+                    <span>Preserves text hierarchy, bold headings, page breaks, and genuine formatted tables.</span>
                   </div>
                 </div>
               ) : (titleLower.includes('number') || titleLower.includes('page-number')) ? (

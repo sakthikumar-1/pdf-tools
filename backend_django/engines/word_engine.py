@@ -59,11 +59,17 @@ def inspect_pdf_document(pdf_path: str) -> Dict[str, Any]:
         doc.close()
         raise InvalidPdfError("The PDF document contains 0 pages.")
 
+    # Fast text layer inspection: sample up to 5 pages
+    is_scanned = True
     total_text_chars = 0
-    for page in doc:
-        total_text_chars += len(page.get_text().strip())
+    sample_pages = min(page_count, 5)
+    for i in range(sample_pages):
+        sample_chars = len(doc[i].get_text().strip())
+        total_text_chars += sample_chars
+        if sample_chars > 0:
+            is_scanned = False
+            break
 
-    is_scanned = total_text_chars == 0
     doc.close()
 
     return {
@@ -142,8 +148,11 @@ def convert_pdf_to_docx(
     try:
         cv = Converter(str(input_pdf_path))
         # Optimize raster sampling ratio from 4.0 down to 2.0 to prevent 60s+ slowdowns on image/vector clips
-        cv.default_settings['clip_image_res_ratio'] = 2.0
-        cv.default_settings['float_image_ignorable_gap'] = 5.0
+        cv.default_settings['clip_image_res_ratio'] = 1.25
+        cv.default_settings['float_image_ignorable_gap'] = 10.0
+        cv.default_settings['min_svg_gap_dx'] = 25.0
+        cv.default_settings['ignore_page_error'] = True
+        cv.default_settings['debug'] = False
         cv.convert(str(output_docx_path))
     except Exception as err:
         logger.error(f"pdf2docx conversion error: {err}", exc_info=True)
