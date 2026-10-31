@@ -262,6 +262,8 @@ export default function Home() {
                   icon={tool.icon}
                   path={tool.path}
                   variant="popular"
+                  comingSoon={tool.comingSoon}
+                  badge={tool.badge}
                 />
               ))}
             </div>
@@ -308,6 +310,8 @@ export default function Home() {
                     icon={tool.icon}
                     path={tool.path}
                     variant="compact"
+                    comingSoon={tool.comingSoon}
+                    badge={tool.badge}
                   />
                 ))}
               </div>

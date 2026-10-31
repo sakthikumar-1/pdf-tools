@@ -3,33 +3,26 @@ import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faWandMagicSparkles,
-  faFileLines,
-  faCopy,
-  faCheck,
-  faDownload,
-  faRotateRight,
-  faCircleExclamation,
-  faTriangleExclamation,
-  faClock,
-  faBookOpen,
-  faLayerGroup,
-  faShieldHalved,
-  faMicrochip,
   faArrowLeft,
-  faTrashCan,
-  faListOl,
-  faListCheck,
-  faAlignLeft,
-  faCircleCheck,
   faBolt,
-  faChevronRight
+  faAlignLeft,
+  faListCheck,
+  faListOl
 } from '@fortawesome/free-solid-svg-icons';
-import UploadBox from '../components/UploadBox';
-import { useFileUpload } from '../hooks/useFileUpload';
+import {
+  AIQuotaBanner,
+  AIConsentDialog,
+  hasUserGivenAIConsent,
+  setUserAIConsent,
+  AIFileUploader,
+  AIProcessingIndicator,
+  AIErrorState,
+  AILimitReachedModal,
+  AIResultToolbar,
+  renderTextWithCitations
+} from '../components/ai';
 import { getPdfPageCount } from '../utils/pdfPageCounter';
-import { formatBytes, downloadFile } from '../utils/fileUtils';
-import { summarizePdf } from '../services/api';
-import { fetchServerCapabilities } from '../utils/capabilityChecker';
+import { summarizePdf, fetchAIQuota } from '../services/api';
 import './AISummarizer.css';
 
 const SUMMARY_MODES = [
@@ -38,7 +31,7 @@ const SUMMARY_MODES = [
     title: 'Quick Summary',
     badge: 'Fast',
     icon: faBolt,
-    description: 'Executive briefing capturing the primary thesis, core findings, and conclusion in 2-3 concise paragraphs.',
+    description: 'Executive briefing capturing primary thesis, core findings, and conclusions in 2-3 concise paragraphs.',
     targetTokens: '~150 words'
   },
   {
@@ -46,7 +39,7 @@ const SUMMARY_MODES = [
     title: 'Detailed Summary',
     badge: 'Comprehensive',
     icon: faAlignLeft,
-    description: 'In-depth analysis retaining vital background, methodology, arguments, caveats, and data points.',
+    description: 'In-depth analysis retaining background context, methodology, data points, arguments, and caveats.',
     targetTokens: '~450 words'
   },
   {
@@ -54,7 +47,7 @@ const SUMMARY_MODES = [
     title: 'Key Points',
     badge: 'Bullets',
     icon: faListCheck,
-    description: 'High-impact bulleted list highlighting critical facts, metrics, decisions, and actionable takeaways.',
+    description: 'High-impact bulleted list highlighting critical facts, decisions, metrics, and actionable takeaways.',
     targetTokens: '6-10 points'
   },
   {
@@ -62,186 +55,144 @@ const SUMMARY_MODES = [
     title: 'Section-by-Section',
     badge: 'Structured',
     icon: faListOl,
-    description: 'Sequential walkthrough mapping out each section, chapter, or topic with structured headings.',
+    description: 'Sequential walkthrough mapping out each chapter, heading, or thematic section with citations.',
     targetTokens: 'Per section'
   }
 ];
 
 export default function AISummarizer() {
-  const [selectedMode, setSelectedMode] = useState('quick');
+  const [selectedFile, setSelectedFile] = useState(null);
   const [docPageCount, setDocPageCount] = useState(null);
-  const [capabilities, setCapabilities] = useState(null);
-  const [copied, setCopied] = useState(false);
-  const [summaryResult, setSummaryResult] = useState(null);
-  const [statusMessage, setStatusMessage] = useState('');
-  const [activeError, setActiveError] = useState(null);
+  const [selectedMode, setSelectedMode] = useState('quick');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
-  const timerRef = useRef(null);
+  const [statusMessage, setStatusMessage] = useState('');
+  const [summaryResult, setSummaryResult] = useState(null);
+  const [activeError, setActiveError] = useState(null);
+  const [quota, setQuota] = useState(null);
+  const [quotaLoading, setQuotaLoading] = useState(false);
+  const [consentDialogOpen, setConsentDialogOpen] = useState(false);
+  const [limitModalOpen, setLimitModalOpen] = useState(false);
+  const pendingOperationRef = useRef(null);
 
-  const {
-    file,
-    isDragging,
-    error: uploadError,
-    status: uploadStatus,
-    setStatus: setUploadStatus,
-    setError: setUploadError,
-    selectFile,
-    handleDragOver,
-    handleDragLeave,
-    handleDrop,
-    reset: resetUpload
-  } = useFileUpload();
-
-  // Scroll to top and fetch capabilities on mount
+  // Load quota on mount
   useEffect(() => {
     window.scrollTo(0, 0);
-    fetchServerCapabilities().then((data) => {
-      setCapabilities(data);
-    });
+    loadQuota();
   }, []);
 
-  // When a file is selected, inspect page count
+  // Update page count when file changes
   useEffect(() => {
-    if (file) {
-      setActiveError(null);
-      setSummaryResult(null);
+    if (selectedFile) {
       setDocPageCount(null);
-      getPdfPageCount(file).then((count) => {
+      getPdfPageCount(selectedFile).then((count) => {
         if (count !== null) setDocPageCount(count);
       });
     }
-  }, [file]);
+  }, [selectedFile]);
 
-  // Handle elapsed timer during processing
-  useEffect(() => {
-    if (isProcessing) {
-      setElapsedSeconds(0);
-      timerRef.current = setInterval(() => {
-        setElapsedSeconds((prev) => prev + 1);
-      }, 1000);
-    } else {
-      if (timerRef.current) clearInterval(timerRef.current);
-    }
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [isProcessing]);
-
-  // Handle summary generation
-  const handleGenerateSummary = async (modeOverride = null) => {
-    if (!file || isProcessing) return;
-
-    if (typeof navigator !== 'undefined' && !navigator.onLine) {
-      setActiveError({
-        message: 'Network Offline: Google Gemini AI document summarization requires an active internet connection. Please reconnect to summarize, or use our offline-capable PDF tools (Merge, Split, Compress, Rotate).',
-        isOffline: true,
-        isScanned: false,
-        isConfig: false,
-        isPassword: false,
-        isRateLimit: false
-      });
-      return;
-    }
-
-    const mode = modeOverride || selectedMode;
-    setIsProcessing(true);
-    setActiveError(null);
-    setStatusMessage('Uploading document to AI analyzer...');
-
+  const loadQuota = async () => {
+    setQuotaLoading(true);
     try {
-      const result = await summarizePdf(file, mode, (percent, msg) => {
-        if (msg) setStatusMessage(msg);
-      });
-
-      setSummaryResult(result);
-      setIsProcessing(false);
-      setStatusMessage('');
+      const q = await fetchAIQuota();
+      if (q) setQuota(q);
     } catch (err) {
-      setIsProcessing(false);
-      setStatusMessage('');
-      const message = err.message || 'An unexpected error occurred while analyzing the document.';
-      const isNetworkErr = (typeof navigator !== 'undefined' && !navigator.onLine) ||
-        message.toLowerCase().includes('failed to fetch') ||
-        message.toLowerCase().includes('network') ||
-        message.toLowerCase().includes('unable to connect');
-
-      setActiveError({
-        message: isNetworkErr
-          ? 'Network connectivity unavailable. Google Gemini AI summarization requires an active internet connection. Offline PDF tools (Merge, Split, Compress, Rotate) remain fully functional.'
-          : message,
-        isOffline: isNetworkErr,
-        isScanned: message.toLowerCase().includes('scanned') || message.toLowerCase().includes('ocr'),
-        isConfig: message.toLowerCase().includes('not configured') || message.toLowerCase().includes('api key'),
-        isPassword: message.toLowerCase().includes('password') || message.toLowerCase().includes('encrypted'),
-        isRateLimit: message.toLowerCase().includes('rate limit') || message.toLowerCase().includes('too many')
-      });
+      console.warn('Could not fetch AI quota:', err);
+    } finally {
+      setQuotaLoading(false);
     }
   };
 
-  // Copy summary text to clipboard
-  const handleCopy = () => {
-    if (!summaryResult?.summary) return;
-    navigator.clipboard.writeText(summaryResult.summary).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
+  const handleSelectFile = (file) => {
+    setSelectedFile(file);
+    setSummaryResult(null);
+    setActiveError(null);
   };
 
-  // Download summary as a clean .txt file
-  const handleDownloadTxt = () => {
-    if (!summaryResult?.summary || !file) return;
-
-    const baseName = file.name.replace(/\.[^/.]+$/, '');
-    const modeLabel = SUMMARY_MODES.find((m) => m.id === summaryResult.mode)?.title || 'AI Summary';
-    const dateStr = new Date().toISOString().split('T')[0];
-
-    const content = [
-      `================================================================================`,
-      `SIMATRIX PDF TOOLS — AI DOCUMENT SUMMARY`,
-      `================================================================================`,
-      `Source File:     ${file.name}`,
-      `File Size:       ${formatBytes(file.size)}`,
-      `Pages Analyzed:  ${summaryResult.pageCount || docPageCount || 'N/A'}`,
-      `Summary Mode:    ${modeLabel}`,
-      `AI Engine:       ${summaryResult.provider} (${summaryResult.model})`,
-      `Word Count:      ${summaryResult.wordCount} words`,
-      `Estimated Read:  ${summaryResult.estimatedReadingTimeMinutes} min`,
-      `Generated Date:  ${dateStr}`,
-      `================================================================================`,
-      ``,
-      summaryResult.summary,
-      ``,
-      `--------------------------------------------------------------------------------`,
-      `Processed privately by Simatrix Academy PDF Tools (https://academy.simatrix.com)`,
-      `--------------------------------------------------------------------------------`
-    ].join('\n');
-
-    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-    downloadFile(blob, `${baseName}_${summaryResult.mode}_summary.txt`);
-  };
-
-  // Reset to initial upload state
-  const handleReset = () => {
-    resetUpload();
+  const handleClearFile = () => {
+    setSelectedFile(null);
     setSummaryResult(null);
     setActiveError(null);
     setDocPageCount(null);
     setIsProcessing(false);
   };
 
-  // Render markdown text into semantic HTML blocks
-  const renderFormattedSummary = (text) => {
-    if (!text) return null;
+  const executeSummarize = async (modeToRun = null) => {
+    const mode = modeToRun || selectedMode;
+    if (!selectedFile || isProcessing) return;
 
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      setActiveError({
+        message: 'Network Offline: Simatrix AI document analysis requires an active internet connection. Please reconnect, or use offline-capable PDF tools (Merge, Split, Rotate).',
+        code: 'NETWORK_OFFLINE'
+      });
+      return;
+    }
+
+    if (quota && quota.remaining <= 0 && !summaryResult?.isDemo) {
+      setLimitModalOpen(true);
+      return;
+    }
+
+    // Check external consent
+    if (!hasUserGivenAIConsent()) {
+      pendingOperationRef.current = () => executeSummarize(mode);
+      setConsentDialogOpen(true);
+      return;
+    }
+
+    setIsProcessing(true);
+    setActiveError(null);
+    setStatusMessage('Uploading document to AI analyzer...');
+
+    try {
+      const result = await summarizePdf(
+        selectedFile,
+        mode,
+        (percent, msg) => {
+          if (msg) setStatusMessage(msg);
+        },
+        { consent: true }
+      );
+
+      setSummaryResult(result);
+      if (result.quota) {
+        setQuota(result.quota);
+      } else {
+        loadQuota();
+      }
+    } catch (err) {
+      console.error('AI Summarizer error:', err);
+      const code = err.code || '';
+      if (code === 'AI_LIMIT_REACHED') {
+        setLimitModalOpen(true);
+      }
+      setActiveError(err);
+    } finally {
+      setIsProcessing(false);
+      setStatusMessage('');
+    }
+  };
+
+  const handleConsentConfirm = () => {
+    setUserAIConsent(true);
+    setConsentDialogOpen(false);
+    if (pendingOperationRef.current) {
+      const op = pendingOperationRef.current;
+      pendingOperationRef.current = null;
+      op();
+    }
+  };
+
+  const renderSummaryBlocks = (text) => {
+    if (!text) return null;
     const lines = text.split('\n');
+
     return lines.map((line, idx) => {
       const trimmed = line.trim();
       if (!trimmed) {
         return <div key={idx} className="summary-spacer" />;
       }
 
-      // Main section headings (## Heading or # Heading)
       if (trimmed.startsWith('## ') || trimmed.startsWith('# ')) {
         const headingText = trimmed.replace(/^#+\s*/, '');
         return (
@@ -251,7 +202,6 @@ export default function AISummarizer() {
         );
       }
 
-      // Subheadings (### Subheading)
       if (trimmed.startsWith('### ')) {
         const headingText = trimmed.replace(/^###\s*/, '');
         return (
@@ -261,55 +211,42 @@ export default function AISummarizer() {
         );
       }
 
-      // Bullet points (* or -)
       if (trimmed.startsWith('* ') || trimmed.startsWith('- ') || trimmed.startsWith('• ')) {
         const bulletText = trimmed.replace(/^[\*\-•]\s*/, '');
         return (
           <li key={idx} className="summary-bullet">
-            {formatInlineBold(bulletText)}
+            {renderTextWithCitations(bulletText)}
           </li>
         );
       }
 
-      // Numbered lists (1. 2. etc.)
       const numMatch = trimmed.match(/^(\d+)\.\s+(.*)/);
       if (numMatch) {
         return (
           <li key={idx} className="summary-numbered" value={numMatch[1]}>
-            {formatInlineBold(numMatch[2])}
+            {renderTextWithCitations(numMatch[2])}
           </li>
         );
       }
 
-      // Normal paragraph
       return (
         <p key={idx} className="summary-paragraph">
-          {formatInlineBold(trimmed)}
+          {renderTextWithCitations(trimmed)}
         </p>
       );
     });
   };
 
-  // Format **bold** text inline
-  const formatInlineBold = (str) => {
-    if (!str.includes('**')) return str;
-    const parts = str.split('**');
-    return parts.map((part, i) => (i % 2 === 1 ? <strong key={i}>{part}</strong> : part));
-  };
-
-  const aiEngineName = capabilities?.ai?.provider || 'Hosted AI Engine';
-  const aiModelName = capabilities?.ai?.model || 'gpt-4o-mini / gemini-2.5-flash';
-
   return (
     <div className="ai-summarizer-container">
-      {/* Top Navigation Row with Back Button */}
+      {/* Back Link */}
       <div className="tool-top-nav-row">
         <Link to="/" className="tool-back-link">
           <FontAwesomeIcon icon={faArrowLeft} /> Back to Tools
         </Link>
       </div>
 
-      {/* Tool Header matching Reference */}
+      {/* Hero Header */}
       <div className="ai-tool-hero">
         <div className="ai-tool-icon">
           <FontAwesomeIcon icon={faWandMagicSparkles} />
@@ -317,304 +254,146 @@ export default function AISummarizer() {
         <div className="ai-tool-info">
           <h1 className="ai-tool-title">AI PDF Summarizer</h1>
           <p className="ai-tool-desc">
-            Get instant, accurate summaries of your PDF documents using Google Gemini AI.
+            Executive briefings, detailed analyses, and structured key points powered by DeepSeek & Google Gemini.
           </p>
         </div>
       </div>
 
+      {/* AI Quota Banner */}
+      <AIQuotaBanner
+        quota={quota}
+        onRefresh={loadQuota}
+        isLoading={quotaLoading}
+        onUpgradeClick={() => setLimitModalOpen(true)}
+      />
+
       <div className="ai-summarizer-content">
-        {/* VIEW 1: UPLOAD AREA (when no file selected) */}
-        {!file && (
-          <div className="ai-upload-section">
-            <UploadBox
-              onFileSelect={(f) => selectFile(f)}
-              isDragging={isDragging}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={(e) => handleDrop(e, false)}
-              error={uploadError}
-              title="Select PDF Document to Summarize"
-              subtitle="or drag and drop your PDF here"
-              acceptedTypes=".pdf"
-              maxSizeText="25 MB"
-            />
+        {/* Step 1: File Uploader */}
+        <AIFileUploader
+          file={selectedFile}
+          onSelectFile={handleSelectFile}
+          onClear={handleClearFile}
+          pageCount={docPageCount}
+          isProcessing={isProcessing}
+          title="Select or drop PDF document to summarize"
+          subtitle="Supports PDF documents up to 15MB"
+        />
 
-
-            {/* Privacy Transparency Callout */}
-            <div className="ai-privacy-note">
-              <FontAwesomeIcon icon={faShieldHalved} className="privacy-icon" />
-              <span>
-                <strong>Data Privacy Notice:</strong> Document text is securely sent to the configured hosted AI engine for
-                instant analysis. No document contents are permanently stored on our servers.
-              </span>
-            </div>
-          </div>
-        )}
-
-        {/* VIEW 2: FILE SELECTED & CONFIGURATION (or RESULT) */}
-        {file && (
-          <div className="ai-workspace">
-            {/* Active File Bar */}
-            <div className="active-file-card">
-              <div className="file-meta-group">
-                <div className="file-icon-box">
-                  <FontAwesomeIcon icon={faFileLines} />
-                </div>
-                <div className="file-details">
-                  <span className="file-name" title={file.name}>
-                    {file.name}
-                  </span>
-                  <div className="file-specs">
-                    <span className="spec-item">{formatBytes(file.size)}</span>
-                    <span className="spec-dot">•</span>
-                    <span className="spec-item">
-                      {docPageCount !== null ? `${docPageCount} ${docPageCount === 1 ? 'page' : 'pages'}` : 'Counting pages...'}
-                    </span>
-                    {summaryResult && (
-                      <>
-                        <span className="spec-dot">•</span>
-                        <span className="spec-badge-success">
-                          <FontAwesomeIcon icon={faCheck} /> Summarized
-                        </span>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                className="btn-change-file"
-                onClick={handleReset}
-                disabled={isProcessing}
-                title="Upload a different document"
-              >
-                <FontAwesomeIcon icon={faTrashCan} />
-                <span>Change File</span>
-              </button>
+        {/* Step 2: Mode Selector & Execution Button */}
+        {selectedFile && !isProcessing && (
+          <div className="ai-config-section">
+            <h3 className="ai-section-title">Select Summary Mode</h3>
+            <div className="summary-modes-grid">
+              {SUMMARY_MODES.map((mode) => {
+                const isSelected = selectedMode === mode.id;
+                return (
+                  <button
+                    key={mode.id}
+                    type="button"
+                    className={`summary-mode-card ${isSelected ? 'selected' : ''}`}
+                    onClick={() => {
+                      setSelectedMode(mode.id);
+                      if (summaryResult && summaryResult.mode !== mode.id) {
+                        executeSummarize(mode.id);
+                      }
+                    }}
+                  >
+                    <div className="mode-card-header">
+                      <div className="mode-icon-box">
+                        <FontAwesomeIcon icon={mode.icon} />
+                      </div>
+                      <span className="mode-badge">{mode.badge}</span>
+                    </div>
+                    <h4 className="mode-title">{mode.title}</h4>
+                    <p className="mode-desc">{mode.description}</p>
+                    <span className="mode-target">{mode.targetTokens}</span>
+                  </button>
+                );
+              })}
             </div>
 
-            {/* ERROR ALERT DISPLAY */}
-            {activeError && (
-              <div className="ai-error-banner" role="alert">
-                <div className="error-icon-box">
-                  <FontAwesomeIcon icon={faCircleExclamation} />
-                </div>
-                <div className="error-body">
-                  <h4>Unable to Summarize Document</h4>
-                  <p>{activeError.message}</p>
-                  {activeError.isScanned && (
-                    <div className="error-hint">
-                      <strong>Scanned Document Notice:</strong> This PDF contains scanned bitmap images with no extractable
-                      digital text. OCR (Optical Character Recognition) is currently unconfigured. Please upload a standard
-                      text-based PDF.
-                    </div>
-                  )}
-                  {activeError.isConfig && (
-                    <div className="error-hint">
-                      <strong>Configuration Required:</strong> The server administrator must configure a valid
-                      <code>GEMINI_API_KEY</code> or <code>OPENAI_API_KEY</code> environment variable in the backend.
-                    </div>
-                  )}
-                  {activeError.isPassword && (
-                    <div className="error-hint">
-                      <strong>Encrypted PDF:</strong> Please remove password protection or decrypt the document before uploading.
-                    </div>
-                  )}
-                </div>
+            {!summaryResult && (
+              <div className="ai-generate-row">
                 <button
                   type="button"
-                  className="btn-error-retry"
-                  onClick={() => handleGenerateSummary()}
+                  className="ai-btn-generate-main"
+                  onClick={() => executeSummarize()}
                   disabled={isProcessing}
                 >
-                  <FontAwesomeIcon icon={faRotateRight} /> Retry
+                  <FontAwesomeIcon icon={faWandMagicSparkles} />
+                  <span>Generate Summary Now</span>
                 </button>
               </div>
             )}
+          </div>
+        )}
 
-            {/* PROCESSING OVERLAY / STATUS CARD */}
-            {isProcessing && (
-              <div className="ai-processing-card">
-                <div className="processing-spinner-box">
-                  <div className="ai-pulse-ring" />
-                  <FontAwesomeIcon icon={faWandMagicSparkles} className="ai-pulse-icon" />
+        {/* Processing Indicator */}
+        {isProcessing && (
+          <AIProcessingIndicator
+            statusMessage={statusMessage || 'Analyzing document context and synthesizing summary...'}
+          />
+        )}
+
+        {/* Error State */}
+        {activeError && !isProcessing && (
+          <AIErrorState
+            error={activeError}
+            onRetry={() => executeSummarize()}
+            onReset={handleClearFile}
+            onSelectSample={handleSelectFile}
+          />
+        )}
+
+        {/* Results Panel */}
+        {!isProcessing && summaryResult && (
+          <div className="ai-result-panel">
+            <AIResultToolbar
+              content={summaryResult.summary}
+              rawDocumentName={selectedFile?.name || 'document'}
+              wordCount={summaryResult.wordCount}
+              charCount={summaryResult.charCount}
+              readingTimeMinutes={summaryResult.estimatedReadingTimeMinutes}
+              onReset={handleClearFile}
+              suffix={`summary_${summaryResult.mode}`}
+            />
+
+            <div className="ai-result-card">
+              <div className="ai-result-header-row">
+                <div className="ai-result-mode-pill">
+                  <FontAwesomeIcon icon={faWandMagicSparkles} />
+                  <span>{SUMMARY_MODES.find((m) => m.id === summaryResult.mode)?.title || 'Summary'}</span>
                 </div>
-                <h3>Analyzing Document with AI</h3>
-                <p className="processing-status-text">
-                  {statusMessage || 'Processing text chunks and synthesizing insights...'}
-                </p>
-                <div className="processing-timer">
-                  <FontAwesomeIcon icon={faClock} /> Time elapsed: {elapsedSeconds}s
-                </div>
-                <p className="processing-subtext">
-                  Long multi-page documents may take up to 20-30 seconds to extract and chunk cleanly.
-                </p>
-              </div>
-            )}
-
-            {/* RESULTS VIEW */}
-            {!isProcessing && summaryResult && (
-              <div className="ai-result-panel">
-                {/* Result Header & Metrics Bar */}
-                <div className="result-header-bar">
-                  <div className="result-mode-tag">
-                    <FontAwesomeIcon icon={faWandMagicSparkles} />
-                    <span>{SUMMARY_MODES.find((m) => m.id === summaryResult.mode)?.title || 'Summary'}</span>
-                  </div>
-
-                  <div className="result-metrics">
-                    <span className="metric-badge" title="Summary word count">
-                      <FontAwesomeIcon icon={faBookOpen} /> {summaryResult.wordCount} words
-                    </span>
-                    <span className="metric-badge" title="Estimated reading time">
-                      <FontAwesomeIcon icon={faClock} /> {summaryResult.estimatedReadingTimeMinutes} min read
-                    </span>
-                    <span className="metric-badge" title="Pages processed">
-                      <FontAwesomeIcon icon={faLayerGroup} /> {summaryResult.pageCount} pages
-                    </span>
-                    {summaryResult.isChunked && (
-                      <span className="metric-badge chunked" title="Map-reduce multi-chunk synthesis">
-                        Map-Reduce
-                      </span>
-                    )}
-                    <span className="metric-badge provider" title="AI Provider and Model">
-                      {summaryResult.provider}
-                    </span>
-                  </div>
-
-                  {/* Top Action Buttons */}
-                  <div className="result-actions">
-                    <button
-                      type="button"
-                      className={`btn-action-copy ${copied ? 'copied' : ''}`}
-                      onClick={handleCopy}
-                      title="Copy full summary to clipboard"
-                    >
-                      {copied ? (
-                        <>
-                          <FontAwesomeIcon icon={faCheck} /> Copied!
-                        </>
-                      ) : (
-                        <>
-                          <FontAwesomeIcon icon={faCopy} /> Copy
-                        </>
-                      )}
-                    </button>
-
-                    <button
-                      type="button"
-                      className="btn-action-download"
-                      onClick={handleDownloadTxt}
-                      title="Download summary as a .txt file"
-                    >
-                      <FontAwesomeIcon icon={faDownload} /> Download .TXT
-                    </button>
-                  </div>
-                </div>
-
-                {/* Scant Text / Partial Extraction Warning if present */}
-                {summaryResult.warning && (
-                  <div className="summary-warning-alert">
-                    <FontAwesomeIcon icon={faTriangleExclamation} />
-                    <span>{summaryResult.warning}</span>
-                  </div>
-                )}
-
-                {/* Formatted Summary Content Card */}
-                <div className="summary-body-card">
-                  <div className="summary-markdown-content">
-                    {renderFormattedSummary(summaryResult.summary)}
-                  </div>
-                </div>
-
-                {/* Mode Switcher / Re-run Bar */}
-                <div className="rerun-bar">
-                  <span className="rerun-label">Summarize in another format:</span>
-                  <div className="rerun-modes-pills">
-                    {SUMMARY_MODES.map((mode) => (
-                      <button
-                        key={mode.id}
-                        type="button"
-                        className={`rerun-pill ${summaryResult.mode === mode.id ? 'active' : ''}`}
-                        onClick={() => {
-                          setSelectedMode(mode.id);
-                          handleGenerateSummary(mode.id);
-                        }}
-                        disabled={isProcessing || summaryResult.mode === mode.id}
-                      >
-                        <FontAwesomeIcon icon={mode.icon} />
-                        <span>{mode.title}</span>
-                      </button>
-                    ))}
-                  </div>
+                <div className="ai-result-engine-meta">
+                  <span className="ai-engine-tag">
+                    {summaryResult.provider === 'deepseek' ? 'DeepSeek V3' : summaryResult.provider}
+                  </span>
+                  {summaryResult.isDemo && (
+                    <span className="ai-demo-tag">Official Demo Paper (0 Quota)</span>
+                  )}
                 </div>
               </div>
-            )}
 
-            {/* MODE SELECTION & ACTION PANEL (Visible when not processing and not viewing result, or to re-run) */}
-            {!isProcessing && !summaryResult && (
-              <div className="ai-controls-card">
-                <div className="controls-header">
-                  <h3>Select Summarization Mode</h3>
-                  <p>Choose how you would like the AI model to analyze and structure the output.</p>
-                </div>
-
-                <div className="modes-selection-grid">
-                  {SUMMARY_MODES.map((mode) => {
-                    const isSelected = selectedMode === mode.id;
-                    return (
-                      <div
-                        key={mode.id}
-                        className={`mode-card ${isSelected ? 'selected' : ''}`}
-                        onClick={() => setSelectedMode(mode.id)}
-                        role="button"
-                        tabIndex={0}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            setSelectedMode(mode.id);
-                          }
-                        }}
-                      >
-                        <div className="mode-card-top">
-                          <div className={`mode-icon-circle ${isSelected ? 'active' : ''}`}>
-                            <FontAwesomeIcon icon={mode.icon} />
-                          </div>
-                          <span className="mode-badge">{mode.badge}</span>
-                        </div>
-                        <h4 className="mode-title">{mode.title}</h4>
-                        <p className="mode-desc">{mode.description}</p>
-                        <div className="mode-footer">
-                          <span className="mode-tokens">Target: {mode.targetTokens}</span>
-                          <div className={`radio-dot ${isSelected ? 'checked' : ''}`} />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Primary Action Button */}
-                <div className="action-cta-area">
-                  <button
-                    type="button"
-                    className="btn-generate-ai"
-                    onClick={() => handleGenerateSummary()}
-                    disabled={isProcessing}
-                  >
-                    <FontAwesomeIcon icon={faWandMagicSparkles} />
-                    <span>Generate AI Summary</span>
-                    <FontAwesomeIcon icon={faChevronRight} />
-                  </button>
-                  <p className="cta-disclaimer">
-                    Takes approximately 5-15 seconds depending on document length and token volume.
-                  </p>
-                </div>
+              <div className="ai-result-text-body">
+                {renderSummaryBlocks(summaryResult.summary)}
               </div>
-            )}
+            </div>
           </div>
         )}
       </div>
+
+      {/* Global Modals */}
+      <AIConsentDialog
+        isOpen={consentDialogOpen}
+        onConfirm={handleConsentConfirm}
+        onCancel={() => setConsentDialogOpen(false)}
+      />
+
+      <AILimitReachedModal
+        isOpen={limitModalOpen}
+        onClose={() => setLimitModalOpen(false)}
+        onSelectSample={handleSelectFile}
+      />
     </div>
   );
 }

@@ -290,3 +290,18 @@
     display: flex;
   }
 }
+
+.sidebar-subitem-soon {
+  margin-left: auto;
+  font-size: 0.625rem;
+  font-weight: 600;
+  padding: 0.1rem 0.4rem;
+  border-radius: var(--radius-full);
+  background-color: #E2E6EA;
+  color: var(--color-text-secondary);
+  line-height: 1;
+}
+
+[data-theme="dark"] .sidebar-subitem-soon {
+  background-color: var(--color-bg);
+}

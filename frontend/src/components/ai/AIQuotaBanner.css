@@ -1,0 +1,206 @@
+/* ==============================================================================
+   SIMATRIX AI QUOTA BANNER — Charcoal & Grey Professional Styling
+   ============================================================================== */
+
+.ai-quota-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  margin-bottom: 1.25rem;
+  transition: border-color var(--transition-fast), background-color var(--transition-fast);
+}
+
+.ai-quota-left {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.ai-quota-icon-badge {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+  flex-shrink: 0;
+  background-color: #FFFFFF;
+  border: 1px solid var(--color-border);
+  color: var(--color-heading);
+}
+
+[data-theme="dark"] .ai-quota-icon-badge {
+  background-color: var(--color-bg);
+}
+
+.status-normal .ai-quota-icon-badge {
+  color: var(--color-heading);
+}
+
+.status-warning .ai-quota-icon-badge {
+  color: var(--color-warning);
+  border-color: var(--color-warning-border);
+  background-color: var(--color-warning-bg);
+}
+
+.status-exhausted .ai-quota-icon-badge {
+  color: var(--color-error);
+  border-color: var(--color-error-border);
+  background-color: var(--color-error-bg);
+}
+
+.ai-quota-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.ai-quota-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.ai-quota-title {
+  font-size: 0.825rem;
+  font-weight: 600;
+  color: var(--color-heading);
+}
+
+.ai-quota-badge {
+  font-size: 0.725rem;
+  font-weight: 500;
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--radius-full);
+  background-color: #E2E6EA;
+  color: var(--color-text-secondary);
+}
+
+.status-warning .ai-quota-badge {
+  background-color: var(--color-warning-bg);
+  color: var(--color-warning);
+}
+
+.status-exhausted .ai-quota-badge {
+  background-color: var(--color-error-bg);
+  color: var(--color-error);
+}
+
+.ai-quota-meter-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.ai-quota-meter-track {
+  flex: 1;
+  max-width: 180px;
+  height: 6px;
+  background-color: #E2E6EA;
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+[data-theme="dark"] .ai-quota-meter-track {
+  background-color: var(--color-border);
+}
+
+.ai-quota-meter-fill {
+  height: 100%;
+  background-color: var(--color-primary);
+  border-radius: var(--radius-full);
+  transition: width var(--transition-normal);
+}
+
+.status-warning .ai-quota-meter-fill {
+  background-color: var(--color-warning);
+}
+
+.status-exhausted .ai-quota-meter-fill {
+  background-color: var(--color-error);
+}
+
+.ai-quota-count {
+  font-size: 0.75rem;
+  font-family: var(--font-family-mono);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.ai-quota-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.ai-quota-btn-refresh {
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background-color: #FFFFFF;
+  color: var(--color-text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+[data-theme="dark"] .ai-quota-btn-refresh {
+  background-color: var(--color-bg);
+}
+
+.ai-quota-btn-refresh:hover:not(:disabled) {
+  border-color: var(--color-border-hover);
+  color: var(--color-heading);
+  background-color: var(--color-surface-hover);
+}
+
+.ai-quota-btn-refresh:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ai-quota-btn-upgrade {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background-color: var(--color-primary);
+  color: #FFFFFF;
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+  white-space: nowrap;
+}
+
+.ai-quota-btn-upgrade:hover {
+  background-color: var(--color-primary-hover);
+}
+
+@media (max-width: 640px) {
+  .ai-quota-banner {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .ai-quota-meter-track {
+    max-width: 100%;
+  }
+  .ai-quota-actions {
+    justify-content: flex-end;
+  }
+}
+

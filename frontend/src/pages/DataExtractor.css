@@ -1,0 +1,161 @@
+/* ==============================================================================
+   SIMATRIX DATA EXTRACTOR — Charcoal & Grey Styling
+   ============================================================================== */
+
+.de-container {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 1.5rem 2rem 4rem;
+  box-sizing: border-box;
+}
+
+.de-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin-top: 1.25rem;
+}
+
+.de-action-row {
+  display: flex;
+  justify-content: center;
+  margin-top: 1rem;
+}
+
+.de-result-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.de-export-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.de-btn-export {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  color: var(--color-heading);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.de-btn-export:hover {
+  background-color: var(--color-surface-hover);
+  border-color: var(--color-border-hover);
+}
+
+.de-card {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.de-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding-bottom: 0.65rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.de-card-header h3 {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--color-heading);
+  margin: 0;
+}
+
+.de-icon {
+  font-size: 1rem;
+  color: var(--color-primary);
+}
+
+.de-kv-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.85rem;
+}
+
+.de-kv-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  background-color: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0.65rem 0.85rem;
+}
+
+.de-kv-key {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
+.de-kv-val {
+  font-size: 0.9rem;
+  font-weight: 700;
+  font-family: var(--font-family-mono);
+  color: var(--color-heading);
+}
+
+.de-table-responsive {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.de-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.825rem;
+}
+
+.de-table th {
+  background-color: var(--color-header-bg);
+  border: 1px solid var(--color-border);
+  padding: 0.65rem 0.85rem;
+  font-weight: 600;
+  color: var(--color-heading);
+  text-align: left;
+}
+
+.de-table td {
+  border: 1px solid var(--color-border);
+  padding: 0.6rem 0.85rem;
+  color: var(--color-text);
+}
+
+.de-table tbody tr:nth-child(even) {
+  background-color: var(--color-bg);
+}
+
+.de-raw-body {
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--color-heading);
+  white-space: pre-wrap;
+}
+
+@media (max-width: 640px) {
+  .de-container {
+    padding: 1rem 1rem 3rem;
+  }
+}
+

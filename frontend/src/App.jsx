@@ -13,6 +13,14 @@ const ReorderPages = lazy(() => import('./pages/ReorderPages'));
 const CropPDF = lazy(() => import('./pages/CropPDF'));
 const SignPDF = lazy(() => import('./pages/SignPDF'));
 const AISummarizer = lazy(() => import('./pages/AISummarizer'));
+const AskPdf = lazy(() => import('./pages/AskPdf'));
+const PDFTranslator = lazy(() => import('./pages/PDFTranslator'));
+const KeyPointsExtractor = lazy(() => import('./pages/KeyPointsExtractor'));
+const DataExtractor = lazy(() => import('./pages/DataExtractor'));
+const QuestionGenerator = lazy(() => import('./pages/QuestionGenerator'));
+const PDFRewriter = lazy(() => import('./pages/PDFRewriter'));
+const PDFComparison = lazy(() => import('./pages/PDFComparison'));
+const ComingSoonTool = lazy(() => import('./pages/ComingSoonTool'));
 const Login = lazy(() => import('./pages/Login'));
 const Account = lazy(() => import('./pages/Account'));
 const History = lazy(() => import('./pages/History'));
@@ -125,9 +133,25 @@ export default function App() {
               <Route path="/tools/edit-secure" element={<CategoryPage explicitSlug="edit-secure" />} />
               <Route path="/tools/ai" element={<CategoryPage explicitSlug="ai" />} />
 
-              {/* 3. AI PDF Feature */}
+              {/* 3. AI PDF Features */}
               <Route path="/ai-summarizer" element={<AISummarizer />} />
               <Route path="/tools/ai-summarizer" element={<Navigate to="/ai-summarizer" replace />} />
+              <Route path="/ai-chat-pdf" element={<AskPdf />} />
+              <Route path="/tools/ai-chat-pdf" element={<Navigate to="/ai-chat-pdf" replace />} />
+              <Route path="/ai-translate" element={<PDFTranslator />} />
+              <Route path="/tools/ai-translate" element={<Navigate to="/ai-translate" replace />} />
+
+              {/* Active AI Productivity Suite */}
+              <Route path="/ai-key-points" element={<KeyPointsExtractor />} />
+              <Route path="/tools/ai-key-points" element={<Navigate to="/ai-key-points" replace />} />
+              <Route path="/ai-extract-data" element={<DataExtractor />} />
+              <Route path="/tools/ai-extract-data" element={<Navigate to="/ai-extract-data" replace />} />
+              <Route path="/ai-question-generator" element={<QuestionGenerator />} />
+              <Route path="/tools/ai-question-generator" element={<Navigate to="/ai-question-generator" replace />} />
+              <Route path="/ai-rewriter" element={<PDFRewriter />} />
+              <Route path="/tools/ai-rewriter" element={<Navigate to="/ai-rewriter" replace />} />
+              <Route path="/ai-compare" element={<PDFComparison />} />
+              <Route path="/tools/ai-compare" element={<Navigate to="/ai-compare" replace />} />
 
               {/* 4. Individual PDF Tool Routes (both /tools/:id and /:id) */}
               {/* PDF to Word */}

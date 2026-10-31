@@ -1,0 +1,42 @@
+/* ==============================================================================
+   SIMATRIX AI PAGE CITATION — Crisp Page Reference Badges
+   ============================================================================== */
+
+.ai-page-citation {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.725rem;
+  font-family: var(--font-family-mono);
+  font-weight: 600;
+  color: var(--color-heading);
+  background-color: #E2E6EA;
+  border: 1px solid var(--color-border);
+  padding: 0.1rem 0.45rem;
+  border-radius: var(--radius-xs);
+  margin: 0 0.2rem;
+  vertical-align: baseline;
+  user-select: none;
+}
+
+[data-theme="dark"] .ai-page-citation {
+  background-color: var(--color-bg);
+}
+
+.ai-page-citation.clickable {
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.ai-page-citation.clickable:hover {
+  background-color: var(--color-surface-hover);
+  border-color: var(--color-border-hover);
+  color: var(--color-primary);
+}
+
+.ai-citations-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+

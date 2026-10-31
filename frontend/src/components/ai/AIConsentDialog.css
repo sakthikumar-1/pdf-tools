@@ -1,0 +1,198 @@
+/* ==============================================================================
+   SIMATRIX AI CONSENT DIALOG — Charcoal & Grey Modal
+   ============================================================================== */
+
+.ai-consent-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(23, 28, 36, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.ai-consent-card {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  max-width: 520px;
+  width: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.ai-consent-header {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 1.15rem 1.25rem;
+  border-bottom: 1px solid var(--color-border);
+  background-color: var(--color-header-bg);
+}
+
+.ai-consent-icon-box {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  background-color: #FFFFFF;
+  border: 1px solid var(--color-border);
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+[data-theme="dark"] .ai-consent-icon-box {
+  background-color: var(--color-bg);
+}
+
+.ai-consent-header-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.ai-consent-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-heading);
+  margin: 0 0 0.15rem 0;
+}
+
+.ai-consent-subtitle {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+
+.ai-consent-close {
+  background: transparent;
+  border: none;
+  color: var(--color-text-secondary);
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0.35rem;
+  border-radius: var(--radius-xs);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ai-consent-close:hover {
+  color: var(--color-heading);
+  background-color: var(--color-hover-bg);
+}
+
+.ai-consent-body {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.ai-consent-intro {
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--color-text);
+  margin: 0;
+}
+
+.ai-consent-points {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  background-color: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 0.85rem;
+}
+
+.ai-consent-point {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+}
+
+.ai-point-icon {
+  color: var(--color-primary);
+  font-size: 0.825rem;
+  margin-top: 0.15rem;
+  flex-shrink: 0;
+}
+
+.ai-point-text {
+  font-size: 0.775rem;
+  line-height: 1.45;
+  color: var(--color-text-secondary);
+}
+
+.ai-point-text strong {
+  color: var(--color-heading);
+}
+
+.ai-consent-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.775rem;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  user-select: none;
+}
+
+.ai-consent-checkbox-row input {
+  cursor: pointer;
+}
+
+.ai-consent-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  border-top: 1px solid var(--color-border);
+  background-color: var(--color-header-bg);
+}
+
+.ai-btn-secondary {
+  padding: 0.5rem 1rem;
+  font-size: 0.825rem;
+  font-weight: 500;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background-color: #FFFFFF;
+  color: var(--color-heading);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+[data-theme="dark"] .ai-btn-secondary {
+  background-color: var(--color-bg);
+}
+
+.ai-btn-secondary:hover {
+  background-color: var(--color-surface-hover);
+  border-color: var(--color-border-hover);
+}
+
+.ai-btn-primary {
+  padding: 0.5rem 1.15rem;
+  font-size: 0.825rem;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-primary);
+  background-color: var(--color-primary);
+  color: #FFFFFF;
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+}
+
+.ai-btn-primary:hover {
+  background-color: var(--color-primary-hover);
+}
+

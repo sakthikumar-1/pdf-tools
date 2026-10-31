@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, Navigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faHouse,
@@ -9,20 +9,26 @@ import {
   faArrowRight
 } from '@fortawesome/free-solid-svg-icons';
 import ToolCard from '../components/ToolCard';
-import { getCategoryBySlug, getToolsByCategory } from '../utils/toolsData';
+import ComingSoonTool from './ComingSoonTool';
+import NotFound from './NotFound';
+import { getCategoryBySlug, getToolsByCategory, getToolById } from '../utils/toolsData';
 import './CategoryPage.css';
 
 export default function CategoryPage({ explicitSlug }) {
   const params = useParams();
   const slug = explicitSlug || params.categorySlug || 'organize';
-  const category = getCategoryBySlug(slug) || {
-    id: slug,
-    slug: slug,
-    label: slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-    count: 0,
-    description: 'Explore specialized PDF utilities in this category.',
-    icon: null
-  };
+  const category = getCategoryBySlug(slug);
+
+  if (!category) {
+    const matchedTool = getToolById(slug);
+    if (matchedTool) {
+      if (matchedTool.path && !matchedTool.comingSoon) {
+        return <Navigate to={matchedTool.path} replace />;
+      }
+      return <ComingSoonTool toolId={matchedTool.id} />;
+    }
+    return <NotFound />;
+  }
 
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -111,6 +117,8 @@ export default function CategoryPage({ explicitSlug }) {
                 icon={tool.icon}
                 path={tool.path}
                 variant="popular"
+                comingSoon={tool.comingSoon}
+                badge={tool.badge}
               />
             ))}
           </div>

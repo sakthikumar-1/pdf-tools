@@ -1,0 +1,163 @@
+/* ==============================================================================
+   SIMATRIX AI LIMIT REACHED MODAL — Charcoal & Grey Modal
+   ============================================================================== */
+
+.ai-limit-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(23, 28, 36, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.ai-limit-modal-card {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  max-width: 520px;
+  width: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.ai-limit-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 1.15rem 1.25rem;
+  border-bottom: 1px solid var(--color-border);
+  background-color: var(--color-header-bg);
+}
+
+.ai-limit-modal-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-warning-bg);
+  border: 1px solid var(--color-warning-border);
+  color: var(--color-warning);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.ai-limit-modal-title-box {
+  flex: 1;
+  min-width: 0;
+}
+
+.ai-limit-modal-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-heading);
+  margin: 0 0 0.15rem 0;
+}
+
+.ai-limit-modal-subtitle {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+
+.ai-limit-modal-close {
+  background: transparent;
+  border: none;
+  color: var(--color-text-secondary);
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0.35rem;
+  border-radius: var(--radius-xs);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ai-limit-modal-close:hover {
+  color: var(--color-heading);
+  background-color: var(--color-hover-bg);
+}
+
+.ai-limit-modal-body {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.ai-limit-modal-intro {
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--color-text);
+  margin: 0;
+}
+
+.ai-limit-modal-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.ai-limit-option-card {
+  padding: 1rem;
+  background-color: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  position: relative;
+}
+
+.ai-limit-option-badge {
+  align-self: flex-start;
+  font-size: 0.675rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background-color: rgba(43, 138, 62, 0.1);
+  color: var(--color-success);
+  padding: 0.15rem 0.45rem;
+  border-radius: var(--radius-xs);
+}
+
+.ai-limit-option-badge.standard {
+  background-color: #E2E6EA;
+  color: var(--color-heading);
+}
+
+.ai-limit-option-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--color-heading);
+  margin: 0;
+}
+
+.ai-limit-option-desc {
+  font-size: 0.775rem;
+  line-height: 1.45;
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.ai-limit-btn-sample {
+  margin-top: 0.5rem;
+  align-self: flex-start;
+}
+
+.ai-limit-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  border-top: 1px solid var(--color-border);
+  background-color: var(--color-header-bg);
+}
+

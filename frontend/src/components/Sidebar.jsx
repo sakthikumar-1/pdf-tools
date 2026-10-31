@@ -224,6 +224,7 @@ export default function Sidebar({
                             >
                               <span className="subitem-bullet">•</span>
                               <span className="subitem-label">{tool.title}</span>
+                              {tool.comingSoon && <span className="sidebar-subitem-soon">Soon</span>}
                             </NavLink>
                           </li>
                         );

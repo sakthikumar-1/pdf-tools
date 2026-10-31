@@ -134,3 +134,57 @@
 .tool-card-compact:hover .compact-tool-arrow {
   color: var(--color-heading);
 }
+
+/* ==============================================================================
+   COMING SOON TOOL CARD STYLES
+   ============================================================================== */
+
+.popular-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.tool-card-popular.is-coming-soon {
+  cursor: default;
+  opacity: 0.85;
+}
+
+.tool-card-popular.is-coming-soon:hover {
+  background-color: var(--color-surface);
+  border-color: var(--color-border);
+}
+
+.tool-card-compact.is-coming-soon {
+  cursor: default;
+  opacity: 0.85;
+}
+
+.tool-card-compact.is-coming-soon:hover {
+  background-color: var(--color-surface);
+  border-color: var(--color-border);
+}
+
+.tool-card-badge.coming-soon {
+  font-size: 0.675rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  background-color: #E2E6EA;
+  border: 1px solid var(--color-border);
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--radius-full);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  white-space: nowrap;
+}
+
+.tool-card-badge.coming-soon.compact {
+  font-size: 0.65rem;
+  padding: 0.1rem 0.4rem;
+}
+
+[data-theme="dark"] .tool-card-badge.coming-soon {
+  background-color: var(--color-bg);
+}
