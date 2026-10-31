@@ -9,22 +9,40 @@ import './UploadBox.css';
 
 export default function UploadBox({
   onFileSelect,
+  onFileSelected,
   isDragging,
   onDragOver,
   onDragLeave,
   onDrop,
   error,
   acceptedTypes = '.pdf',
+  accept,
   maxSizeText = '50MB',
+  fileLimitInfo,
   title = 'Drop your PDF file here',
   subtitle = 'or click to browse',
   buttonText = 'Choose PDF File',
+  buttonLabel,
   multiple = false,
 }) {
   const fileInputRef = useRef(null);
 
-  const handleClick = () => {
+  const effectiveAccept = accept || acceptedTypes || '.pdf';
+  const effectiveButtonText = buttonText || buttonLabel || 'Choose PDF File';
+  const effectiveLimitText = maxSizeText || fileLimitInfo || '50MB';
+
+  const triggerFileCallback = (files) => {
+    if (typeof onFileSelect === 'function') {
+      onFileSelect(files);
+    } else if (typeof onFileSelected === 'function') {
+      onFileSelected(files);
+    }
+  };
+
+  const handleClick = (e) => {
+    if (e && e.target && e.target.tagName === 'INPUT') return;
     if (fileInputRef.current) {
+      fileInputRef.current.value = '';
       fileInputRef.current.click();
     }
   };
@@ -33,9 +51,9 @@ export default function UploadBox({
     if (e.target.files && e.target.files.length > 0) {
       const filesArray = Array.from(e.target.files);
       if (multiple) {
-        onFileSelect(filesArray);
+        triggerFileCallback(filesArray);
       } else {
-        onFileSelect(filesArray[0]);
+        triggerFileCallback(filesArray[0]);
       }
     }
   };
@@ -48,9 +66,9 @@ export default function UploadBox({
       const blob = await res.blob();
       const sampleFile = new File([blob], 'sample_document.pdf', { type: 'application/pdf' });
       if (multiple) {
-        onFileSelect([sampleFile]);
+        triggerFileCallback([sampleFile]);
       } else {
-        onFileSelect(sampleFile);
+        triggerFileCallback(sampleFile);
       }
     } catch (err) {
       console.warn('[UploadBox] Could not load sample document:', err);
@@ -61,9 +79,21 @@ export default function UploadBox({
     <div className="upload-box-wrapper">
       <div
         className={`upload-box ${isDragging ? 'dragging' : ''} ${error ? 'has-error' : ''}`}
-        onDragOver={onDragOver}
-        onDragLeave={onDragLeave}
-        onDrop={(e) => onDrop(e, multiple)}
+        onDragOver={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (onDragOver) onDragOver(e);
+        }}
+        onDragLeave={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (onDragLeave) onDragLeave(e);
+        }}
+        onDrop={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (onDrop) onDrop(e, multiple);
+        }}
         onClick={handleClick}
         tabIndex={0}
         role="button"
@@ -78,9 +108,10 @@ export default function UploadBox({
         <input
           ref={fileInputRef}
           type="file"
-          accept={acceptedTypes}
+          accept={effectiveAccept}
           multiple={multiple}
           onChange={handleInputChange}
+          onClick={(e) => e.stopPropagation()}
           className="file-input-hidden"
         />
 
@@ -101,11 +132,11 @@ export default function UploadBox({
             handleClick();
           }}
         >
-          {buttonText}
+          {effectiveButtonText}
         </button>
 
         <div className="upload-meta-row">
-          <span className="upload-limit-text">Max file size: {maxSizeText}</span>
+          <span className="upload-limit-text">Max file size: {effectiveLimitText}</span>
           {acceptedTypes.includes('.pdf') && (
             <>
               <span className="upload-meta-dot">&bull;</span>

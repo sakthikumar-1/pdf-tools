@@ -20,7 +20,8 @@ import {
   faUpDown,
   faTableCellsLarge,
   faArrowRightArrowLeft,
-  faShieldHalved
+  faShieldHalved,
+  faSignature
 } from '@fortawesome/free-solid-svg-icons';
 
 export const TOOL_CATEGORIES = [
@@ -29,8 +30,8 @@ export const TOOL_CATEGORIES = [
     slug: 'all',
     path: '/#all-tools',
     label: 'All Tools',
-    count: 19,
-    description: 'Explore the complete suite of 19 productivity utilities',
+    count: 20,
+    description: 'Explore the complete suite of 20 productivity utilities',
     icon: faTableCellsLarge
   },
   {
@@ -65,8 +66,8 @@ export const TOOL_CATEGORIES = [
     slug: 'edit-secure',
     path: '/tools/edit-secure',
     label: 'Edit & Secure PDF',
-    count: 3,
-    description: 'Bank-grade password encryption, watermarking, and metadata management',
+    count: 4,
+    description: 'Bank-grade password encryption, electronic signatures, watermarking, and metadata',
     icon: faShieldHalved
   },
   {
@@ -327,6 +328,19 @@ export const TOOLS_DATA = [
     icon: faTag,
     keywords: ['metadata', 'properties', 'author', 'title', 'subject', 'keywords', 'info', 'document info'],
     popular: false,
+  },
+  {
+    id: 'sign-pdf',
+    title: 'Sign PDF',
+    path: '/tools/sign-pdf',
+    legacyPath: '/sign-pdf',
+    description: 'Sign documents yourself with electronic signatures, initials, or handwriting.',
+    category: 'security-protect',
+    categorySlug: 'edit-secure',
+    categoryLabel: 'Edit & Secure PDF',
+    icon: faSignature,
+    keywords: ['sign', 'signature', 'initials', 'draw', 'handwriting', 'e-sign', 'contract', 'agreement', 'fill and sign'],
+    popular: true,
   }
 ];
 

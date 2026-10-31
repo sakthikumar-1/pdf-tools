@@ -10,6 +10,7 @@ const GenericTool = lazy(() => import('./pages/GenericTool'));
 const RemovePages = lazy(() => import('./pages/RemovePages'));
 const ReorderPages = lazy(() => import('./pages/ReorderPages'));
 const CropPDF = lazy(() => import('./pages/CropPDF'));
+const SignPDF = lazy(() => import('./pages/SignPDF'));
 const AISummarizer = lazy(() => import('./pages/AISummarizer'));
 const Login = lazy(() => import('./pages/Login'));
 const Account = lazy(() => import('./pages/Account'));
@@ -288,6 +289,10 @@ export default function App() {
               <Route path="/reorder-pdf" element={<ReorderPages />} />
               <Route path="/tools/organize-pdf" element={<ReorderPages />} />
               <Route path="/organize-pdf" element={<ReorderPages />} />
+
+              {/* Sign PDF */}
+              <Route path="/tools/sign-pdf" element={<SignPDF />} />
+              <Route path="/sign-pdf" element={<SignPDF />} />
 
               {/* Dynamic Category Slug fallback */}
               <Route path="/tools/:categorySlug" element={<CategoryPage />} />

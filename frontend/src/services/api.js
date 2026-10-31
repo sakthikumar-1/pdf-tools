@@ -537,3 +537,69 @@ export async function summarizePdf(file, mode = 'quick', onProgress) {
     model: data.model,
   };
 }
+
+/**
+ * Signs a PDF document by stamping electronic signatures onto pages using the Python Django backend.
+ * @param {File} file
+ * @param {Array} signatures
+ * @param {Function} onProgress
+ * @returns {Promise<{ blob: Blob, filename: string, pageCount: number, sizeBytes: number }>}
+ */
+export async function signPdfPython(file, signatures, onProgress) {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('signatures', JSON.stringify(signatures));
+
+  const xhr = new XMLHttpRequest();
+  const url = `${API_BASE_URL}/tools/sign-pdf`;
+
+  const data = await new Promise((resolve, reject) => {
+    xhr.upload.addEventListener('progress', (e) => {
+      if (e.lengthComputable && onProgress) {
+        const percent = Math.round((e.loaded / e.total) * 60);
+        onProgress(percent);
+      }
+    });
+
+    xhr.addEventListener('load', () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          resolve(JSON.parse(xhr.responseText));
+        } catch (err) {
+          reject(new Error('Invalid response from signing engine.'));
+        }
+      } else {
+        try {
+          const errData = JSON.parse(xhr.responseText);
+          reject(new Error(errData.detail || errData.message || `Server error: ${xhr.status}`));
+        } catch (e) {
+          reject(new Error(`Server error: ${xhr.status} ${xhr.statusText}`));
+        }
+      }
+    });
+
+    xhr.addEventListener('error', () => {
+      reject(new Error('Unable to connect to Python signing backend.'));
+    });
+
+    xhr.open('POST', url, true);
+    xhr.send(formData);
+  });
+
+  if (onProgress) onProgress(80);
+
+  const downloadRes = await fetch(data.download_url);
+  if (!downloadRes.ok) {
+    throw new Error('Failed to retrieve signed PDF file from server.');
+  }
+
+  const blob = await downloadRes.blob();
+  if (onProgress) onProgress(100);
+
+  return {
+    blob,
+    filename: data.filename || `${file.name.replace(/\.[^/.]+$/, '')}_signed.pdf`,
+    pageCount: data.page_count || 1,
+    sizeBytes: data.size_bytes || blob.size,
+  };
+}

@@ -1,0 +1,1061 @@
+/* ==============================================================================
+   SIMATRIX SIGN PDF STYLES
+   Dedicated electronic signature workspace matching Simatrix design system
+   ============================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Allura&family=Caveat:wght@600&family=Dancing+Script:wght@700&family=Great+Vibes&family=Pacifico&family=Sacramento&display=swap');
+
+.sign-pdf-container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 1.5rem 1.5rem 4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  width: 100%;
+}
+
+/* Top Back Link Row */
+.tool-top-nav-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+}
+
+.tool-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  padding: 0.4rem 0.75rem;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  transition: all var(--transition-fast);
+}
+
+.tool-back-link:hover {
+  color: var(--color-primary);
+  border-color: var(--color-border-hover, #CBD5E1);
+  background: var(--color-surface-hover, #F8FAFC);
+}
+
+/* Hero Section */
+.sign-pdf-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.65rem;
+  padding: 1rem 0 1.5rem;
+  border-bottom: 1px solid var(--color-border);
+  width: 100%;
+}
+
+.sign-pdf-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, rgba(224, 49, 49, 0.12) 0%, rgba(240, 62, 62, 0.06) 100%);
+  border: 1px solid rgba(224, 49, 49, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-brand-red);
+  font-size: 1.5rem;
+  margin-bottom: 0.25rem;
+}
+
+[data-theme="dark"] .sign-pdf-icon {
+  background: linear-gradient(135deg, rgba(224, 49, 49, 0.2) 0%, rgba(255, 107, 107, 0.1) 100%);
+  border-color: rgba(224, 49, 49, 0.4);
+}
+
+.sign-pdf-title {
+  font-size: 1.9rem;
+  font-weight: 800;
+  color: var(--color-heading);
+  letter-spacing: -0.025em;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.sign-pdf-desc {
+  font-size: 0.95rem;
+  color: var(--color-text-secondary);
+  max-width: 640px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Workspace Layout */
+.sign-workspace-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  width: 100%;
+}
+
+/* Filmstrip Card */
+.sign-filmstrip-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 0.85rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.sign-filmstrip-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.sign-filmstrip-scroll {
+  display: flex;
+  gap: 0.75rem;
+  overflow-x: auto;
+  padding: 0.35rem 0.25rem 0.65rem;
+  scrollbar-width: thin;
+}
+
+.sign-thumb-item {
+  flex-shrink: 0;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  padding: 3px;
+  background: var(--color-bg);
+  border: 2px solid var(--color-border);
+  transition: all var(--transition-fast);
+  position: relative;
+}
+
+.sign-thumb-item:hover {
+  border-color: var(--color-brand-red);
+  transform: translateY(-2px);
+}
+
+.sign-thumb-item.active {
+  border-color: var(--color-brand-red);
+  box-shadow: 0 0 0 3px rgba(224, 49, 49, 0.2);
+  background: var(--color-surface);
+}
+
+.sign-thumb-preview {
+  position: relative;
+  width: 72px;
+  height: 98px;
+  background: #FFFFFF;
+  border-radius: 3px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sign-thumb-preview img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.sign-thumb-badge {
+  position: absolute;
+  bottom: 3px;
+  right: 3px;
+  background: rgba(15, 23, 42, 0.8);
+  color: #FFFFFF;
+  font-size: 0.62rem;
+  font-weight: 700;
+  padding: 0.1rem 0.35rem;
+  border-radius: 3px;
+}
+
+.sign-thumb-has-signatures {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--color-brand-red);
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.55rem;
+  font-weight: 800;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* Main Workspace Grid (Canvas Left, Controls Right) */
+.sign-main-grid {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 1.5rem;
+  align-items: start;
+  width: 100%;
+}
+
+@media (max-width: 1024px) {
+  .sign-main-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Document Stage / Canvas Card */
+.sign-canvas-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.sign-canvas-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.sign-canvas-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--color-heading);
+}
+
+.sign-page-nav-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.sign-page-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.sign-page-nav-btn:hover:not(:disabled) {
+  background: var(--color-surface-hover, #F8FAFC);
+  border-color: var(--color-brand-red);
+}
+
+.sign-page-nav-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.sign-page-indicator {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+/* Interactive Canvas Stage Container */
+.sign-canvas-stage {
+  position: relative;
+  width: 100%;
+  min-height: 520px;
+  background: #E2E8F0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  overflow: auto;
+  user-select: none;
+}
+
+[data-theme="dark"] .sign-canvas-stage {
+  background: #090E17;
+}
+
+.sign-canvas-loading-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(2px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  color: #FFFFFF;
+  font-size: 0.85rem;
+  font-weight: 600;
+  z-index: 30;
+  border-radius: var(--radius-sm);
+}
+
+.sign-loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #FFFFFF;
+  border-radius: 50%;
+  animation: signSpin 0.7s linear infinite;
+}
+
+@keyframes signSpin {
+  to { transform: rotate(360deg); }
+}
+
+.sign-page-wrapper {
+  position: relative;
+  background: #FFFFFF;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.16);
+  line-height: 0;
+  display: inline-block;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.sign-main-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: #FFFFFF;
+}
+
+/* Placed Signature Stamp Element on Canvas */
+.placed-signature-stamp {
+  position: absolute;
+  cursor: move;
+  border: 1.5px dashed var(--color-brand-red);
+  background: rgba(224, 49, 49, 0.05);
+  box-sizing: border-box;
+  touch-action: none;
+  z-index: 10;
+  transition: box-shadow var(--transition-fast);
+}
+
+.placed-signature-stamp.active {
+  border: 2px solid var(--color-brand-red);
+  box-shadow: 0 2px 10px rgba(224, 49, 49, 0.25);
+  background: rgba(224, 49, 49, 0.08);
+}
+
+.placed-signature-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  display: block;
+}
+
+/* Delete button on placed stamp */
+.stamp-delete-btn {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #E03131;
+  color: #FFFFFF;
+  border: 2px solid #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+  transition: transform var(--transition-fast);
+  z-index: 20;
+}
+
+.stamp-delete-btn:hover {
+  transform: scale(1.15);
+  background: #C92A2A;
+}
+
+/* Resize corner handle */
+.stamp-resize-handle {
+  position: absolute;
+  bottom: -6px;
+  right: -6px;
+  width: 14px;
+  height: 14px;
+  border-radius: 2px;
+  background: var(--color-brand-red);
+  border: 2px solid #FFFFFF;
+  cursor: nwse-resize;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  z-index: 20;
+}
+
+/* Control Panel Card (Right Sidebar) */
+.sign-controls-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.sign-controls-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--color-heading);
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+/* Tab Navigation for Signature Creation (Draw / Type / Upload) */
+.sign-mode-tabs {
+  display: flex;
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  padding: 3px;
+  gap: 3px;
+}
+
+.sign-mode-tab {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.25rem;
+  border-radius: var(--radius-xs);
+  border: none;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.sign-mode-tab:hover {
+  color: var(--color-text-primary);
+}
+
+.sign-mode-tab.active {
+  background: var(--color-surface);
+  color: var(--color-brand-red);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* Draw Tab Content */
+.sign-draw-area {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.draw-canvas-box {
+  width: 100%;
+  height: 140px;
+  border: 1.5px dashed var(--color-border);
+  border-radius: var(--radius-sm);
+  background: #FFFFFF;
+  position: relative;
+  touch-action: none;
+  cursor: crosshair;
+}
+
+.draw-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.draw-canvas-placeholder {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #94A3B8;
+  font-size: 0.82rem;
+  font-style: italic;
+  pointer-events: none;
+}
+
+.draw-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.color-palette-group {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.color-palette-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.color-palette {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.color-swatch-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid #FFFFFF;
+  cursor: pointer;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+  padding: 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
+}
+
+.color-swatch-btn:hover {
+  transform: scale(1.15);
+}
+
+.color-swatch-btn.active {
+  box-shadow: 0 0 0 2px #38BDF8, 0 2px 6px rgba(0, 0, 0, 0.25);
+  transform: scale(1.1);
+}
+
+/* Custom Color Picker Swatch */
+.custom-color-picker-label {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.native-color-input {
+  position: absolute;
+  top: -10px;
+  left: -10px;
+  width: 50px;
+  height: 50px;
+  opacity: 0;
+  cursor: pointer;
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+
+.custom-color-badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  font-family: monospace;
+  padding: 0.1rem 0.35rem;
+  border-radius: var(--radius-xs);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  letter-spacing: 0.5px;
+}
+
+.draw-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.btn-draw-action {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.3rem 0.6rem;
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-draw-action:hover {
+  color: var(--color-text-primary);
+  border-color: var(--color-border-hover, #CBD5E1);
+}
+
+/* Type Tab Content */
+.sign-type-area {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.type-input {
+  width: 100%;
+  padding: 0.6rem 0.85rem;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+  font-size: 0.92rem;
+  outline: none;
+  transition: border-color var(--transition-fast);
+  box-sizing: border-box;
+}
+
+.type-input:focus {
+  border-color: var(--color-brand-red);
+  background: var(--color-surface);
+}
+
+.font-preview-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  max-height: 270px;
+  overflow-y: auto;
+  padding-right: 3px;
+}
+
+.font-preview-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 0.85rem;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--color-border);
+  background: #FFFFFF;
+  color: #1E293B;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  gap: 0.5rem;
+}
+
+[data-theme="dark"] .font-preview-item {
+  background: var(--color-surface);
+  color: #F1F5F9;
+}
+
+.font-preview-item:hover {
+  border-color: var(--color-brand-red);
+  background: var(--color-surface-hover, #F8FAFC);
+}
+
+.font-preview-item.active {
+  border-color: var(--color-brand-red);
+  background: rgba(224, 49, 49, 0.04);
+  box-shadow: 0 2px 6px rgba(224, 49, 49, 0.1);
+}
+
+.font-preview-main {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.font-preview-text {
+  font-size: 1.45rem;
+  line-height: 1.25;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.font-info-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.08rem;
+  flex-shrink: 0;
+}
+
+.font-tag-name {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--color-heading);
+}
+
+.font-tag-desc {
+  font-size: 0.65rem;
+  color: var(--color-text-muted);
+}
+
+/* Upload Tab Content */
+.sign-upload-area {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.upload-sig-dropzone {
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 1.25rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  text-align: center;
+  cursor: pointer;
+  background: var(--color-bg);
+  transition: all var(--transition-fast);
+}
+
+.upload-sig-dropzone:hover {
+  border-color: var(--color-brand-red);
+  background: var(--color-surface);
+}
+
+.upload-sig-preview {
+  width: 100%;
+  height: 90px;
+  background: #FFFFFF;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  box-sizing: border-box;
+}
+
+.upload-sig-preview img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+/* Add Signature Button */
+.btn-place-signature {
+  width: 100%;
+  padding: 0.65rem 1rem;
+  background: var(--color-primary);
+  color: #FFFFFF;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 0.88rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-place-signature:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+  transform: translateY(-1px);
+}
+
+.btn-place-signature:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Quick Stamp Elements (Date, Initials) */
+.quick-elements-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.quick-elements-label {
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-secondary);
+}
+
+.quick-elements-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.btn-quick-stamp {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.65rem;
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-quick-stamp:hover {
+  border-color: var(--color-brand-red);
+  background: var(--color-surface);
+}
+
+/* Placed Signatures Summary */
+.placed-signatures-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+}
+
+.placed-signatures-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--color-heading);
+}
+
+.placed-signatures-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  max-height: 110px;
+  overflow-y: auto;
+}
+
+.placed-item-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.35rem 0.5rem;
+  border-radius: var(--radius-xs);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  font-size: 0.75rem;
+}
+
+.placed-item-info {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--color-text-secondary);
+}
+
+.btn-remove-sig {
+  border: none;
+  background: transparent;
+  color: var(--color-error);
+  cursor: pointer;
+  padding: 0 0.2rem;
+  font-size: 0.75rem;
+}
+
+/* Primary Execution Button (Sign PDF Document) */
+.btn-execute-sign {
+  width: 100%;
+  padding: 0.85rem 1.25rem;
+  background: var(--color-brand-red);
+  color: #FFFFFF;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 0.95rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(224, 49, 49, 0.25);
+  transition: all var(--transition-fast);
+}
+
+.btn-execute-sign:hover:not(:disabled) {
+  background: var(--color-brand-red-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(224, 49, 49, 0.35);
+}
+
+.btn-execute-sign:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Electronic Signature Disclaimer Note */
+.sign-legal-disclaimer {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+  font-size: 0.72rem;
+  line-height: 1.4;
+  color: var(--color-text-muted, #64748B);
+  background: var(--color-bg);
+  padding: 0.55rem 0.75rem;
+  border-radius: var(--radius-xs);
+  border-left: 3px solid #64748B;
+}
+
+/* Active File Info Bar */
+.sign-file-info-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1.25rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.sign-file-info-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.sign-file-pdf-icon {
+  font-size: 1.6rem;
+  color: var(--color-brand-red);
+}
+
+.sign-file-meta-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.sign-filename {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--color-heading);
+  max-width: 450px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sign-filesize {
+  font-size: 0.76rem;
+  color: var(--color-text-secondary);
+}
+
+.btn-change-file {
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text-secondary);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-change-file:hover {
+  background: var(--color-surface);
+  color: var(--color-primary);
+  border-color: var(--color-brand-red);
+}
+
+/* Success View */
+.sign-success-card {
+  max-width: 640px;
+  margin: 2rem auto;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 2.5rem 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 1.25rem;
+  box-shadow: var(--shadow-md, 0 4px 20px rgba(0, 0, 0, 0.08));
+}
+
+.sign-success-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: rgba(43, 138, 62, 0.12);
+  border: 2px solid var(--color-success);
+  color: var(--color-success);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+}
+
+.sign-success-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--color-heading);
+  margin: 0;
+}
+
+.sign-success-desc {
+  font-size: 0.92rem;
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.sign-download-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 0.85rem 2rem;
+  background: var(--color-brand-red);
+  color: #FFFFFF;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(224, 49, 49, 0.3);
+  transition: all var(--transition-fast);
+}
+
+.sign-download-btn:hover {
+  background: var(--color-brand-red-hover);
+  transform: translateY(-2px);
+}
+

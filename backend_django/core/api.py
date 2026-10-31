@@ -43,6 +43,11 @@ from engines.utilities_engine import (
     reorder_pages_py,
     UtilitiesEngineException
 )
+from engines.sign_engine import (
+    sign_pdf_document,
+    SignEngineException,
+    InvalidPdfError as SignInvalidPdfError
+)
 from ai.factory import get_ai_status_info
 from ai.provider_base import (
     AIProviderException,
@@ -255,6 +260,7 @@ def get_capabilities(request):
             "crop-pdf": {"available": True, "engine": "PyMuPDF Crop Engine", "status": "AVAILABLE"},
             "edit-metadata": {"available": True, "engine": "PyMuPDF Metadata Engine", "status": "AVAILABLE"},
             "reorder-pdf": {"available": True, "engine": "PyMuPDF Page Sequence Engine", "status": "AVAILABLE"},
+            "sign-pdf": {"available": True, "engine": "PyMuPDF Electronic Signature Engine", "status": "AVAILABLE"},
             "ai-summarizer": {
                 "available": ai_status.get("configured", False),
                 "engine": f"AI Engine ({ai_status.get('provider', 'AI')})",
@@ -948,6 +954,75 @@ def reorder_endpoint(
 
     base_name = Path(orig_name).stem
     download_filename = f"{base_name}_reordered.pdf"
+    signed_token = token_signer.sign_object({
+        "file": output_filename,
+        "name": download_filename,
+        "t": int(time.time())
+    })
+
+    return 200, {
+        "success": True,
+        "filename": download_filename,
+        "download_url": f"/api/v1/download/{signed_token}",
+        "download_token": signed_token,
+        "page_count": result["page_count"],
+        "size_bytes": result["size_bytes"],
+        "execution_time_ms": int((time.time() - start_time) * 1000)
+    }
+
+
+@api.post(
+    "/tools/sign-pdf",
+    response={200: ProtectSuccessResponse, 400: ErrorResponse, 500: ErrorResponse},
+    tags=["PDF Utilities"]
+)
+def sign_pdf_endpoint(
+    request,
+    file: UploadedFile = File(...),
+    signatures: str = Form(...)
+):
+    """
+    Stamps electronic signatures (transparent PNGs) onto designated PDF pages and exact point coordinates.
+    """
+    max_size = 50 * 1024 * 1024
+    if file.size > max_size:
+        raise HttpError(400, f"File size exceeds maximum allowed limit of 50MB ({file.size} bytes uploaded).")
+
+    orig_name = file.name or "document.pdf"
+    if not orig_name.lower().endswith('.pdf'):
+        raise HttpError(400, "Only PDF files are supported for electronic signing.")
+
+    import json
+    try:
+        signatures_list = json.loads(signatures)
+        if not isinstance(signatures_list, list) or len(signatures_list) == 0:
+            raise HttpError(400, "At least one signature placement is required.")
+    except Exception:
+        raise HttpError(400, "Invalid signatures data format. Expected JSON array of signatures.")
+
+    job_uuid = uuid.uuid4().hex
+    input_filename = f"{job_uuid}.pdf"
+    output_filename = f"{job_uuid}_signed.pdf"
+    input_path = settings.UPLOADS_DIR / input_filename
+    output_path = settings.OUTPUTS_DIR / output_filename
+
+    start_time = time.time()
+    try:
+        with open(input_path, 'wb') as dest:
+            for chunk in file.chunks():
+                dest.write(chunk)
+
+        result = sign_pdf_document(str(input_path), str(output_path), signatures_list)
+    except (SignInvalidPdfError, SignEngineException) as client_err:
+        raise HttpError(400, str(client_err))
+    except Exception as exc:
+        logger.error(f"Sign PDF error: {exc}", exc_info=True)
+        raise HttpError(500, f"Failed to sign PDF document: {str(exc)}")
+    finally:
+        safe_unlink(input_path)
+
+    base_name = Path(orig_name).stem
+    download_filename = f"{base_name}_signed.pdf"
     signed_token = token_signer.sign_object({
         "file": output_filename,
         "name": download_filename,
