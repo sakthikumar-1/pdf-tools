@@ -110,7 +110,7 @@ export default function GenericTool({
   const [scannedWarning, setScannedWarning] = useState(false);
   const [pptMode, setPptMode] = useState('editable');
   const [pptMeta, setPptMeta] = useState(null);
-  const [wordEngine, setWordEngine] = useState('instant'); // 'instant' (~1s in-browser) or 'server' (Python cloud)
+  const [wordEngine, setWordEngine] = useState('server'); // 'server' (Python cloud with font recovery) or 'instant' (client)
   const [pptEngine, setPptEngine] = useState('instant'); // 'instant' (~1s in-browser) or 'server' (Python cloud)
 
   // Phase 2A: Add Page Numbers States
@@ -715,8 +715,8 @@ export default function GenericTool({
                   <div className="utility-form-group">
                     <label className="option-label" style={{ fontWeight: 600, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span>Conversion Engine:</span>
-                      <span style={{ fontSize: '0.75rem', fontWeight: 600, color: wordEngine === 'instant' ? '#0284c7' : 'var(--color-text-secondary)' }}>
-                        {wordEngine === 'instant' ? '⚡ Instant (~1s)' : '☁️ Cloud Server'}
+                      <span style={{ fontSize: '0.75rem', fontWeight: 600, color: wordEngine === 'server' ? '#0284c7' : 'var(--color-text-secondary)' }}>
+                        {wordEngine === 'server' ? '☁️ Server Engine (Recommended)' : '⚡ Fast Client'}
                       </span>
                     </label>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.75rem', marginTop: '0.5rem' }}>

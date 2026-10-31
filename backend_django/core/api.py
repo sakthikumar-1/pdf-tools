@@ -275,7 +275,33 @@ def get_capabilities(request):
 def trigger_storage_cleanup(request, max_age_seconds: int = 900):
     """
     Purges temporary upload and output files older than max_age_seconds (default 15 mins).
+    Requires staff/superuser authentication or X-Simatrix-Maintenance-Key header.
     """
+    maint_key = request.headers.get("X-Simatrix-Maintenance-Key", "") or request.META.get("HTTP_X_SIMATRIX_MAINTENANCE_KEY", "")
+    expected_key = getattr(settings, "MAINTENANCE_KEY", None) or (settings.SECRET_KEY[:16] if hasattr(settings, "SECRET_KEY") else "")
+
+    is_authorized = bool(maint_key and expected_key and maint_key == expected_key)
+
+    if not is_authorized:
+        auth_header = request.headers.get("Authorization", "")
+        if auth_header.startswith("Bearer "):
+            try:
+                token = auth_header.split(" ", 1)[1].strip()
+                signer = TimestampSigner()
+                data = signer.unsign_object(token, max_age=86400 * 30)
+                user_id = data.get("user_id")
+                if user_id:
+                    user = User.objects.filter(id=user_id).first()
+                    if user and (user.is_staff or user.is_superuser):
+                        is_authorized = True
+            except Exception:
+                pass
+        elif getattr(request, "user", None) and request.user.is_authenticated and (request.user.is_staff or request.user.is_superuser):
+            is_authorized = True
+
+    if not is_authorized:
+        raise HttpError(403, "Forbidden: Maintenance cleanup requires staff privileges or a valid X-Simatrix-Maintenance-Key.")
+
     start = time.time()
     now = time.time()
     deleted_count = 0
@@ -1041,98 +1067,11 @@ def sign_pdf_endpoint(
 
 
 # ==============================================================================
-# AI DOCUMENT INTELLIGENCE ENDPOINTS
+# AI DOCUMENT INTELLIGENCE ENDPOINTS (Phase 4 Router)
 # ==============================================================================
 
-@api.post(
-    "/ai/summarize",
-    response={
-        200: SummarizeResponse,
-        400: ErrorResponse,
-        413: ErrorResponse,
-        429: ErrorResponse,
-        502: ErrorResponse,
-        503: ErrorResponse,
-        504: ErrorResponse,
-        500: ErrorResponse
-    },
-    tags=["AI Intelligence"]
-)
-def summarize_document_endpoint(
-    request,
-    file: UploadedFile = File(...),
-    mode: str = Form("quick")
-):
-    """
-    Analyzes and summarizes an uploaded PDF document using the configured hosted AI provider.
-    Supports 4 modes: 'quick', 'detailed', 'key_points', 'section_by_section'.
-    Handles input validation, scanned PDF detection, chunking for long documents,
-    and anonymous rate limiting (15 requests/hour).
-    """
-    client_ip = get_client_ip(request)
-    is_allowed, remaining, retry_after = ai_rate_limiter.check(client_ip)
-    if not is_allowed:
-        raise HttpError(
-            429,
-            f"Rate limit exceeded. You can make at most 15 AI requests per hour. Please try again in {retry_after} seconds."
-        )
-
-    orig_name = file.name or "document.pdf"
-    if not orig_name.lower().endswith('.pdf'):
-        raise HttpError(400, "Invalid file format. Please upload a standard PDF document (.pdf).")
-
-    # Enforce file size limit before writing to disk
-    max_size = 25 * 1024 * 1024  # 25 MB
-    if file.size > max_size:
-        raise HttpError(400, f"File size ({file.size} bytes) exceeds the maximum allowed limit of 25MB.")
-
-    valid_modes = ('quick', 'detailed', 'key_points', 'section_by_section')
-    clean_mode = (mode or 'quick').lower().strip()
-    if clean_mode not in valid_modes:
-        raise HttpError(
-            400,
-            f"Invalid summary mode '{clean_mode}'. Supported modes are: {', '.join(valid_modes)}."
-        )
-
-    job_uuid = uuid.uuid4().hex
-    input_filename = f"{job_uuid}_summarize.pdf"
-    input_path = settings.UPLOADS_DIR / input_filename
-
-    try:
-        with open(input_path, 'wb') as dest:
-            for chunk in file.chunks():
-                dest.write(chunk)
-
-        result = summarize_pdf(str(input_path), mode=clean_mode)
-        # Record successful usage against rate limiter
-        ai_rate_limiter.record(client_ip)
-        return 200, result
-
-    except ScannedPdfError as err:
-        raise HttpError(400, str(err))
-    except SummarizerPasswordProtectedPdfError as err:
-        raise HttpError(400, str(err))
-    except (EmptyPdfError, FileLimitExceededError, SummarizerInvalidPdfError) as err:
-        raise HttpError(400, str(err))
-    except SummarizerEngineException as err:
-        raise HttpError(400, str(err))
-    except AIProviderNotConfiguredError as err:
-        raise HttpError(503, str(err))
-    except AIProviderAuthenticationError as err:
-        raise HttpError(502, f"AI provider authentication failed: {str(err)}")
-    except AIProviderRateLimitError as err:
-        raise HttpError(429, f"Upstream AI provider rate limit reached: {str(err)}")
-    except AIProviderTimeoutError as err:
-        raise HttpError(504, f"AI provider timed out: {str(err)}")
-    except AIProviderContextLengthError as err:
-        raise HttpError(413, f"Document context length exceeded: {str(err)}")
-    except AIProviderException as err:
-        raise HttpError(502, f"AI provider error: {str(err)}")
-    except Exception as exc:
-        logger.error(f"Summarizer error: {exc}", exc_info=True)
-        raise HttpError(500, f"Failed to generate summary: {str(exc)}")
-    finally:
-        safe_unlink(input_path)
+from ai.api import ai_router
+api.add_router("/ai", ai_router)
 
 
 

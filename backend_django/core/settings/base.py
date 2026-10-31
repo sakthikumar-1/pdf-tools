@@ -98,8 +98,8 @@ if database_url:
 if 'DATABASES' not in locals() or 'default' not in DATABASES:
     db_host = os.getenv('DB_HOST', '').strip()
     db_engine = os.getenv('DB_ENGINE', '').strip()
-    # Only attempt MySQL if an explicit external DB_HOST was provided
-    if db_host and db_host != '127.0.0.1' and db_host != 'localhost' and 'mysql' in db_engine:
+    # Use MySQL InnoDB database
+    if db_host and 'mysql' in db_engine and os.getenv('USE_SQLITE', '').lower() not in ('1', 'true'):
         DATABASES = {
             'default': {
                 'ENGINE': db_engine,
@@ -110,6 +110,11 @@ if 'DATABASES' not in locals() or 'default' not in DATABASES:
                 'PORT': os.getenv('DB_PORT', '3306'),
                 'OPTIONS': {
                     'charset': 'utf8mb4',
+                    'init_command': "SET default_storage_engine=INNODB, sql_mode='STRICT_TRANS_TABLES'",
+                },
+                'TEST': {
+                    'CHARSET': 'utf8mb4',
+                    'COLLATION': 'utf8mb4_unicode_ci',
                 },
             }
         }
@@ -199,3 +204,11 @@ PROCESSING_DIR = STORAGE_ROOT / 'processing'
 
 for directory in [STORAGE_ROOT, UPLOADS_DIR, OUTPUTS_DIR, PROCESSING_DIR]:
     directory.mkdir(parents=True, exist_ok=True)
+
+# AI Provider Configuration (Environment variables only — zero frontend exposure)
+AI_PROVIDER = os.getenv('AI_PROVIDER', 'router')
+DEEPSEEK_API_KEY = os.getenv('DEEPSEEK_API_KEY', '')
+DEEPSEEK_MODEL = os.getenv('DEEPSEEK_MODEL', 'deepseek-chat')
+DEEPSEEK_BASE_URL = os.getenv('DEEPSEEK_BASE_URL', 'https://api.deepseek.com/v1')
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', os.getenv('GOOGLE_API_KEY', ''))
+GEMINI_MODEL = os.getenv('GEMINI_MODEL', 'gemini-2.5-flash')

@@ -763,39 +763,92 @@ export async function extractStructuredPdfPages(fileOrBuffer, onProgress) {
       return { y: line.y, cells };
     });
 
-    // Detect column anchors for lines with >= 2 cells
-    const multiCellLines = processedLines.filter(l => l.cells.length >= 2);
-    const colAnchors = [];
-    const tolerance = 14;
-
-    multiCellLines.forEach(l => {
-      l.cells.forEach(c => {
-        let match = colAnchors.find(a => Math.abs(a - c.x) <= tolerance);
-        if (match === undefined) {
-          colAnchors.push(c.x);
+    // Filter out trailing score / exam marks (e.g. "(4)", "(5)", "(3)", "15") on lines
+    // so right-aligned score annotations do not trigger false multi-column tables.
+    const cleanLines = processedLines.map(l => {
+      if (l.cells.length === 2) {
+        const c2 = l.cells[1];
+        const t2 = (c2.text || '').trim();
+        const isScoreMark = (c2.x > pageWidth * 0.6) && (/^\(?[0-9]{1,3}\)?$/i.test(t2) || /^\(?[0-9]{1,3}\s*(marks?|pts?|points?)?\)?$/i.test(t2) || /^_{4,}$/.test(t2));
+        if (isScoreMark) {
+          return {
+            y: l.y,
+            cells: [{
+              text: `${l.cells[0].text}   ${t2}`,
+              x: l.cells[0].x,
+              width: (c2.x + c2.width) - l.cells[0].x,
+              height: l.cells[0].height,
+              isBold: l.cells[0].isBold,
+              fontSize: l.cells[0].fontSize
+            }]
+          };
         }
+      }
+      return l;
+    });
+
+    // Detect genuine multi-row table blocks:
+    // Requires >= 2 consecutive lines with 2 to 6 aligned columns
+    const tableBlocks = [];
+    let activeBlock = null;
+
+    for (let i = 0; i < cleanLines.length; i++) {
+      const line = cleanLines[i];
+      if (line.cells.length >= 2 && line.cells.length <= 6) {
+        if (!activeBlock) {
+          activeBlock = { lines: [line], indices: [i] };
+        } else {
+          const prevLine = activeBlock.lines[activeBlock.lines.length - 1];
+          const yDist = Math.abs(prevLine.y - line.y);
+          let alignedCount = 0;
+          line.cells.forEach(c => {
+            if (prevLine.cells.some(pc => Math.abs(pc.x - c.x) <= 22)) alignedCount++;
+          });
+          const isAligned = alignedCount >= Math.min(line.cells.length, prevLine.cells.length) - 1;
+          if (yDist <= 55 && isAligned) {
+            activeBlock.lines.push(line);
+            activeBlock.indices.push(i);
+          } else {
+            if (activeBlock.lines.length >= 2) tableBlocks.push(activeBlock);
+            activeBlock = { lines: [line], indices: [i] };
+          }
+        }
+      } else {
+        if (activeBlock && activeBlock.lines.length >= 2) tableBlocks.push(activeBlock);
+        activeBlock = null;
+      }
+    }
+    if (activeBlock && activeBlock.lines.length >= 2) tableBlocks.push(activeBlock);
+
+    // Map lines to table block metadata
+    const lineToTableMeta = new Map();
+    tableBlocks.forEach((tb, tbIdx) => {
+      const anchors = [];
+      tb.lines.forEach(l => {
+        l.cells.forEach(c => {
+          if (!anchors.some(a => Math.abs(a - c.x) <= 18)) anchors.push(c.x);
+        });
+      });
+      anchors.sort((a, b) => a - b);
+      const colCount = Math.max(2, anchors.length);
+      const colWidthDxa = Math.round(9000 / colCount);
+      const colWidths = new Array(colCount).fill(colWidthDxa);
+
+      tb.indices.forEach(lIdx => {
+        lineToTableMeta.set(lIdx, { tableId: tbIdx, anchors, colWidths, colCount });
       });
     });
-    colAnchors.sort((a, b) => a - b);
 
     // Build structured grid rows
     const gridRows = [];
-    processedLines.forEach(l => {
-      if (l.cells.length === 1 && colAnchors.length >= 2) {
-        gridRows.push({
-          type: 'heading',
-          y: l.y,
-          text: l.cells[0].text,
-          fontSize: l.cells[0].fontSize,
-          isBold: l.cells[0].isBold,
-          rowCells: [l.cells[0].text]
-        });
-      } else if (colAnchors.length >= 2) {
-        const row = new Array(colAnchors.length).fill('');
+    cleanLines.forEach((l, lIdx) => {
+      const tMeta = lineToTableMeta.get(lIdx);
+      if (tMeta) {
+        const row = new Array(tMeta.colCount).fill('');
         l.cells.forEach(c => {
           let bestIdx = 0;
           let bestDist = Infinity;
-          colAnchors.forEach((a, i) => {
+          tMeta.anchors.forEach((a, i) => {
             const dist = Math.abs(a - c.x);
             if (dist < bestDist) {
               bestDist = dist;
@@ -804,12 +857,13 @@ export async function extractStructuredPdfPages(fileOrBuffer, onProgress) {
           });
           row[bestIdx] = c.text;
         });
-        const isHeader = l.cells.some(c => c.isBold) || gridRows.length === 0 || (gridRows.length === 1 && gridRows[0].type === 'heading');
+        const isHeader = l.cells.some(c => c.isBold);
         gridRows.push({
           type: 'table_row',
           y: l.y,
           isHeader,
-          rowCells: row
+          rowCells: row,
+          colWidths: tMeta.colWidths
         });
       } else {
         const lineText = l.cells.map(c => c.text).join(' ');
@@ -834,9 +888,8 @@ export async function extractStructuredPdfPages(fileOrBuffer, onProgress) {
       pageHeight,
       hasText: rawItems.length > 0,
       totalTextItems: rawItems.length,
-      hasTable: colAnchors.length >= 2,
-      colCount: Math.max(1, colAnchors.length),
-      colAnchors,
+      hasTable: tableBlocks.length > 0,
+      colCount: tableBlocks.length > 0 ? tableBlocks[0].lines[0].cells.length : 1,
       gridRows,
       lineCount: processedLines.length
     });
@@ -912,9 +965,12 @@ export async function generateDocxDocument(structuredData, documentTitle = 'Docu
 
       let inTable = false;
       let tableRowsXml = '';
+      let currentTableColWidths = null;
 
       const flushTable = () => {
         if (inTable && tableRowsXml) {
+          const colWidths = currentTableColWidths || [4500, 4500];
+          const gridColsXml = colWidths.map(w => `<w:gridCol w:w="${Math.round(w)}"/>`).join('');
           bodyXml += `
             <w:tbl>
               <w:tblPr>
@@ -928,27 +984,37 @@ export async function generateDocxDocument(structuredData, documentTitle = 'Docu
                   <w:insideV w:val="none"/>
                 </w:tblBorders>
               </w:tblPr>
+              <w:tblGrid>
+                ${gridColsXml}
+              </w:tblGrid>
               ${tableRowsXml}
             </w:tbl>
             <w:p><w:pPr><w:spacing w:after="120"/></w:pPr></w:p>
           `;
           tableRowsXml = '';
           inTable = false;
+          currentTableColWidths = null;
         }
       };
 
       page.gridRows.forEach(item => {
         if (item.type === 'table_row') {
           inTable = true;
+          if (item.colWidths && !currentTableColWidths) {
+            currentTableColWidths = item.colWidths;
+          }
           const isHdr = item.isHeader;
-          const cellsXml = item.rowCells.map(val => {
+          const colWidths = item.colWidths || currentTableColWidths || [];
+          const cellsXml = item.rowCells.map((val, cIdx) => {
             const escaped = escapeXml(val);
             const shdXml = isHdr ? '<w:shd w:val="clear" w:color="auto" w:fill="F1F5F9"/>' : '';
             const boldXml = isHdr ? '<w:b/>' : '';
             const colorVal = isHdr ? '1E293B' : '334155';
+            const cellW = colWidths[cIdx] ? `<w:tcW w:w="${Math.round(colWidths[cIdx])}" w:type="dxa"/>` : '';
             return `
               <w:tc>
                 <w:tcPr>
+                  ${cellW}
                   ${shdXml}
                   <w:tcMar>
                     <w:top w:w="120" w:type="dxa"/>
@@ -961,7 +1027,8 @@ export async function generateDocxDocument(structuredData, documentTitle = 'Docu
                   <w:pPr><w:spacing w:before="0" w:after="0"/></w:pPr>
                   <w:r>
                     <w:rPr>
-                      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+                      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri" w:cs="Nirmala UI"/>
+                      <w:lang w:bidi="ta-IN"/>
                       ${boldXml}
                       <w:sz w:val="20"/>
                       <w:color w:val="${colorVal}"/>
@@ -985,7 +1052,8 @@ export async function generateDocxDocument(structuredData, documentTitle = 'Docu
                 </w:pPr>
                 <w:r>
                   <w:rPr>
-                    <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+                    <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri" w:cs="Nirmala UI"/>
+                    <w:lang w:bidi="ta-IN"/>
                     <w:b/>
                     <w:sz w:val="${hSize}"/>
                     <w:color w:val="0F172A"/>
@@ -1002,7 +1070,8 @@ export async function generateDocxDocument(structuredData, documentTitle = 'Docu
                 </w:pPr>
                 <w:r>
                   <w:rPr>
-                    <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+                    <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri" w:cs="Nirmala UI"/>
+                    <w:lang w:bidi="ta-IN"/>
                     <w:sz w:val="22"/>
                     <w:color w:val="334155"/>
                   </w:rPr>
@@ -1088,7 +1157,8 @@ export async function createDocxFile(input, documentTitle = 'Document') {
     if (trimmed.startsWith('--- Page Break ---')) {
       return '<w:p><w:r><w:br w:type="page"/></w:r></w:p>';
     }
-    return `<w:p><w:pPr><w:spacing w:after="120" w:line="276" w:lineRule="auto"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/><w:sz w:val="22"/><w:color w:val="334155"/></w:rPr><w:t xml:space="preserve">${escapeXml(trimmed)}</w:t></w:r></w:p>`;
+    return `<w:p><w:pPr><w:spacing w:after="120" w:line="276" w:lineRule="auto"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri" w:cs="Nirmala UI"/>
+                    <w:lang w:bidi="ta-IN"/><w:sz w:val="22"/><w:color w:val="334155"/></w:rPr><w:t xml:space="preserve">${escapeXml(trimmed)}</w:t></w:r></w:p>`;
   }).join('');
 
   const zip = new JSZip();

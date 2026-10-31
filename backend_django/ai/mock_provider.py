@@ -3,11 +3,15 @@ Mock AI Provider for deterministic testing, offline development, and zero-cost t
 """
 
 import re
+import time
 from typing import Optional
 from .provider_base import (
     BaseAIProvider,
+    AIResponse,
     AIProviderTimeoutError,
-    AIProviderRateLimitError
+    AIProviderRateLimitError,
+    AIProviderServiceUnavailableError,
+    AIProviderInvalidRequestError
 )
 
 
@@ -28,20 +32,26 @@ class MockAIProvider(BaseAIProvider):
     def model(self) -> str:
         return "mock-summarizer-v1"
 
-    def generate(
+    def generate_response(
         self,
         prompt: str,
         system_prompt: Optional[str] = None,
         max_tokens: int = 1500,
         temperature: float = 0.3
-    ) -> str:
+    ) -> AIResponse:
+        start_time = time.time()
+
         if self._simulate_error == "timeout":
             raise AIProviderTimeoutError("Mock provider request timed out after 30 seconds.")
         elif self._simulate_error == "rate_limit":
-            raise AIProviderRateLimitError("Mock provider quota exceeded.")
+            raise AIProviderRateLimitError("Mock provider quota exceeded (HTTP 429).")
+        elif self._simulate_error == "server_error":
+            raise AIProviderServiceUnavailableError("Mock provider service unavailable (HTTP 503).")
+        elif self._simulate_error == "invalid_request":
+            raise AIProviderInvalidRequestError("Mock provider invalid request parameters (HTTP 400).")
 
-        # Extract text within <document_content>...</document_content>
-        match = re.search(r"<document_content>(.*?)</document_content>", prompt, re.DOTALL)
+        # Extract text within <document_content>...</document_content> or <document_context>...</document_context>
+        match = re.search(r"<(?:document_content|document_context)>(.*?)</(?:document_content|document_context)>", prompt, re.DOTALL)
         content = match.group(1).strip() if match else prompt
 
         # Determine requested mode from prompt instructions
@@ -61,7 +71,7 @@ class MockAIProvider(BaseAIProvider):
         sample_body = " ".join(lines[:6]) if lines else "Document content is present and verified."
 
         if mode == "quick":
-            return (
+            text = (
                 f"### Executive Overview\n"
                 f"This document focuses on {sample_title}. It outlines critical background context, primary operational goals, "
                 f"and strategic directions relevant to the organization.\n\n"
@@ -73,7 +83,7 @@ class MockAIProvider(BaseAIProvider):
             )
 
         elif mode == "detailed":
-            return (
+            text = (
                 f"### 1. Executive Overview & Context\n"
                 f"The document titled '{sample_title}' establishes comprehensive operational parameters. "
                 f"It serves as a primary reference guide for evaluating key deliverables and procedural benchmarks.\n\n"
@@ -91,7 +101,7 @@ class MockAIProvider(BaseAIProvider):
             )
 
         elif mode == "key_points":
-            return (
+            text = (
                 f"### Major Highlights\n"
                 f"- **Core Subject**: Focuses primarily on {sample_title}.\n"
                 f"- **Document Integrity**: Validated digital text streams with structured page separation.\n\n"
@@ -104,7 +114,7 @@ class MockAIProvider(BaseAIProvider):
             )
 
         elif mode == "section_by_section":
-            return (
+            text = (
                 f"### Section 1: Overview & Initial Findings\n"
                 f"- Introduces {sample_title} and outlines initial scope.\n"
                 f"- Sets forth foundational metrics and procedural goals.\n\n"
@@ -115,5 +125,20 @@ class MockAIProvider(BaseAIProvider):
                 f"- Synthesizes final results and confirms all milestones are addressed.\n"
                 f"- Provides sign-off for next phase actions."
             )
+        else:
+            text = f"Summary of {sample_title}: {sample_body[:250]}"
 
-        return f"Summary of {sample_title}: {sample_body[:250]}"
+        exec_ms = max(1, int((time.time() - start_time) * 1000))
+        prompt_tokens = max(1, len(prompt) // 4)
+        completion_tokens = max(1, len(text) // 4)
+
+        return AIResponse(
+            content=text,
+            provider="mock",
+            model="mock-summarizer-v1",
+            prompt_tokens=prompt_tokens,
+            completion_tokens=completion_tokens,
+            total_tokens=prompt_tokens + completion_tokens,
+            execution_time_ms=exec_ms,
+            raw_metadata={"simulated": True}
+        )

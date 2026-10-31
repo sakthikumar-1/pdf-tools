@@ -90,3 +90,76 @@ class WordEngineIntegrationTests(TestCase):
         """Verify tampered or invalid download tokens are rejected with HTTP 400."""
         res = self.client.get('/api/v1/download/tampered_invalid_token_12345')
         self.assertEqual(res.status_code, 400)
+
+    def test_04_tamil_examination_multilingual_regression(self):
+        """
+        Verify high-fidelity conversion of complex multilingual Tamil examination paper.
+        Asserts 2 pages, exactly 1 table (4 columns), 2 images, and correct Tamil/English text.
+        """
+        fixture_path = settings.BASE_DIR.parent / 'fixtures' / 'Grade3_Test2_Model_2026.pdf'
+        if not fixture_path.exists():
+            self.skipTest("Grade3 Tamil examination fixture not found.")
+
+        with open(fixture_path, 'rb') as f:
+            pdf_bytes = f.read()
+
+        upload_file = SimpleUploadedFile(
+            'Grade3_Test2_Model_2026.pdf',
+            pdf_bytes,
+            content_type='application/pdf'
+        )
+
+        response = self.client.post('/api/v1/convert/pdf-to-word', {'file': upload_file})
+        self.assertEqual(response.status_code, 200)
+
+        data = response.json()
+        self.assertTrue(data.get('success'))
+        self.assertEqual(data.get('page_count'), 2)
+        self.assertIn('download_url', data)
+
+        dl_res = self.client.get(data['download_url'])
+        self.assertEqual(dl_res.status_code, 200)
+        docx_bytes = dl_res.getvalue() if hasattr(dl_res, 'getvalue') else b''.join(dl_res.streaming_content)
+        self.assertGreater(len(docx_bytes), 50000)
+
+        # Inspect using python-docx
+        import docx
+        doc = docx.Document(io.BytesIO(docx_bytes))
+
+        # 1. Table structure: exactly 1 genuine table with 4 columns (no 19-column defective tables)
+        self.assertEqual(len(doc.tables), 1, f"Expected 1 table, found {len(doc.tables)}")
+        table = doc.tables[0]
+        self.assertEqual(len(table.columns), 4, f"Expected 4 columns, found {len(table.columns)}")
+        headers = [cell.text.strip() for cell in table.rows[0].cells]
+        self.assertIn('இறந்தகாலம்', headers)
+        self.assertIn('நிகழ்காலம்', headers)
+        self.assertIn('எதிர்காலம்', headers)
+
+        # 2. Images: exactly 2 embedded media files
+        with zipfile.ZipFile(io.BytesIO(docx_bytes), 'r') as z:
+            media_files = [n for n in z.namelist() if n.startswith('word/media/')]
+            self.assertEqual(len(media_files), 2, f"Expected 2 media images, found {len(media_files)}")
+
+        # 3. Text integrity: All paragraphs combined
+        full_text = '\n'.join([p.text for p in doc.paragraphs] + [cell.text for row in table.rows for cell in row.cells])
+
+        # Core header text
+        self.assertIn('தேர்வு 2 - மாதிரி வினாத்தாள்', full_text)
+        self.assertIn('உலகத் தமிழ்க் கல்விக்கழகம்', full_text)
+        self.assertIn('எழுத்துத் தேர்வு', full_text)
+        self.assertIn('வாய்மொழித் தேர்வு', full_text)
+
+        # Question text
+        self.assertIn('படத்தையும் சொல்லையும் இணை:', full_text)
+        self.assertIn('ஒருமைச் சொற்களை பன்மைச் சொற்களாக', full_text)
+        self.assertIn('சொல்லப்படும் சொற்களை எழுதி', full_text)
+        self.assertIn('கண்டுபிடி - சரியான விடையை எழுது', full_text)
+        self.assertIn('வாக்கியங்களை வாசித்து அதன் அர்த்தத்தைச் சொல்லவும்', full_text)
+
+        # Dictation items (mixed Tamil and English)
+        dictation_items = [
+            'elephant tusk', 'beginning', 'feather', 'width',
+            'bicycle', 'computer', 'window', 'sky', 'urgency'
+        ]
+        for item in dictation_items:
+            self.assertIn(item, full_text, f"Missing dictation word: {item}")

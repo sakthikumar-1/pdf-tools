@@ -166,7 +166,17 @@ class FullPythonSuiteTests(TestCase):
         self.assertEqual(res.status_code, 400)
 
     def test_maintenance_cleanup_endpoint(self):
-        res = self.client.post('/api/v1/maintenance/cleanup?max_age_seconds=0')
+        from django.conf import settings
+        # Anonymous unauthenticated request should be rejected with 403
+        unauth = self.client.post('/api/v1/maintenance/cleanup?max_age_seconds=0')
+        self.assertEqual(unauth.status_code, 403)
+
+        # Authorized with maintenance key
+        maint_key = settings.SECRET_KEY[:16]
+        res = self.client.post(
+            '/api/v1/maintenance/cleanup?max_age_seconds=0',
+            HTTP_X_SIMATRIX_MAINTENANCE_KEY=maint_key
+        )
         self.assertEqual(res.status_code, 200)
         data = res.json()
         self.assertTrue(data['success'])
