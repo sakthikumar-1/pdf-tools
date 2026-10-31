@@ -195,15 +195,15 @@ export default function ReorderPages() {
       let blob;
       let filename;
 
-      // 1. Try Python Django Ninja backend
+      // Direct instant in-browser reordering via pdf-lib (~50ms)
       try {
+        blob = await reorderPdfPages(file, pageOrderArray, rotations, (p) => setProgress(p));
+        filename = `${baseName}_reordered.pdf`;
+      } catch (clientErr) {
+        console.warn('[ReorderPages] Client reordering failed, falling back to Python:', clientErr);
         const res = await reorderPdfPagesPython(file, pageOrderArray, (p) => setProgress(p));
         blob = res.blob;
         filename = res.filename || `${baseName}_reordered.pdf`;
-      } catch (backendErr) {
-        console.warn('[ReorderPages] Backend API error or offline, running client fallback:', backendErr);
-        blob = await reorderPdfPages(file, pageOrderArray, rotations, (p) => setProgress(p));
-        filename = `${baseName}_reordered.pdf`;
       }
 
       setProcessedResult({ blob, filename });

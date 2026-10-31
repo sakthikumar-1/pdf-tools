@@ -111,6 +111,7 @@ export default function GenericTool({
   const [pptMode, setPptMode] = useState('editable');
   const [pptMeta, setPptMeta] = useState(null);
   const [wordEngine, setWordEngine] = useState('instant'); // 'instant' (~1s in-browser) or 'server' (Python cloud)
+  const [pptEngine, setPptEngine] = useState('instant'); // 'instant' (~1s in-browser) or 'server' (Python cloud)
 
   // Phase 2A: Add Page Numbers States
   const [startNumber, setStartNumber] = useState(1);
@@ -240,11 +241,17 @@ export default function GenericTool({
         }
       } else if (titleLower.includes('powerpoint') || titleLower.includes('ppt')) {
         let res;
-        try {
-          res = await convertPdfToPowerpointPython(primaryFile, pptMode, (p) => setProgress(p));
-        } catch (backendErr) {
-          console.warn('[PDFToPPTX] Python backend error or offline, running client fallback:', backendErr);
+        if (pptEngine === 'instant') {
+          // Instant in-browser PowerPoint generation (~1s)
           res = await pdfToPptx(primaryFile, pptMode, (p) => setProgress(p));
+        } else {
+          // Cloud server engine with automatic fast fallback
+          try {
+            res = await convertPdfToPowerpointPython(primaryFile, pptMode, (p) => setProgress(p));
+          } catch (backendErr) {
+            console.warn('[PDFToPPTX] Server error or timeout, running instant fallback:', backendErr);
+            res = await pdfToPptx(primaryFile, pptMode, (p) => setProgress(p));
+          }
         }
         blob = res.blob;
         filename = res.filename || `${baseName}_presentation.pptx`;
@@ -293,13 +300,14 @@ export default function GenericTool({
           pageRange: numPageRange
         };
         try {
+          // Instant in-browser page numbering via pdf-lib (~50ms)
+          blob = await addPageNumbersToPdf(primaryFile, numOptions, (p) => setProgress(p));
+          filename = `${baseName}_numbered.pdf`;
+        } catch (clientErr) {
+          console.warn('[AddPageNumbers] Client stamping failed, falling back to Python:', clientErr);
           const res = await addPageNumbersPython(primaryFile, numOptions, (p) => setProgress(p));
           blob = res.blob;
           filename = res.filename || `${baseName}_numbered.pdf`;
-        } catch (backendErr) {
-          console.warn('[AddPageNumbers] Backend API error or offline, running client fallback:', backendErr);
-          blob = await addPageNumbersToPdf(primaryFile, numOptions, (p) => setProgress(p));
-          filename = `${baseName}_numbered.pdf`;
         }
       } else if (titleLower.includes('watermark')) {
         if (!wmText || !wmText.trim()) {
@@ -315,13 +323,14 @@ export default function GenericTool({
           pageRange: wmPageRange
         };
         try {
+          // Instant in-browser watermarking via pdf-lib (~50ms)
+          blob = await watermarkPdf(primaryFile, wmOptions, (p) => setProgress(p));
+          filename = `${baseName}_watermarked.pdf`;
+        } catch (clientErr) {
+          console.warn('[WatermarkPDF] Client watermark failed, falling back to Python:', clientErr);
           const res = await watermarkPdfPython(primaryFile, wmOptions, (p) => setProgress(p));
           blob = res.blob;
           filename = res.filename || `${baseName}_watermarked.pdf`;
-        } catch (backendErr) {
-          console.warn('[WatermarkPDF] Backend API error or offline, running client fallback:', backendErr);
-          blob = await watermarkPdf(primaryFile, wmOptions, (p) => setProgress(p));
-          filename = `${baseName}_watermarked.pdf`;
         }
       } else if (titleLower.includes('crop')) {
         const top = Number(cropTop) || 0;
@@ -336,13 +345,14 @@ export default function GenericTool({
           pageRange: cropPageRange
         };
         try {
+          // Instant in-browser lossless crop via pdf-lib (~30ms)
+          blob = await cropPdf(primaryFile, cropOptions, (p) => setProgress(p));
+          filename = `${baseName}_cropped.pdf`;
+        } catch (clientErr) {
+          console.warn('[CropPDF] Client crop failed, falling back to Python:', clientErr);
           const res = await cropPdfPython(primaryFile, cropOptions, (p) => setProgress(p));
           blob = res.blob;
           filename = res.filename || `${baseName}_cropped.pdf`;
-        } catch (backendErr) {
-          console.warn('[CropPDF] Backend API error or offline, running client fallback:', backendErr);
-          blob = await cropPdf(primaryFile, cropOptions, (p) => setProgress(p));
-          filename = `${baseName}_cropped.pdf`;
         }
       } else if (titleLower.includes('metadata')) {
         const metaOptions = {
@@ -352,13 +362,14 @@ export default function GenericTool({
           keywords: metaKeywords
         };
         try {
+          // Instant in-browser metadata editing via pdf-lib (~20ms)
+          blob = await editPdfMetadata(primaryFile, metaOptions, (p) => setProgress(p));
+          filename = `${baseName}_metadata.pdf`;
+        } catch (clientErr) {
+          console.warn('[EditMetadata] Client metadata edit failed, falling back to Python:', clientErr);
           const res = await editPdfMetadataPython(primaryFile, metaOptions, (p) => setProgress(p));
           blob = res.blob;
           filename = res.filename || `${baseName}_metadata.pdf`;
-        } catch (backendErr) {
-          console.warn('[EditMetadata] Backend API error or offline, running client fallback:', backendErr);
-          blob = await editPdfMetadata(primaryFile, metaOptions, (p) => setProgress(p));
-          filename = `${baseName}_metadata.pdf`;
         }
       } else {
         blob = await createPdfBlob(primaryFile, 'processed');

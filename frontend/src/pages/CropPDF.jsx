@@ -319,13 +319,14 @@ export default function CropPDF() {
       let filename;
 
       try {
+        // Instant in-browser crop via pdf-lib (~30ms)
+        blob = await cropPdf(file, cropOptions, (p) => setProgress(p));
+        filename = `${baseName}_cropped.pdf`;
+      } catch (clientErr) {
+        console.warn('[CropPDF] Client crop failed, falling back to Python:', clientErr);
         const res = await cropPdfPython(file, cropOptions, (p) => setProgress(p));
         blob = res.blob;
         filename = res.filename || `${baseName}_cropped.pdf`;
-      } catch (backendErr) {
-        console.warn('[CropPDF] Backend API error or offline, running client fallback:', backendErr);
-        blob = await cropPdf(file, cropOptions, (p) => setProgress(p));
-        filename = `${baseName}_cropped.pdf`;
       }
 
       setProcessedResult({ blob, filename });
