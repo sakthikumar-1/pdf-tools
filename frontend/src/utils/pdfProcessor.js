@@ -2434,3 +2434,93 @@ export async function reorderPdfPages(file, pageOrderArray, rotations = {}, onPr
   return new Blob([pdfBytes], { type: 'application/pdf' });
 }
 
+/**
+ * Signs a PDF document in-browser using pdf-lib (client-side fallback).
+ * Stamps signatures (transparent PNGs) onto designated pages and coordinates.
+ * @param {File} file
+ * @param {Array} signatures
+ * @param {Function} onProgress
+ * @returns {Promise<Blob>}
+ */
+export async function signPdfClient(file, signatures, onProgress) {
+  if (onProgress) onProgress(10);
+  const arrayBuffer = await file.arrayBuffer();
+  const pdfDoc = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
+  const totalPages = pdfDoc.getPageCount();
+
+  if (onProgress) onProgress(30);
+
+  const sigCount = signatures.length;
+  for (let i = 0; i < sigCount; i++) {
+    const sig = signatures[i];
+    const pageIndex = (sig.page || 1) - 1;
+    if (pageIndex < 0 || pageIndex >= totalPages) continue;
+
+    const page = pdfDoc.getPage(pageIndex);
+    const { width: pageW, height: pageH } = page.getSize();
+    const rotation = page.getRotation().angle;
+
+    // Decode base64 image
+    let rawB64 = sig.dataUrl || sig.imageBase64 || '';
+    if (rawB64.includes(',')) rawB64 = rawB64.split(',')[1];
+    if (!rawB64) continue;
+
+    const binaryString = atob(rawB64);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let b = 0; b < binaryString.length; b++) {
+      bytes[b] = binaryString.charCodeAt(b);
+    }
+
+    const pngImage = await pdfDoc.embedPng(bytes);
+
+    const ptX = Number(sig.ptX) || 0;
+    const ptY = Number(sig.ptY) || 0;
+    const ptW = Number(sig.ptW) || 120;
+    const ptH = Number(sig.ptH) || 50;
+
+    // Coordinate mapping depending on page rotation in pdf-lib
+    if (rotation === 0) {
+      page.drawImage(pngImage, {
+        x: ptX,
+        y: pageH - ptY - ptH,
+        width: ptW,
+        height: ptH,
+      });
+    } else if (rotation === 90) {
+      page.drawImage(pngImage, {
+        x: ptY,
+        y: ptX,
+        width: ptW,
+        height: ptH,
+        rotate: degrees(-90),
+      });
+    } else if (rotation === 180) {
+      page.drawImage(pngImage, {
+        x: pageW - ptX - ptW,
+        y: ptY,
+        width: ptW,
+        height: ptH,
+        rotate: degrees(180),
+      });
+    } else if (rotation === 270) {
+      page.drawImage(pngImage, {
+        x: pageW - ptY - ptH,
+        y: pageH - ptX - ptW,
+        width: ptW,
+        height: ptH,
+        rotate: degrees(90),
+      });
+    }
+
+    if (onProgress) {
+      onProgress(30 + Math.round(((i + 1) / sigCount) * 50));
+    }
+  }
+
+  if (onProgress) onProgress(85);
+  const pdfBytes = await pdfDoc.save();
+  if (onProgress) onProgress(100);
+
+  return new Blob([pdfBytes], { type: 'application/pdf' });
+}
+
