@@ -237,7 +237,6 @@ export default function QuestionGenerator() {
             error={activeError}
             onRetry={executeGeneration}
             onReset={handleClearFile}
-            onSelectSample={handleSelectFile}
           />
         )}
 
@@ -345,7 +344,6 @@ export default function QuestionGenerator() {
       <AILimitReachedModal
         isOpen={limitModalOpen}
         onClose={() => setLimitModalOpen(false)}
-        onSelectSample={handleSelectFile}
       />
     </div>
   );

@@ -341,7 +341,6 @@ export default function AISummarizer() {
             error={activeError}
             onRetry={() => executeSummarize()}
             onReset={handleClearFile}
-            onSelectSample={handleSelectFile}
           />
         )}
 
@@ -392,7 +391,6 @@ export default function AISummarizer() {
       <AILimitReachedModal
         isOpen={limitModalOpen}
         onClose={() => setLimitModalOpen(false)}
-        onSelectSample={handleSelectFile}
       />
     </div>
   );

@@ -10,14 +10,12 @@ import {
   faRotateRight,
   faArrowLeft
 } from '@fortawesome/free-solid-svg-icons';
-import AISampleDocumentButton from './AISampleDocumentButton';
 import './AIErrorState.css';
 
 export default function AIErrorState({
   error,
   onRetry,
-  onReset,
-  onSelectSample
+  onReset
 }) {
   if (!error) return null;
 
@@ -60,12 +58,6 @@ export default function AIErrorState({
         <h4 className="ai-error-title">{title}</h4>
         <p className="ai-error-message">{rawMessage}</p>
 
-        {isQuotaExceeded && (
-          <p className="ai-error-hint">
-            Tip: You can continue exploring all AI features using official sample documents without consuming any quota.
-          </p>
-        )}
-
         <div className="ai-error-actions">
           {onRetry && !isQuotaExceeded && (
             <button type="button" className="ai-btn-retry" onClick={onRetry}>
@@ -80,16 +72,8 @@ export default function AIErrorState({
               <span>Choose Another PDF</span>
             </button>
           )}
-
-          {onSelectSample && (
-            <AISampleDocumentButton
-              onSelectFile={onSelectSample}
-              label="Try Official Sample Document"
-            />
-          )}
         </div>
       </div>
     </div>
   );
 }
-

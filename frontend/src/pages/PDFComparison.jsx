@@ -76,20 +76,6 @@ export default function PDFComparison() {
     }
   };
 
-  const handleLoadSampleComparison = async () => {
-    try {
-      const res1 = await fetch('/sample_document.pdf');
-      const blob1 = await res1.blob();
-      const f1 = new File([blob1], 'sample_document_v1.pdf', { type: 'application/pdf' });
-      const f2 = new File([blob1], 'sample_document_v2.pdf', { type: 'application/pdf' });
-      setFile1(f1);
-      setFile2(f2);
-      setResult(null);
-      setActiveError(null);
-    } catch (err) {
-      console.warn('Failed to load sample comparison:', err);
-    }
-  };
 
   const handleClearAll = () => {
     setFile1(null);
@@ -307,16 +293,6 @@ export default function PDFComparison() {
             <span>Compare Documents Now</span>
           </button>
 
-          {!file1 && (
-            <button
-              type="button"
-              className="cmp-btn-sample"
-              onClick={handleLoadSampleComparison}
-              disabled={isProcessing}
-            >
-              Try Sample Comparison (Zero Quota)
-            </button>
-          )}
 
           {file1 && (
             <button
@@ -457,7 +433,6 @@ export default function PDFComparison() {
       <AILimitReachedModal
         isOpen={limitModalOpen}
         onClose={() => setLimitModalOpen(false)}
-        onSelectSample={() => handleLoadSampleComparison()}
       />
     </div>
   );

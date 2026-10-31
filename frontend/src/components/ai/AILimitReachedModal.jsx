@@ -2,17 +2,13 @@ import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faBan,
-  faXmark,
-  faFilePdf,
-  faEnvelope
+  faXmark
 } from '@fortawesome/free-solid-svg-icons';
-import AISampleDocumentButton from './AISampleDocumentButton';
 import './AILimitReachedModal.css';
 
 export default function AILimitReachedModal({
   isOpen,
-  onClose,
-  onSelectSample
+  onClose
 }) {
   if (!isOpen) return null;
 
@@ -45,24 +41,6 @@ export default function AILimitReachedModal({
           </p>
 
           <div className="ai-limit-modal-options">
-            <div className="ai-limit-option-card">
-              <div className="ai-limit-option-badge">Unlimited & Free</div>
-              <h4 className="ai-limit-option-title">Official Sample Document</h4>
-              <p className="ai-limit-option-desc">
-                Test and explore all features of the AI Summarizer, Ask PDF, and PDF Translator using our verified official sample papers at zero cost.
-              </p>
-              {onSelectSample && (
-                <AISampleDocumentButton
-                  onSelectFile={(f) => {
-                    onSelectSample(f);
-                    if (onClose) onClose();
-                  }}
-                  label="Load Sample Document"
-                  className="ai-limit-btn-sample"
-                />
-              )}
-            </div>
-
             <div className="ai-limit-option-card standard-tools">
               <div className="ai-limit-option-badge standard">Included</div>
               <h4 className="ai-limit-option-title">19 Core PDF Utilities</h4>

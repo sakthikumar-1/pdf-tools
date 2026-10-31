@@ -9,7 +9,6 @@ import {
   faBookOpen
 } from '@fortawesome/free-solid-svg-icons';
 import { formatBytes } from '../../utils/fileUtils';
-import AISampleDocumentButton from './AISampleDocumentButton';
 import './AIFileUploader.css';
 
 const MAX_FILE_SIZE_BYTES = 15 * 1024 * 1024; // 15MB
@@ -22,8 +21,7 @@ export default function AIFileUploader({
   isProcessing = false,
   error: externalError,
   title = 'Select or drop your PDF document here',
-  subtitle = 'Supports PDF documents up to 15MB',
-  showSampleButton = true
+  subtitle = 'Supports PDF documents up to 15MB'
 }) {
   const [isDragging, setIsDragging] = useState(false);
   const [internalError, setInternalError] = useState(null);
@@ -138,13 +136,6 @@ export default function AIFileUploader({
             >
               Choose PDF File
             </button>
-
-            {showSampleButton && (
-              <AISampleDocumentButton
-                onSelectFile={validateAndSelect}
-                disabled={isProcessing}
-              />
-            )}
           </div>
         </div>
       ) : (
@@ -159,7 +150,7 @@ export default function AIFileUploader({
               </span>
               <div className="ai-file-meta-tags">
                 <span className="ai-file-meta-chip">{formatBytes(file.size)}</span>
-                {pageCount !== null && pageCount !== undefined && (
+                {pageCount != null && (
                   <span className="ai-file-meta-chip page-chip">
                     <FontAwesomeIcon icon={faBookOpen} />
                     {pageCount} page{pageCount === 1 ? '' : 's'}
@@ -197,7 +188,7 @@ export default function AIFileUploader({
       )}
 
       {error && (
-        <div className="ai-uploader-error">
+        <div className="ai-uploader-error" role="alert">
           <FontAwesomeIcon icon={faCircleExclamation} />
           <span>{error}</span>
         </div>
@@ -205,4 +196,3 @@ export default function AIFileUploader({
     </div>
   );
 }
-

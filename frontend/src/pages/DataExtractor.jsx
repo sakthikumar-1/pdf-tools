@@ -247,7 +247,6 @@ export default function DataExtractor() {
             error={activeError}
             onRetry={executeExtraction}
             onReset={handleClearFile}
-            onSelectSample={handleSelectFile}
           />
         )}
 
@@ -354,7 +353,6 @@ export default function DataExtractor() {
       <AILimitReachedModal
         isOpen={limitModalOpen}
         onClose={() => setLimitModalOpen(false)}
-        onSelectSample={handleSelectFile}
       />
     </div>
   );

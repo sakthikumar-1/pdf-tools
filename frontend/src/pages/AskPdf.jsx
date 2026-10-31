@@ -320,7 +320,6 @@ export default function AskPdf() {
                 error={activeError}
                 onRetry={() => handleSendMessage()}
                 onReset={handleClearFile}
-                onSelectSample={handleSelectFile}
               />
             )}
 
@@ -444,7 +443,6 @@ export default function AskPdf() {
       <AILimitReachedModal
         isOpen={limitModalOpen}
         onClose={() => setLimitModalOpen(false)}
-        onSelectSample={handleSelectFile}
       />
     </div>
   );

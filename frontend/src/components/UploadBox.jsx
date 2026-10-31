@@ -2,7 +2,6 @@ import React, { useRef } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faCloudArrowUp,
-  faFileLines,
   faTriangleExclamation
 } from '@fortawesome/free-solid-svg-icons';
 import './UploadBox.css';
@@ -55,23 +54,6 @@ export default function UploadBox({
       } else {
         triggerFileCallback(filesArray[0]);
       }
-    }
-  };
-
-  const handleLoadSample = async (e) => {
-    e.stopPropagation();
-    try {
-      const res = await fetch('/sample_document.pdf');
-      if (!res.ok) throw new Error('Sample file request failed');
-      const blob = await res.blob();
-      const sampleFile = new File([blob], 'sample_document.pdf', { type: 'application/pdf' });
-      if (multiple) {
-        triggerFileCallback([sampleFile]);
-      } else {
-        triggerFileCallback(sampleFile);
-      }
-    } catch (err) {
-      console.warn('[UploadBox] Could not load sample document:', err);
     }
   };
 
@@ -137,20 +119,6 @@ export default function UploadBox({
 
         <div className="upload-meta-row">
           <span className="upload-limit-text">Max file size: {effectiveLimitText}</span>
-          {acceptedTypes.includes('.pdf') && (
-            <>
-              <span className="upload-meta-dot">&bull;</span>
-              <button
-                type="button"
-                className="upload-sample-link"
-                onClick={handleLoadSample}
-                title="Load sample document to test this tool"
-              >
-                <FontAwesomeIcon icon={faFileLines} />
-                <span>Try with sample PDF</span>
-              </button>
-            </>
-          )}
         </div>
       </div>
 

@@ -235,7 +235,6 @@ export default function KeyPointsExtractor() {
             error={activeError}
             onRetry={executeExtraction}
             onReset={handleClearFile}
-            onSelectSample={handleSelectFile}
           />
         )}
 
@@ -346,7 +345,6 @@ export default function KeyPointsExtractor() {
       <AILimitReachedModal
         isOpen={limitModalOpen}
         onClose={() => setLimitModalOpen(false)}
-        onSelectSample={handleSelectFile}
       />
     </div>
   );

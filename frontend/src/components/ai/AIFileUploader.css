@@ -100,34 +100,13 @@
   background-color: var(--color-primary-hover);
 }
 
-.ai-btn-sample {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.95rem;
-  font-size: 0.8rem;
-  font-weight: 500;
-  border-radius: var(--radius-sm);
-  background-color: #FFFFFF;
-  color: var(--color-heading);
-  border: 1px solid var(--color-border);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-}
 
-[data-theme="dark"] .ai-btn-sample {
-  background-color: var(--color-bg);
-}
 
-.ai-btn-sample:hover:not(:disabled) {
-  border-color: var(--color-border-hover);
-  background-color: var(--color-surface-hover);
-}
+[data-theme="dark"] 
 
-.ai-btn-sample:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
+
+
+
 
 /* Selected File Card */
 .ai-file-selected-card {

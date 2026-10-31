@@ -281,7 +281,6 @@ export default function PDFRewriter() {
             error={activeError}
             onRetry={() => executeRewrite()}
             onReset={handleClearFile}
-            onSelectSample={handleSelectFile}
           />
         )}
 
@@ -332,7 +331,6 @@ export default function PDFRewriter() {
       <AILimitReachedModal
         isOpen={limitModalOpen}
         onClose={() => setLimitModalOpen(false)}
-        onSelectSample={handleSelectFile}
       />
     </div>
   );

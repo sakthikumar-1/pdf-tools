@@ -284,7 +284,6 @@ export default function PDFTranslator() {
             error={activeError}
             onRetry={executeTranslate}
             onReset={handleClearFile}
-            onSelectSample={handleSelectFile}
           />
         )}
 
@@ -339,7 +338,6 @@ export default function PDFTranslator() {
       <AILimitReachedModal
         isOpen={limitModalOpen}
         onClose={() => setLimitModalOpen(false)}
-        onSelectSample={handleSelectFile}
       />
     </div>
   );

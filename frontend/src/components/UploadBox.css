@@ -1,6 +1,6 @@
 /* ==============================================================================
    SIMATRIX GREY PROFESSIONAL UPLOAD BOX STYLES
-   Minimalist grey/charcoal dropzone with sample document action
+   Minimalist grey/charcoal dropzone
    ============================================================================== */
 
 .upload-box-wrapper {
@@ -112,7 +112,7 @@
   border-color: var(--color-primary-active);
 }
 
-/* Metadata & Sample Document Prompt */
+/* Metadata Row */
 .upload-meta-row {
   display: flex;
   align-items: center;
@@ -128,31 +128,6 @@
   color: var(--color-text-secondary);
 }
 
-.upload-meta-dot {
-  color: var(--color-border);
-}
-
-.upload-sample-link {
-  background: none;
-  border: none;
-  color: var(--color-heading);
-  font-size: 0.785rem;
-  font-weight: 600;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0.15rem 0.45rem;
-  border-radius: var(--radius-xs);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  transition: color var(--transition-fast), background-color var(--transition-fast);
-}
-
-.upload-sample-link:hover {
-  color: var(--color-brand-red);
-  background-color: var(--color-hover-bg);
-}
 
 .upload-error-alert {
   margin-top: 0.75rem;
