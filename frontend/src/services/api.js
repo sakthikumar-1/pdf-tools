@@ -530,6 +530,7 @@ export async function summarizePdf(file, mode = 'quick', onProgress, options = {
 
     xhr.timeout = 90000;
     xhr.open('POST', url, true);
+    xhr.withCredentials = true;
 
     const token = getStoredAuthToken();
     if (token) {
@@ -644,15 +645,17 @@ export async function signPdfPython(file, signatures, onProgress) {
  */
 export async function fetchAIQuota() {
   const token = getStoredAuthToken();
-  if (!token) return null;
-
   try {
+    const headers = {
+      'Accept': 'application/json'
+    };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
     const res = await fetch(`${API_BASE_URL}/ai/quota`, {
       method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Accept': 'application/json'
-      }
+      headers,
+      credentials: 'include'
     });
     if (!res.ok) return null;
     return await res.json();
@@ -726,6 +729,7 @@ export async function chatPdfAI({
 
     xhr.timeout = 90000;
     xhr.open('POST', url, true);
+    xhr.withCredentials = true;
 
     const token = getStoredAuthToken();
     if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`);
@@ -855,6 +859,7 @@ export async function translatePdfAI({
 
     xhr.timeout = 120000;
     xhr.open('POST', url, true);
+    xhr.withCredentials = true;
 
     const token = getStoredAuthToken();
     if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`);

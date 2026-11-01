@@ -4,8 +4,6 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faArrowLeft, 
   faShieldHalved, 
-  faWandMagicSparkles, 
-  faClockRotateLeft,
   faSpinner,
   faCircleCheck,
   faBolt
@@ -17,8 +15,6 @@ import './Login.css';
 export default function Login() {
   const navigate = useNavigate();
   const { loginWithGoogle, loginAsGuest, isAuthenticated, user } = useAuth();
-  const [emailInput, setEmailInput] = useState('');
-  const [nameInput, setNameInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
@@ -35,7 +31,7 @@ export default function Login() {
               if (tokenResponse.error) {
                 console.error('Google OAuth error:', tokenResponse);
                 if (tokenResponse.error === 'popup_closed_by_user') {
-                  setError('Google popup was closed. You can also sign in instantly as Guest or use email below.');
+                  setError('Google popup was closed. You can also continue as Guest below.');
                 } else {
                   setError(`Google sign-in error (${tokenResponse.error}). You can continue as Guest below.`);
                 }
@@ -77,9 +73,9 @@ export default function Login() {
             error_callback: (err) => {
               console.warn('Google Identity error_callback:', err);
               if (err.type === 'origin_mismatch') {
-                setError('Google OAuth Error 400: origin_mismatch for local address. Use 1-Click Guest Sign-In or register your origin in Google Cloud Console.');
+                setError('Google OAuth origin mismatch for local address. You can continue as Guest below.');
               } else {
-                setError('Google Sign-In encountered an issue. You can sign in instantly as Guest below.');
+                setError('Google Sign-In encountered an issue. You can continue as Guest below.');
               }
               setIsLoading(false);
             }
@@ -129,17 +125,17 @@ export default function Login() {
             }
           },
           error_callback: (err) => {
-            setError('Google Sign-In was closed or encountered an origin mismatch. Use 1-Click Guest Sign-In below.');
+            setError('Google Sign-In was closed. You can continue as Guest below.');
             setIsLoading(false);
           }
         });
         client.requestAccessToken({ prompt: 'select_account' });
       } else {
-        setError('Google Sign-In is still connecting. You can sign in instantly as Guest below.');
+        setError('Google Sign-In is still connecting. You can continue as Guest below.');
         setIsLoading(false);
       }
     } catch (e) {
-      setError('Could not connect to Google. Use 1-Click Guest Sign-In below.');
+      setError('Could not connect to Google. You can continue as Guest below.');
       setIsLoading(false);
     }
   };
@@ -155,41 +151,6 @@ export default function Login() {
       }, 700);
     } catch (err) {
       setError(err.message || 'Guest sign-in failed. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleCustomSubmit = async (e) => {
-    if (e && e.preventDefault) e.preventDefault();
-    setIsLoading(true);
-    setError(null);
-    try {
-      const cleanInput = (emailInput || '').trim();
-      if (!cleanInput) {
-        // Empty input -> Instant Guest login
-        await loginAsGuest();
-      } else if (cleanInput.includes('@')) {
-        await loginWithGoogle({
-          email: cleanInput,
-          name: nameInput.trim() || cleanInput.split('@')[0],
-          avatar_url: ''
-        });
-      } else {
-        // Username without @
-        await loginWithGoogle({
-          email: `${cleanInput.toLowerCase().replace(/[^a-z0-9_]/g, '')}@simatrix.local`,
-          name: cleanInput,
-          avatar_url: '',
-          is_guest: true
-        });
-      }
-      setSuccess(true);
-      setTimeout(() => {
-        navigate('/account');
-      }, 700);
-    } catch (err) {
-      setError(err.message || 'Authentication failed. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -235,9 +196,9 @@ export default function Login() {
           <div className="login-logo-mark">
             <img src="/logo.png" alt="Simatrix Logo" className="login-logo-img" />
           </div>
-          <h1 className="login-title">Sign in to Simatrix</h1>
+          <h1 className="login-title">Sign in to Simatrix PDF</h1>
           <p className="login-subtitle">
-            Save your document conversion history metadata and unlock personalized workspace preferences.
+            Choose how you would like to proceed with Simatrix PDF.
           </p>
         </div>
 
@@ -256,101 +217,78 @@ export default function Login() {
             )}
 
             <div className="login-actions">
-              {/* 1-Click Instant Guest Sign-In */}
+              {/* 1. Continue as Guest Button */}
               <button
                 type="button"
                 className="guest-signin-btn"
                 onClick={handleGuestSignIn}
                 disabled={isLoading}
               >
-                {isLoading ? (
-                  <FontAwesomeIcon icon={faSpinner} spin />
-                ) : (
-                  <FontAwesomeIcon icon={faBolt} className="guest-bolt-icon" />
-                )}
-                <span>Continue as Guest (No Email Needed)</span>
+                <div className="btn-content-stacked">
+                  <div className="btn-title-row">
+                    {isLoading ? (
+                      <FontAwesomeIcon icon={faSpinner} spin />
+                    ) : (
+                      <FontAwesomeIcon icon={faBolt} className="guest-bolt-icon" />
+                    )}
+                    <span className="btn-main-title">Continue as Guest</span>
+                  </div>
+                  <span className="btn-sub-copy">
+                    One guest profile per browser. Includes one free AI request.
+                  </span>
+                </div>
               </button>
 
+              {/* 2. Continue with Google Button */}
               <button 
                 type="button" 
                 className="google-signin-btn"
                 onClick={handleGoogleSignInClick}
                 disabled={isLoading}
               >
-                {isLoading ? (
-                  <FontAwesomeIcon icon={faSpinner} spin />
-                ) : (
-                  <svg className="google-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
-                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-                  </svg>
-                )}
-                <span>{isLoading ? 'Connecting to Google...' : 'Continue with Google'}</span>
-              </button>
-
-              <div style={{ display: 'flex', alignItems: 'center', textAlign: 'center', color: 'var(--color-text-muted)', fontSize: '0.8rem', margin: '0.5rem 0' }}>
-                <span style={{ flex: 1, borderBottom: '1px solid var(--color-border)' }}></span>
-                <span style={{ padding: '0 0.65rem' }}>or enter email or nickname</span>
-                <span style={{ flex: 1, borderBottom: '1px solid var(--color-border)' }}></span>
-              </div>
-
-              <form onSubmit={handleCustomSubmit} style={{ display: 'flex', gap: '0.5rem' }}>
-                <input
-                  type="text"
-                  value={emailInput}
-                  onChange={(e) => setEmailInput(e.target.value)}
-                  placeholder="your.email@gmail.com or nickname"
-                  style={{ flex: 1, padding: '0.75rem 1rem', background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '8px', color: 'var(--color-heading)', fontSize: '0.92rem', outline: 'none' }}
-                />
-                <button
-                  type="submit"
-                  className="btn btn-secondary btn-md"
-                  disabled={isLoading}
-                  style={{ whiteSpace: 'nowrap' }}
-                >
-                  Sign in
-                </button>
-              </form>
-
-              <button 
-                type="button" 
-                className="continue-anonymous-btn"
-                onClick={() => navigate('/')}
-              >
-                <span>Continue browsing without signing in &rarr;</span>
+                <div className="btn-content-stacked">
+                  <div className="btn-title-row">
+                    {isLoading ? (
+                      <FontAwesomeIcon icon={faSpinner} spin />
+                    ) : (
+                      <svg className="google-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                      </svg>
+                    )}
+                    <span className="btn-main-title">
+                      {isLoading ? 'Connecting to Google...' : 'Continue with Google'}
+                    </span>
+                  </div>
+                  <span className="btn-sub-copy">
+                    Get five AI requests and a personalized workspace.
+                  </span>
+                </div>
               </button>
             </div>
 
-            <div className="login-features">
-              <div className="login-feature-item">
-                <FontAwesomeIcon icon={faShieldHalved} className="feature-item-icon" />
-                <div>
-                  <strong>Zero Document Retention</strong>
-                  <p>Files are processed in memory and never stored on disk.</p>
-                </div>
+            {/* 3. Privacy Information Panel */}
+            <div className="login-privacy-callout">
+              <div className="privacy-callout-header">
+                <FontAwesomeIcon icon={faShieldHalved} className="callout-icon" />
+                <strong>Privacy & Document Processing Notice</strong>
               </div>
-              <div className="login-feature-item">
-                <FontAwesomeIcon icon={faClockRotateLeft} className="feature-item-icon" />
-                <div>
-                  <strong>Metadata-Only History</strong>
-                  <p>Only document names and processing timestamps are recorded.</p>
-                </div>
-              </div>
-              <div className="login-feature-item">
-                <FontAwesomeIcon icon={faWandMagicSparkles} className="feature-item-icon" />
-                <div>
-                  <strong>Google Gemini AI Access</strong>
-                  <p>Summarize complex documents with intelligent multi-mode briefing.</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="login-footer">
-              <p>
-                By signing in, you agree to Simatrix Terms of Service and Privacy Policy. All 18 standard PDF utilities remain 100% free for anonymous users.
-              </p>
+              <ul className="privacy-disclosure-list">
+                <li>
+                  <strong>Temporary Upload Deletion:</strong> Uploaded document files are automatically and permanently deleted from temporary server storage immediately after conversion finishes.
+                </li>
+                <li>
+                  <strong>External AI Processing:</strong> Upon explicit user consent, document content is transmitted securely to external AI providers (DeepSeek and Google Gemini) in accordance with enterprise data protection standards.
+                </li>
+                <li>
+                  <strong>Ask PDF Context:</strong> Extracted document text chunks for Ask PDF sessions are retained in an encrypted session index for up to 24 hours to enable conversational context, after which they are purged.
+                </li>
+                <li>
+                  <strong>Device Identity:</strong> Anonymous guest access uses an encrypted, privacy-preserving browser device token to maintain your 1 free AI request without requiring personal information.
+                </li>
+              </ul>
             </div>
           </>
         )}

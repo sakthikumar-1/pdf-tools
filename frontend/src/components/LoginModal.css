@@ -407,3 +407,65 @@
   margin: 0;
 }
 
+/* Redesigned Button Subtitles & Privacy Disclosures */
+.btn-content-stacked {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  width: 100%;
+}
+
+.btn-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  font-size: 0.98rem;
+  font-weight: 700;
+}
+
+.guest-signin-btn .btn-sub-copy {
+  font-size: 0.76rem;
+  font-weight: 400;
+  opacity: 0.92;
+  color: #FFFFFF !important;
+}
+
+.google-signin-btn .btn-sub-copy {
+  font-size: 0.76rem;
+  font-weight: 400;
+  color: #6B7280 !important;
+}
+
+[data-theme="dark"] .google-signin-btn .btn-sub-copy {
+  color: #9CA3AF !important;
+}
+
+.privacy-callout-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+  color: var(--color-heading);
+  font-weight: 700;
+  margin-bottom: 0.4rem;
+}
+
+.privacy-disclosure-list {
+  margin: 0;
+  padding-left: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  font-size: 0.74rem;
+  color: var(--color-text-secondary);
+  line-height: 1.45;
+}
+
+.privacy-disclosure-list li strong {
+  color: var(--color-heading);
+}
+
+

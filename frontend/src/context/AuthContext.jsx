@@ -18,27 +18,31 @@ export function AuthProvider({ children }) {
 
   const [isLoading, setIsLoading] = useState(true);
 
-  // Verify session on mount
+  // Verify session on mount (supports Bearer token and persistent guest device cookie)
   useEffect(() => {
     async function verifySession() {
       const savedToken = localStorage.getItem('simatrix_auth_token');
-      if (!savedToken) {
-        setIsLoading(false);
-        return;
-      }
 
       try {
+        const headers = {};
+        if (savedToken) {
+          headers['Authorization'] = `Bearer ${savedToken}`;
+        }
+
         const res = await fetch('/api/v1/auth/me', {
-          headers: {
-            'Authorization': `Bearer ${savedToken}`
-          }
+          headers,
+          credentials: 'include'
         });
 
         if (res.ok) {
           const data = await res.json();
           setUser(data.user);
+          if (data.token) {
+            setToken(data.token);
+            localStorage.setItem('simatrix_auth_token', data.token);
+          }
           localStorage.setItem('simatrix_auth_user', JSON.stringify(data.user));
-        } else {
+        } else if (savedToken) {
           // Token expired or invalid
           setUser(null);
           setToken(null);
@@ -62,12 +66,13 @@ export function AuthProvider({ children }) {
         headers: {
           'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify(payload)
       });
 
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.detail || 'Sign-in failed. Please try again or use 1-Click Guest access.');
+        throw new Error(errData.detail || errData.message || 'Sign-in failed. Please try again.');
       }
 
       const data = await res.json();
@@ -82,16 +87,39 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const loginAsGuest = async (customName = '') => {
-    return loginWithGoogle({
-      is_guest: true,
-      name: customName || 'Guest User'
-    });
+  const loginAsGuest = async () => {
+    try {
+      const res = await fetch('/api/v1/auth/guest', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include'
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.detail || errData.message || 'Guest sign-in failed. Please try again.');
+      }
+
+      const data = await res.json();
+      setToken(data.token);
+      setUser(data.user);
+      localStorage.setItem('simatrix_auth_token', data.token);
+      localStorage.setItem('simatrix_auth_user', JSON.stringify(data.user));
+      return data.user;
+    } catch (err) {
+      console.error('Guest login error:', err);
+      throw err;
+    }
   };
 
   const logout = async () => {
     try {
-      await fetch('/api/v1/auth/logout', { method: 'POST' }).catch(() => {});
+      await fetch('/api/v1/auth/logout', {
+        method: 'POST',
+        credentials: 'include'
+      }).catch(() => {});
     } finally {
       setUser(null);
       setToken(null);
