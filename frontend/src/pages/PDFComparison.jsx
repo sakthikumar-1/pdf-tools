@@ -15,6 +15,7 @@ import {
 import {
   AIQuotaBanner,
   AIConsentDialog,
+  AIConsentDisclosure,
   hasUserGivenAIConsent,
   setUserAIConsent,
   AIProcessingIndicator,
@@ -102,9 +103,7 @@ export default function PDFComparison() {
     }
 
     if (!hasUserGivenAIConsent()) {
-      pendingOperationRef.current = executeComparison;
-      setConsentDialogOpen(true);
-      return;
+      setUserAIConsent(true);
     }
 
     setIsProcessing(true);
@@ -280,6 +279,8 @@ export default function PDFComparison() {
             )}
           </div>
         </div>
+
+        <AIConsentDisclosure />
 
         {/* Action Controls */}
         <div className="cmp-actions-center">

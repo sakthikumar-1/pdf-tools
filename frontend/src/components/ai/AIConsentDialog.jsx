@@ -1,28 +1,34 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faShieldHalved,
   faCircleCheck,
   faXmark,
-  faExternalLinkAlt,
   faClock,
   faServer
 } from '@fortawesome/free-solid-svg-icons';
 import './AIConsentDialog.css';
 
 export const AI_CONSENT_STORAGE_KEY = 'simatrix_ai_consent_accepted';
+export const AI_CONSENT_VERSION_KEY = 'simatrix_ai_consent_policy_version';
+export const CURRENT_CONSENT_POLICY_VERSION = '2026.1';
 
 export function hasUserGivenAIConsent() {
   if (typeof window === 'undefined') return false;
-  return localStorage.getItem(AI_CONSENT_STORAGE_KEY) === 'true';
+  const isAccepted = localStorage.getItem(AI_CONSENT_STORAGE_KEY) === 'true';
+  const storedVersion = localStorage.getItem(AI_CONSENT_VERSION_KEY);
+  return isAccepted && storedVersion === CURRENT_CONSENT_POLICY_VERSION;
 }
 
 export function setUserAIConsent(val = true) {
   if (typeof window === 'undefined') return;
   if (val) {
     localStorage.setItem(AI_CONSENT_STORAGE_KEY, 'true');
+    localStorage.setItem(AI_CONSENT_VERSION_KEY, CURRENT_CONSENT_POLICY_VERSION);
   } else {
     localStorage.removeItem(AI_CONSENT_STORAGE_KEY);
+    localStorage.removeItem(AI_CONSENT_VERSION_KEY);
   }
 }
 
@@ -55,7 +61,7 @@ export default function AIConsentDialog({
             <FontAwesomeIcon icon={faShieldHalved} />
           </div>
           <div className="ai-consent-header-text">
-            <h3 id="ai-consent-title" className="ai-consent-title">External AI Processing Notice</h3>
+            <h3 id="ai-consent-title" className="ai-consent-title">Simatrix AI Processing Notice</h3>
             <span className="ai-consent-subtitle">Privacy & Data Governance Disclosure</span>
           </div>
           {showCancel && (
@@ -72,7 +78,7 @@ export default function AIConsentDialog({
 
         <div className="ai-consent-body">
           <p className="ai-consent-intro">
-            Simatrix PDF uses modern artificial intelligence engines (<strong>DeepSeek API</strong> and <strong>Google Gemini API</strong>) to process document requests, extract structured summaries, and power grounded document search.
+            Simatrix AI uses secure enterprise processing infrastructure to analyze documents, extract structured summaries, and power grounded document search.
           </p>
 
           <div className="ai-consent-points">
@@ -81,7 +87,7 @@ export default function AIConsentDialog({
                 <FontAwesomeIcon icon={faServer} />
               </div>
               <div className="ai-point-text">
-                <strong>Ephemeral Processing:</strong> Extracted document text is transmitted securely over TLS to external AI providers exclusively to execute your prompt.
+                <strong>Secure Processing:</strong> Extracted document text is transmitted securely over TLS exclusively to execute your requested AI operation.
               </div>
             </div>
 
@@ -99,7 +105,10 @@ export default function AIConsentDialog({
                 <FontAwesomeIcon icon={faCircleCheck} />
               </div>
               <div className="ai-point-text">
-                <strong>No Public Model Training:</strong> Your uploaded documents are processed via enterprise API agreements and are not used for public model retraining.
+                <strong>No Public Model Training:</strong> Your documents are processed under strict enterprise agreements and are not used to train public foundation models.{' '}
+                <Link to="/privacy" target="_blank" rel="noopener noreferrer">
+                  Learn more
+                </Link>
               </div>
             </div>
           </div>
@@ -136,4 +145,3 @@ export default function AIConsentDialog({
     </div>
   );
 }
-

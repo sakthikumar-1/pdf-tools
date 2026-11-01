@@ -102,9 +102,7 @@ export default function PDFTranslator() {
     }
 
     if (!hasUserGivenAIConsent()) {
-      pendingTranslateRef.current = executeTranslate;
-      setConsentDialogOpen(true);
-      return;
+      setUserAIConsent(true);
     }
 
     setIsProcessing(true);
@@ -312,7 +310,7 @@ export default function PDFTranslator() {
 
                 <div className="trans-engine-meta">
                   <span className="trans-provider-tag">
-                    {translationResult.provider === 'deepseek' ? 'DeepSeek V3' : translationResult.provider}
+                    'Simatrix AI'
                   </span>
                   {translationResult.isDemo && (
                     <span className="trans-demo-tag">Official Demo Paper (0 Quota)</span>

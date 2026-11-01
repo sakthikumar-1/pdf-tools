@@ -22,7 +22,7 @@ export default function Footer() {
           <nav className="footer-nav-links" aria-label="Footer Navigation">
             <a href="#about" className="footer-link">About</a>
             <a href="#contact" className="footer-link">Contact</a>
-            <a href="#privacy" className="footer-link">Privacy Policy</a>
+            <Link to="/privacy" className="footer-link">Privacy Policy</Link>
             <a href="#terms" className="footer-link">Terms of Service</a>
             <a href="#feedback" className="footer-link">Feedback</a>
           </nav>

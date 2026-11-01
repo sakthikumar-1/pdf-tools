@@ -135,9 +135,7 @@ export default function AISummarizer() {
 
     // Check external consent
     if (!hasUserGivenAIConsent()) {
-      pendingOperationRef.current = () => executeSummarize(mode);
-      setConsentDialogOpen(true);
-      return;
+      setUserAIConsent(true);
     }
 
     setIsProcessing(true);
@@ -254,7 +252,7 @@ export default function AISummarizer() {
         <div className="ai-tool-info">
           <h1 className="ai-tool-title">AI PDF Summarizer</h1>
           <p className="ai-tool-desc">
-            Executive briefings, detailed analyses, and structured key points powered by DeepSeek & Google Gemini.
+            Executive briefings, detailed analyses, and structured key points powered by Simatrix AI.
           </p>
         </div>
       </div>
@@ -365,7 +363,7 @@ export default function AISummarizer() {
                 </div>
                 <div className="ai-result-engine-meta">
                   <span className="ai-engine-tag">
-                    {summaryResult.provider === 'deepseek' ? 'DeepSeek V3' : summaryResult.provider}
+                    'Simatrix AI'
                   </span>
                   {summaryResult.isDemo && (
                     <span className="ai-demo-tag">Official Demo Paper (0 Quota)</span>

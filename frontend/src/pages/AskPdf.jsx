@@ -132,9 +132,7 @@ export default function AskPdf() {
     }
 
     if (!hasUserGivenAIConsent()) {
-      pendingQueryRef.current = q;
-      setConsentDialogOpen(true);
-      return;
+      setUserAIConsent(true);
     }
 
     // Add user message to UI immediately
@@ -240,7 +238,7 @@ export default function AskPdf() {
         <div className="ai-tool-info">
           <h1 className="ai-tool-title">Ask PDF (AI Chat)</h1>
           <p className="ai-tool-desc">
-            Chat with any PDF document. Get answers with exact page citations, powered by grounded BM25 chunk retrieval and DeepSeek / Gemini AI.
+            Chat with any PDF document. Get answers with exact page citations, powered by grounded BM25 chunk retrieval and Simatrix AI.
           </p>
         </div>
       </div>

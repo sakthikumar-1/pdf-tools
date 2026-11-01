@@ -280,7 +280,7 @@ export default function Login() {
                   <strong>Temporary Upload Deletion:</strong> Uploaded document files are automatically and permanently deleted from temporary server storage immediately after conversion finishes.
                 </li>
                 <li>
-                  <strong>External AI Processing:</strong> Upon explicit user consent, document content is transmitted securely to external AI providers (DeepSeek and Google Gemini) in accordance with enterprise data protection standards.
+                  <strong>Simatrix AI Processing:</strong> Upon user consent, document content is processed securely using enterprise cloud AI infrastructure in accordance with strict data protection standards and zero public model training.
                 </li>
                 <li>
                   <strong>Ask PDF Context:</strong> Extracted document text chunks for Ask PDF sessions are retained in an encrypted session index for up to 24 hours to enable conversational context, after which they are purged.

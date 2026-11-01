@@ -39,7 +39,7 @@ export default function AIProcessingIndicator({
           </span>
         </div>
         <p className="ai-processing-sub">
-          Processing via DeepSeek / Gemini AI. Token streaming active.
+          Simatrix AI is analyzing your document and preparing the results.
         </p>
       </div>
 

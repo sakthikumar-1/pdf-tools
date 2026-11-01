@@ -96,9 +96,7 @@ export default function DataExtractor() {
     }
 
     if (!hasUserGivenAIConsent()) {
-      pendingOperationRef.current = executeExtraction;
-      setConsentDialogOpen(true);
-      return;
+      setUserAIConsent(true);
     }
 
     setIsProcessing(true);

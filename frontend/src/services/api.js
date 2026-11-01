@@ -538,6 +538,7 @@ export async function summarizePdf(file, mode = 'quick', onProgress, options = {
     }
     if (options.consent !== false) {
       xhr.setRequestHeader('X-Simatrix-AI-Consent', 'true');
+      xhr.setRequestHeader('X-Simatrix-Policy-Version', '2026.1');
     }
     if (options.idempotencyKey) {
       xhr.setRequestHeader('X-Simatrix-Idempotency-Key', options.idempotencyKey);
@@ -734,6 +735,7 @@ export async function chatPdfAI({
     const token = getStoredAuthToken();
     if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`);
     if (consent !== false) xhr.setRequestHeader('X-Simatrix-AI-Consent', 'true');
+      xhr.setRequestHeader('X-Simatrix-Policy-Version', '2026.1');
     if (idempotencyKey) xhr.setRequestHeader('X-Simatrix-Idempotency-Key', idempotencyKey);
 
     xhr.send(formData);
@@ -864,6 +866,7 @@ export async function translatePdfAI({
     const token = getStoredAuthToken();
     if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`);
     if (consent !== false) xhr.setRequestHeader('X-Simatrix-AI-Consent', 'true');
+      xhr.setRequestHeader('X-Simatrix-Policy-Version', '2026.1');
     if (idempotencyKey) xhr.setRequestHeader('X-Simatrix-Idempotency-Key', idempotencyKey);
 
     xhr.send(formData);
@@ -959,6 +962,7 @@ async function callGenericAITool({
     const token = getStoredAuthToken();
     if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`);
     if (consent !== false) xhr.setRequestHeader('X-Simatrix-AI-Consent', 'true');
+      xhr.setRequestHeader('X-Simatrix-Policy-Version', '2026.1');
     if (idempotencyKey) xhr.setRequestHeader('X-Simatrix-Idempotency-Key', idempotencyKey);
 
     xhr.send(formData);

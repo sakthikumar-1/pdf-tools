@@ -130,9 +130,7 @@ export default function PDFRewriter() {
     }
 
     if (!hasUserGivenAIConsent()) {
-      pendingOperationRef.current = () => executeRewrite(styleToUse);
-      setConsentDialogOpen(true);
-      return;
+      setUserAIConsent(true);
     }
 
     setIsProcessing(true);

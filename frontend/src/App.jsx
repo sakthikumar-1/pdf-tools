@@ -24,6 +24,7 @@ const ComingSoonTool = lazy(() => import('./pages/ComingSoonTool'));
 const Login = lazy(() => import('./pages/Login'));
 const Account = lazy(() => import('./pages/Account'));
 const History = lazy(() => import('./pages/History'));
+const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 
 function PageLoader() {
@@ -326,6 +327,10 @@ export default function App() {
 
               {/* Dynamic Category Slug fallback */}
               <Route path="/tools/:categorySlug" element={<CategoryPage />} />
+
+              {/* Privacy Policy */}
+              <Route path="/privacy" element={<PrivacyPolicy />} />
+              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
 
               {/* 404 Route */}
               <Route path="*" element={<NotFound />} />

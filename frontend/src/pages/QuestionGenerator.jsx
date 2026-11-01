@@ -102,9 +102,7 @@ export default function QuestionGenerator() {
     }
 
     if (!hasUserGivenAIConsent()) {
-      pendingOperationRef.current = executeGeneration;
-      setConsentDialogOpen(true);
-      return;
+      setUserAIConsent(true);
     }
 
     setIsProcessing(true);

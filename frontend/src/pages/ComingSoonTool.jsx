@@ -83,7 +83,7 @@ export default function ComingSoonTool({ toolId: explicitToolId }) {
             <div className="cs-alt-text">
               <h3 className="cs-alt-title">Need Key Points Extracted Right Now?</h3>
               <p className="cs-alt-desc">
-                Our <strong>AI PDF Summarizer</strong> includes a dedicated <strong>Key Points Mode</strong> that extracts high-impact bulleted takeaways, critical decisions, and metrics using DeepSeek and Google Gemini.
+                Our <strong>AI PDF Summarizer</strong> includes a dedicated <strong>Key Points Mode</strong> that extracts high-impact bulleted takeaways, critical decisions, and metrics using Simatrix AI.
               </p>
             </div>
           </div>

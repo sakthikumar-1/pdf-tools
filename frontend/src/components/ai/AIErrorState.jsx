@@ -42,11 +42,15 @@ export default function AIErrorState({
     icon = faLock;
     title = 'Password Protected Document';
     isEncrypted = true;
-  } else if (lowerMsg.includes('scanned') || lowerMsg.includes('image-only') || lowerMsg.includes('no selectable text')) {
+  } else if (errorCode === 'SCANNED_PDF' || lowerMsg.includes('scanned') || lowerMsg.includes('image-only') || lowerMsg.includes('image-based') || lowerMsg.includes('no selectable text')) {
     icon = faImage;
-    title = 'Scanned or Image-Only PDF';
+    title = 'Scanned PDF Detected';
     isScanned = true;
   }
+
+  const displayMessage = isScanned
+    ? 'This PDF contains image-based pages. Text extraction is not available for this document yet. Please try a digitally generated PDF.'
+    : rawMessage;
 
   return (
     <div className={`ai-error-state ${isQuotaExceeded ? 'quota-error' : ''}`}>
@@ -56,7 +60,7 @@ export default function AIErrorState({
 
       <div className="ai-error-content">
         <h4 className="ai-error-title">{title}</h4>
-        <p className="ai-error-message">{rawMessage}</p>
+        <p className="ai-error-message">{displayMessage}</p>
 
         <div className="ai-error-actions">
           {onRetry && !isQuotaExceeded && (

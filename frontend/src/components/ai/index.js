@@ -1,5 +1,6 @@
 export { default as AIQuotaBanner } from './AIQuotaBanner';
-export { default as AIConsentDialog, hasUserGivenAIConsent, setUserAIConsent } from './AIConsentDialog';
+export { default as AIConsentDialog, hasUserGivenAIConsent, setUserAIConsent, CURRENT_CONSENT_POLICY_VERSION } from './AIConsentDialog';
+export { default as AIConsentDisclosure } from './AIConsentDisclosure';
 export { default as AIFileUploader } from './AIFileUploader';
 export { default as AIProcessingIndicator } from './AIProcessingIndicator';
 export { default as AIErrorState } from './AIErrorState';
