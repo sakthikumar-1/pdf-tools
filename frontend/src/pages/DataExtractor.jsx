@@ -12,6 +12,7 @@ import {
 import {
   AIQuotaBanner,
   AIConsentDialog,
+  AIConsentDisclosure,
   hasUserGivenAIConsent,
   setUserAIConsent,
   AIFileUploader,
@@ -237,6 +238,12 @@ export default function DataExtractor() {
         {/* Step 2: Action Button */}
         {selectedFile && !result && !isProcessing && (
           <div className="de-action-row">
+            <AIConsentDisclosure
+              consented={consented}
+              onConsentChange={handleConsentChange}
+              error={consentError}
+              disabled={isProcessing}
+            />
             <button
               type="button"
               className="ai-btn-generate-main"
@@ -246,6 +253,9 @@ export default function DataExtractor() {
               <FontAwesomeIcon icon={faTable} />
               <span>Extract Structured Data Now</span>
             </button>
+            <span className="ai-btn-quota-hint">
+              Consumes 1 AI credit {quota ? `• ${quota.remaining} remaining` : ''}
+            </span>
           </div>
         )}
 

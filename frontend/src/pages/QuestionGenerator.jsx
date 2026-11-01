@@ -13,6 +13,7 @@ import {
 import {
   AIQuotaBanner,
   AIConsentDialog,
+  AIConsentDisclosure,
   hasUserGivenAIConsent,
   setUserAIConsent,
   AIFileUploader,
@@ -227,6 +228,12 @@ export default function QuestionGenerator() {
         {/* Step 2: Action Button */}
         {selectedFile && !result && !isProcessing && (
           <div className="qg-action-row">
+            <AIConsentDisclosure
+              consented={consented}
+              onConsentChange={handleConsentChange}
+              error={consentError}
+              disabled={isProcessing}
+            />
             <button
               type="button"
               className="ai-btn-generate-main"
@@ -236,6 +243,9 @@ export default function QuestionGenerator() {
               <FontAwesomeIcon icon={faCircleQuestion} />
               <span>Generate Questions Now</span>
             </button>
+            <span className="ai-btn-quota-hint">
+              Consumes 1 AI credit {quota ? `• ${quota.remaining} remaining` : ''}
+            </span>
           </div>
         )}
 

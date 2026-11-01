@@ -7,11 +7,13 @@ import {
   faBolt,
   faAlignLeft,
   faListCheck,
-  faListOl
+  faListOl,
+  faCircleCheck
 } from '@fortawesome/free-solid-svg-icons';
 import {
   AIQuotaBanner,
   AIConsentDialog,
+  AIConsentDisclosure,
   hasUserGivenAIConsent,
   setUserAIConsent,
   AIFileUploader,
@@ -313,7 +315,14 @@ export default function AISummarizer() {
                       <div className="mode-icon-box">
                         <FontAwesomeIcon icon={mode.icon} />
                       </div>
-                      <span className="mode-badge">{mode.badge}</span>
+                      <div className="mode-badges-wrap">
+                        <span className={`mode-badge mode-badge-${mode.id}`}>{mode.badge}</span>
+                        {isSelected && (
+                          <span className="mode-selected-pill" aria-label="Selected">
+                            <FontAwesomeIcon icon={faCircleCheck} />
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <h4 className="mode-title">{mode.title}</h4>
                     <p className="mode-desc">{mode.description}</p>
@@ -324,16 +333,28 @@ export default function AISummarizer() {
             </div>
 
             {!summaryResult && (
-              <div className="ai-generate-row">
-                <button
-                  type="button"
-                  className="ai-btn-generate-main"
-                  onClick={() => executeSummarize()}
+              <div className="ai-action-container">
+                <AIConsentDisclosure
+                  consented={consented}
+                  onConsentChange={handleConsentChange}
+                  error={consentError}
                   disabled={isProcessing}
-                >
-                  <FontAwesomeIcon icon={faWandMagicSparkles} />
-                  <span>Generate Summary Now</span>
-                </button>
+                />
+
+                <div className="ai-generate-row">
+                  <button
+                    type="button"
+                    className="ai-btn-generate-main"
+                    onClick={() => executeSummarize()}
+                    disabled={isProcessing}
+                  >
+                    <FontAwesomeIcon icon={faWandMagicSparkles} />
+                    <span>Generate Summary Now</span>
+                  </button>
+                  <span className="ai-btn-quota-hint">
+                    Consumes 1 AI credit {quota ? `• ${quota.remaining} remaining` : ''}
+                  </span>
+                </div>
               </div>
             )}
           </div>

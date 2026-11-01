@@ -15,6 +15,7 @@ import {
 import {
   AIQuotaBanner,
   AIConsentDialog,
+  AIConsentDisclosure,
   hasUserGivenAIConsent,
   setUserAIConsent,
   AIFileUploader,
@@ -258,6 +259,12 @@ export default function PDFTranslator() {
         {/* Step 2: Language Selector & Translate Button */}
         {selectedFile && !isProcessing && (
           <div className="translator-config-panel">
+            <AIConsentDisclosure
+              consented={consented}
+              onConsentChange={handleConsentChange}
+              error={consentError}
+              disabled={isProcessing}
+            />
             <div className="translator-controls-row">
               <div className="translator-lang-wrapper">
                 <AILanguageSelector
@@ -282,6 +289,9 @@ export default function PDFTranslator() {
                 <FontAwesomeIcon icon={faLanguage} />
                 <span>Translate Document Now</span>
               </button>
+            <span className="ai-btn-quota-hint">
+              Consumes 1 AI credit {quota ? `• ${quota.remaining} remaining` : ''}
+            </span>
             </div>
           </div>
         )}

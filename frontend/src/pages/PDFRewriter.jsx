@@ -14,6 +14,7 @@ import {
 import {
   AIQuotaBanner,
   AIConsentDialog,
+  AIConsentDisclosure,
   hasUserGivenAIConsent,
   setUserAIConsent,
   AIFileUploader,
@@ -268,16 +269,27 @@ export default function PDFRewriter() {
             </div>
 
             {!result && (
-              <div className="rw-action-row">
-                <button
-                  type="button"
-                  className="ai-btn-generate-main"
-                  onClick={() => executeRewrite()}
+              <div className="rw-action-container">
+                <AIConsentDisclosure
+                  consented={consented}
+                  onConsentChange={handleConsentChange}
+                  error={consentError}
                   disabled={isProcessing}
-                >
-                  <FontAwesomeIcon icon={faPenNib} />
-                  <span>Rewrite Document Now</span>
-                </button>
+                />
+                <div className="rw-action-row">
+                  <button
+                    type="button"
+                    className="ai-btn-generate-main"
+                    onClick={() => executeRewrite()}
+                    disabled={isProcessing}
+                  >
+                    <FontAwesomeIcon icon={faPenNib} />
+                    <span>Rewrite Document Now</span>
+                  </button>
+                  <span className="ai-btn-quota-hint">
+                    Consumes 1 AI credit {quota ? `• ${quota.remaining} remaining` : ''}
+                  </span>
+                </div>
               </div>
             )}
           </div>

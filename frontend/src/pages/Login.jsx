@@ -6,7 +6,12 @@ import {
   faShieldHalved, 
   faSpinner,
   faCircleCheck,
-  faBolt
+  faBolt,
+  faTrashCan,
+  faBrain,
+  faClock,
+  faLock,
+  faArrowRight
 } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '../context/AuthContext';
 import { GOOGLE_CLIENT_ID } from '../config/auth';
@@ -269,26 +274,64 @@ export default function Login() {
               </button>
             </div>
 
-            {/* 3. Privacy Information Panel */}
-            <div className="login-privacy-callout">
-              <div className="privacy-callout-header">
-                <FontAwesomeIcon icon={faShieldHalved} className="callout-icon" />
-                <strong>Privacy & Document Processing Notice</strong>
+            {/* 3. Privacy & Trust Information Panel */}
+            <div className="login-privacy-card">
+              <div className="privacy-card-header">
+                <div className="privacy-card-title-row">
+                  <FontAwesomeIcon icon={faShieldHalved} className="privacy-shield-icon" />
+                  <span>Privacy & Document Protection</span>
+                </div>
+                <span className="privacy-trust-pill">Zero Model Training</span>
               </div>
-              <ul className="privacy-disclosure-list">
-                <li>
-                  <strong>Temporary Upload Deletion:</strong> Uploaded document files are automatically and permanently deleted from temporary server storage immediately after conversion finishes.
-                </li>
-                <li>
-                  <strong>Simatrix AI Processing:</strong> Upon user consent, document content is processed securely using enterprise cloud AI infrastructure in accordance with strict data protection standards and zero public model training.
-                </li>
-                <li>
-                  <strong>Ask PDF Context:</strong> Extracted document text chunks for Ask PDF sessions are retained in an encrypted session index for up to 24 hours to enable conversational context, after which they are purged.
-                </li>
-                <li>
-                  <strong>Device Identity:</strong> Anonymous guest access uses an encrypted, privacy-preserving browser device token to maintain your 1 free AI request without requiring personal information.
-                </li>
-              </ul>
+
+              <div className="privacy-trust-grid">
+                <div className="privacy-trust-item">
+                  <div className="privacy-trust-icon-box">
+                    <FontAwesomeIcon icon={faTrashCan} />
+                  </div>
+                  <div className="privacy-trust-info">
+                    <strong>Automatic File Deletion</strong>
+                    <p>Uploaded documents are purged within 15 minutes of completion.</p>
+                  </div>
+                </div>
+
+                <div className="privacy-trust-item">
+                  <div className="privacy-trust-icon-box">
+                    <FontAwesomeIcon icon={faBrain} />
+                  </div>
+                  <div className="privacy-trust-info">
+                    <strong>Zero Model Training</strong>
+                    <p>Your document text and queries are never used to train public AI models.</p>
+                  </div>
+                </div>
+
+                <div className="privacy-trust-item">
+                  <div className="privacy-trust-icon-box">
+                    <FontAwesomeIcon icon={faClock} />
+                  </div>
+                  <div className="privacy-trust-info">
+                    <strong>Ask PDF Session TTL</strong>
+                    <p>Conversational chunks expire and are purged after 24 hours.</p>
+                  </div>
+                </div>
+
+                <div className="privacy-trust-item">
+                  <div className="privacy-trust-icon-box">
+                    <FontAwesomeIcon icon={faLock} />
+                  </div>
+                  <div className="privacy-trust-info">
+                    <strong>Anonymous Device Token</strong>
+                    <p>Private 1-request guest access without requiring email or password.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="privacy-card-footer">
+                <Link to="/privacy" className="privacy-policy-link">
+                  <span>Read our full Privacy & Governance Policy</span>
+                  <FontAwesomeIcon icon={faArrowRight} />
+                </Link>
+              </div>
             </div>
           </>
         )}

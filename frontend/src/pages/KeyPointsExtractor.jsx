@@ -13,6 +13,7 @@ import {
 import {
   AIQuotaBanner,
   AIConsentDialog,
+  AIConsentDisclosure,
   hasUserGivenAIConsent,
   setUserAIConsent,
   AIFileUploader,
@@ -225,6 +226,12 @@ export default function KeyPointsExtractor() {
         {/* Step 2: Action Button */}
         {selectedFile && !result && !isProcessing && (
           <div className="kp-action-row">
+            <AIConsentDisclosure
+              consented={consented}
+              onConsentChange={handleConsentChange}
+              error={consentError}
+              disabled={isProcessing}
+            />
             <button
               type="button"
               className="ai-btn-generate-main"
@@ -234,6 +241,9 @@ export default function KeyPointsExtractor() {
               <FontAwesomeIcon icon={faListCheck} />
               <span>Extract Key Points Now</span>
             </button>
+            <span className="ai-btn-quota-hint">
+              Consumes 1 AI credit {quota ? `• ${quota.remaining} remaining` : ''}
+            </span>
           </div>
         )}
 
