@@ -236,7 +236,7 @@ export default function Sidebar({
             })}
           </div>
 
-          {/* Standalone AI Feature */}
+          {/* Standalone AI Feature (commented out per user request)
           <div className="sidebar-section-divider" />
           <ul className="sidebar-nav-list">
             <li>
@@ -252,6 +252,7 @@ export default function Sidebar({
               </NavLink>
             </li>
           </ul>
+          */}
         </div>
 
         {/* Bottom Settings Link */}

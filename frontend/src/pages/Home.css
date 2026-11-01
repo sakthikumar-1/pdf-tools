@@ -11,15 +11,19 @@
   flex: 1;
 }
 
-/* Two-column layout on desktop: Left content expands to fill remaining width, Right column is appropriately sized */
+/* Full-width layout: Main content extends across the full available container */
 .home-main-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) clamp(300px, 24vw, 380px);
+  grid-template-columns: 1fr;
   gap: 1.75rem;
   width: 100%;
   max-width: 100%;
   margin: 0;
   align-items: start;
+}
+
+.home-side-column {
+  display: none !important;
 }
 
 .home-main-column {

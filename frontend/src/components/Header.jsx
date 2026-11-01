@@ -115,7 +115,7 @@ export default function Header({ onToggleSidebar, onOpenAuth, onOpenSearch, isCo
         <SimatrixLogo asLink={true} />
       </div>
 
-      {/* 2. Header Center: Wide PDF Tool Search Field */}
+      {/* 2. Header Center: Wide PDF Tool Search Field (commented out per user request)
       <div className="top-nav-center" ref={searchWrapperRef}>
         <form className="header-search-form" onSubmit={handleSearchSubmit}>
           <FontAwesomeIcon icon={faMagnifyingGlass} className="header-search-icon" />
@@ -131,7 +131,7 @@ export default function Header({ onToggleSidebar, onOpenAuth, onOpenSearch, isCo
           <kbd className="header-search-kbd">Ctrl K</kbd>
         </form>
 
-        {/* Instant Search Suggestions Dropdown */}
+        // Instant Search Suggestions Dropdown
         {searchFocused && headerSearchQuery.trim() && (
           <div className="header-search-dropdown" role="listbox">
             {searchResults.map((tool) => (
@@ -156,6 +156,7 @@ export default function Header({ onToggleSidebar, onOpenAuth, onOpenSearch, isCo
           </div>
         )}
       </div>
+      */}
 
       {/* 3. Header Right: Theme Toggle & Sign In */}
       <div className="top-nav-right">

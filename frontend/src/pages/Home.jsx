@@ -374,9 +374,11 @@ export default function Home() {
 
         {/* ====================================================================
             RIGHT COLUMN (AI Summarizer Promo, Privacy Card, FAQs Accordion)
+            Commented out per user request; layout extended to 100% full width
             ==================================================================== */}
+        {/*
         <aside className="home-side-column" aria-label="Promotions and FAQs">
-          {/* Card 1: AI Summarizer Promo Panel */}
+          // Card 1: AI Summarizer Promo Panel
           <div className="side-card ai-side-promo-card">
             <h3 className="side-card-title">Turn Long PDFs into Clear, Useful Insights.</h3>
             <p className="side-card-desc">
@@ -388,7 +390,7 @@ export default function Home() {
             </Link>
           </div>
 
-          {/* Card 2: Your Documents. Your Privacy. */}
+          // Card 2: Your Documents. Your Privacy.
           <div className="side-card privacy-side-card">
             <h3 className="side-card-title">Your Documents. Your Privacy.</h3>
             <div className="privacy-feature-list">
@@ -428,7 +430,7 @@ export default function Home() {
             </a>
           </div>
 
-          {/* Card 3: Frequently Asked Questions */}
+          // Card 3: Frequently Asked Questions
           <div className="side-card faq-side-card">
             <h3 className="side-card-title">Frequently Asked Questions</h3>
             <div className="faq-accordion-list">
@@ -459,6 +461,7 @@ export default function Home() {
             </div>
           </div>
         </aside>
+        */}
       </div>
     </div>
   );
