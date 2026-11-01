@@ -22,7 +22,7 @@ import {
   renderTextWithCitations
 } from '../components/ai';
 import { getPdfPageCount } from '../utils/pdfPageCounter';
-import { summarizePdf, fetchAIQuota } from '../services/api';
+import { summarizePdf, fetchAIQuota, recordAIConsent } from '../services/api';
 import './AISummarizer.css';
 
 const SUMMARY_MODES = [
@@ -72,6 +72,8 @@ export default function AISummarizer() {
   const [quotaLoading, setQuotaLoading] = useState(false);
   const [consentDialogOpen, setConsentDialogOpen] = useState(false);
   const [limitModalOpen, setLimitModalOpen] = useState(false);
+  const [consented, setConsented] = useState(() => hasUserGivenAIConsent());
+  const [consentError, setConsentError] = useState(false);
   const pendingOperationRef = useRef(null);
 
   // Load quota on mount
@@ -108,6 +110,17 @@ export default function AISummarizer() {
     setActiveError(null);
   };
 
+  const handleConsentChange = async (checked) => {
+    setConsented(checked);
+    setUserAIConsent(checked);
+    setConsentError(false);
+    try {
+      await recordAIConsent(checked);
+    } catch (e) {
+      console.warn('Could not record AI consent:', e);
+    }
+  };
+
   const handleClearFile = () => {
     setSelectedFile(null);
     setSummaryResult(null);
@@ -133,9 +146,9 @@ export default function AISummarizer() {
       return;
     }
 
-    // Check external consent
-    if (!hasUserGivenAIConsent()) {
-      setUserAIConsent(true);
+    if (!consented && !hasUserGivenAIConsent()) {
+      setConsentError(true);
+      return;
     }
 
     setIsProcessing(true);

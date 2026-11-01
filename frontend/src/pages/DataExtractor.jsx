@@ -23,7 +23,7 @@ import {
 } from '../components/ai';
 import { getPdfPageCount } from '../utils/pdfPageCounter';
 import { downloadFile } from '../utils/fileUtils';
-import { extractDataAI, fetchAIQuota } from '../services/api';
+import { extractDataAI, fetchAIQuota, recordAIConsent } from '../services/api';
 import './DataExtractor.css';
 
 export default function DataExtractor() {
@@ -37,6 +37,8 @@ export default function DataExtractor() {
   const [quotaLoading, setQuotaLoading] = useState(false);
   const [consentDialogOpen, setConsentDialogOpen] = useState(false);
   const [limitModalOpen, setLimitModalOpen] = useState(false);
+  const [consented, setConsented] = useState(() => hasUserGivenAIConsent());
+  const [consentError, setConsentError] = useState(false);
   const pendingOperationRef = useRef(null);
 
   useEffect(() => {
@@ -67,8 +69,20 @@ export default function DataExtractor() {
 
   const handleSelectFile = (file) => {
     setSelectedFile(file);
+    setConsentError(false);
     setResult(null);
     setActiveError(null);
+  };
+
+  const handleConsentChange = async (checked) => {
+    setConsented(checked);
+    setUserAIConsent(checked);
+    setConsentError(false);
+    try {
+      await recordAIConsent(checked);
+    } catch (e) {
+      console.warn('Could not record AI consent:', e);
+    }
   };
 
   const handleClearFile = () => {
@@ -95,8 +109,9 @@ export default function DataExtractor() {
       return;
     }
 
-    if (!hasUserGivenAIConsent()) {
-      setUserAIConsent(true);
+    if (!consented && !hasUserGivenAIConsent()) {
+      setConsentError(true);
+      return;
     }
 
     setIsProcessing(true);
@@ -215,7 +230,9 @@ export default function DataExtractor() {
           isProcessing={isProcessing}
           title="Select or drop PDF to extract tables and data"
           subtitle="Supports PDF documents up to 15MB"
-        />
+          consented={consented}
+          onConsentChange={handleConsentChange}
+          consentError={consentError}        />
 
         {/* Step 2: Action Button */}
         {selectedFile && !result && !isProcessing && (

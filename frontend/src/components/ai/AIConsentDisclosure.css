@@ -1,5 +1,5 @@
 /* ==============================================================================
-   SIMATRIX AI CONSENT DISCLOSURE — Compact Charcoal/Grey Card
+   SIMATRIX AI CONSENT DISCLOSURE — Compact Charcoal/Grey Card with Checkbox
    ============================================================================== */
 
 .ai-consent-disclosure {
@@ -11,7 +11,7 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   margin-top: 0.5rem;
-  transition: border-color var(--transition-fast), background-color var(--transition-fast);
+  transition: border-color var(--transition-fast), background-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .ai-consent-disclosure.compact {
@@ -22,6 +22,12 @@
 
 .ai-consent-disclosure:hover {
   border-color: var(--color-border-hover);
+}
+
+.ai-consent-disclosure.has-error {
+  border-color: #ef4444;
+  background-color: rgba(239, 68, 68, 0.03);
+  box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.2);
 }
 
 .ai-consent-disclosure-icon {
@@ -46,7 +52,7 @@
 .ai-consent-disclosure-content {
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  gap: 0.35rem;
   flex: 1;
   min-width: 0;
 }
@@ -77,6 +83,86 @@
   color: var(--color-primary);
 }
 
+/* Explicit Checkbox Row */
+.ai-consent-checkbox-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.35rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.ai-consent-checkbox-row.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.ai-consent-checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid var(--color-border-hover);
+  border-radius: 3px;
+  background-color: var(--color-surface);
+  cursor: pointer;
+  display: grid;
+  place-content: center;
+  transition: all var(--transition-fast);
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.ai-consent-checkbox:checked {
+  background-color: var(--color-heading);
+  border-color: var(--color-heading);
+}
+
+.ai-consent-checkbox:checked::before {
+  content: "";
+  width: 8px;
+  height: 5px;
+  border-left: 2px solid #ffffff;
+  border-bottom: 2px solid #ffffff;
+  transform: rotate(-45deg) translate(1px, -1px);
+}
+
+[data-theme="dark"] .ai-consent-checkbox:checked::before {
+  border-color: #0f172a;
+}
+
+.ai-consent-checkbox:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.ai-consent-checkbox-text {
+  font-size: 0.78125rem;
+  font-weight: 500;
+  color: var(--color-heading);
+  line-height: 1.35;
+}
+
+.ai-consent-checkbox-row.checkbox-error .ai-consent-checkbox {
+  border-color: #ef4444;
+}
+
+.ai-consent-checkbox-row.checkbox-error .ai-consent-checkbox-text {
+  color: #ef4444;
+}
+
+/* Inline Error Message */
+.ai-consent-error-message {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  color: #ef4444;
+  font-weight: 500;
+  margin-top: 0.2rem;
+}
+
 @media (max-width: 640px) {
   .ai-consent-disclosure {
     padding: 0.75rem 0.85rem;
@@ -96,5 +182,8 @@
   .ai-consent-disclosure-text {
     font-size: 0.75rem;
   }
-}
 
+  .ai-consent-checkbox-text {
+    font-size: 0.75rem;
+  }
+}

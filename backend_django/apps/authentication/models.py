@@ -209,11 +209,15 @@ def auto_create_user_quota(sender, instance, created, **kwargs):
     """
     Ensures every newly created User automatically has an AIUserQuota row
     initialized, preventing race conditions on first AI request.
+    Registered users receive 5 lifetime requests.
+    Guest users receive 1 lifetime request.
     """
     if created:
+        is_guest = getattr(instance, 'role', '') == 'guest' or instance.email.lower().endswith('@simatrix.local') or hasattr(instance, 'guest_device_identity')
+        allowed = 1 if is_guest else 5
         AIUserQuota.objects.get_or_create(
             user=instance,
-            defaults={'total_allowed': 5, 'used_count': 0, 'is_blocked': False}
+            defaults={'total_allowed': allowed, 'used_count': 0, 'is_blocked': False}
         )
 
 
@@ -309,4 +313,58 @@ class AIRateLimitBucket(models.Model):
 
     def __str__(self):
         return f"RateLimitBucket {self.key}: {self.request_count} reqs since {self.window_start}"
+
+
+# ==============================================================================
+# GUEST DEVICE IDENTITY & DEVICE-LEVEL AI LIMIT MODELS (MySQL InnoDB)
+# ==============================================================================
+
+class GuestDeviceIdentity(models.Model):
+    """
+    Persistent anonymous device identity for unauthenticated guest visitors.
+    Tied to a cryptographically secure random device token stored via persistent
+    HttpOnly cookie in the browser profile. Only a SHA-256 hash of the device token
+    is stored in the database.
+    
+    Guarantees:
+    - Exactly 1 lifetime AI operation per guest device profile across all tools.
+    - Idempotent guest ID reuse across visits (zero account creation spam).
+    - MySQL InnoDB row-level locking concurrency protection.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    device_token_hash = models.CharField(max_length=64, unique=True, db_index=True)
+    guest_id = models.CharField(max_length=32, unique=True, db_index=True)
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='guest_device_identity'
+    )
+    ai_operations_used = models.PositiveIntegerField(default=0)
+    ai_operations_allowed = models.PositiveIntegerField(default=1)
+    is_active = models.BooleanField(default=True, db_index=True)
+    first_seen = models.DateTimeField(auto_now_add=True)
+    last_seen = models.DateTimeField(auto_now=True)
+    initial_ip = models.GenericIPAddressField(null=True, blank=True)
+    last_ip = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.CharField(max_length=255, blank=True, default='')
+    linked_user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='linked_guest_devices'
+    )
+
+    class Meta:
+        db_table = 'guest_device_identities'
+        verbose_name = 'Guest Device Identity'
+        verbose_name_plural = 'Guest Device Identities'
+        indexes = [
+            models.Index(fields=['device_token_hash', 'is_active'], name='idx_gdi_hash_act'),
+            models.Index(fields=['guest_id'], name='idx_gdi_guest_id'),
+        ]
+
+    def __str__(self):
+        return f"GuestDevice {self.guest_id} (used: {self.ai_operations_used}/{self.ai_operations_allowed})"
+
 

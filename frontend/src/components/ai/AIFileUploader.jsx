@@ -23,7 +23,10 @@ export default function AIFileUploader({
   error: externalError,
   title = 'Select or drop your PDF document here',
   subtitle = 'Supports PDF documents up to 15MB',
-  showConsentDisclosure = true
+  showConsentDisclosure = true,
+  consented = false,
+  onConsentChange,
+  consentError = false
 }) {
   const [isDragging, setIsDragging] = useState(false);
   const [internalError, setInternalError] = useState(null);
@@ -197,7 +200,12 @@ export default function AIFileUploader({
       )}
 
       {showConsentDisclosure && (
-        <AIConsentDisclosure />
+        <AIConsentDisclosure
+          consented={consented}
+          onConsentChange={onConsentChange}
+          error={consentError}
+          disabled={isProcessing}
+        />
       )}
     </div>
   );

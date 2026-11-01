@@ -27,7 +27,7 @@ import {
   renderTextWithCitations
 } from '../components/ai';
 import { getPdfPageCount } from '../utils/pdfPageCounter';
-import { translatePdfAI, fetchAIQuota } from '../services/api';
+import { translatePdfAI, fetchAIQuota, recordAIConsent } from '../services/api';
 import './PDFTranslator.css';
 
 export default function PDFTranslator() {
@@ -42,6 +42,8 @@ export default function PDFTranslator() {
   const [quotaLoading, setQuotaLoading] = useState(false);
   const [consentDialogOpen, setConsentDialogOpen] = useState(false);
   const [limitModalOpen, setLimitModalOpen] = useState(false);
+  const [consented, setConsented] = useState(() => hasUserGivenAIConsent());
+  const [consentError, setConsentError] = useState(false);
 
   const pendingTranslateRef = useRef(null);
 
@@ -73,8 +75,20 @@ export default function PDFTranslator() {
 
   const handleSelectFile = (file) => {
     setSelectedFile(file);
+    setConsentError(false);
     setTranslationResult(null);
     setActiveError(null);
+  };
+
+  const handleConsentChange = async (checked) => {
+    setConsented(checked);
+    setUserAIConsent(checked);
+    setConsentError(false);
+    try {
+      await recordAIConsent(checked);
+    } catch (e) {
+      console.warn('Could not record AI consent:', e);
+    }
   };
 
   const handleClearFile = () => {
@@ -101,8 +115,9 @@ export default function PDFTranslator() {
       return;
     }
 
-    if (!hasUserGivenAIConsent()) {
-      setUserAIConsent(true);
+    if (!consented && !hasUserGivenAIConsent()) {
+      setConsentError(true);
+      return;
     }
 
     setIsProcessing(true);
@@ -236,7 +251,9 @@ export default function PDFTranslator() {
           isProcessing={isProcessing}
           title="Select or drop PDF document to translate"
           subtitle="Supports PDF documents up to 15MB"
-        />
+          consented={consented}
+          onConsentChange={handleConsentChange}
+          consentError={consentError}        />
 
         {/* Step 2: Language Selector & Translate Button */}
         {selectedFile && !isProcessing && (

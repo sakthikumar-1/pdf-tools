@@ -667,6 +667,39 @@ export async function fetchAIQuota() {
 }
 
 /**
+ * Records explicit user or guest consent for Simatrix AI processing.
+ * @param {boolean} [consent=true]
+ * @param {string} [policyVersion='2026.1']
+ * @returns {Promise<Object>}
+ */
+export async function recordAIConsent(consent = true, policyVersion = '2026.1') {
+  const token = getStoredAuthToken();
+  const headers = {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json'
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const res = await fetch(`${API_BASE_URL}/ai/consent`, {
+    method: 'POST',
+    headers,
+    credentials: 'include',
+    body: JSON.stringify({
+      consent: Boolean(consent),
+      policy_version: policyVersion
+    })
+  });
+
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.message || `Failed to record AI consent (${res.status})`);
+  }
+  return await res.json();
+}
+
+/**
  * Ask PDF (AI Chat with PDF) with grounded BM25 chunk retrieval and multi-turn sessions.
  * @param {Object} params
  * @param {File} [params.file]

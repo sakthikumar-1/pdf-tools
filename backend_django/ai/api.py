@@ -35,6 +35,8 @@ from .schemas import (
     AIChatMessageOut,
     AITranslateOut,
     AIQuotaOut,
+    AIConsentIn,
+    AIConsentOut,
     AIFeatureNotReadyOut,
     AIErrorResponse,
     AIKeyPointsOut,
@@ -95,9 +97,8 @@ ai_router = Router(tags=["AI Document Intelligence"])
 
 # Privacy Disclosure Text
 AI_PRIVACY_DISCLOSURE = (
-    "Your document content will be securely transmitted to DeepSeek API (primary) "
-    "or Google Gemini API (automatic fallback) for AI analysis. Both providers operate "
-    "under standard commercial API terms and do not use customer data to train public models. "
+    "Your document content will be securely processed by Simatrix AI for document intelligence and analysis. "
+    "All operations execute under standard enterprise data terms and do not use customer data to train public models. "
     "Document text is processed ephemerally and is not retained indefinitely on Simatrix servers."
 )
 
@@ -107,27 +108,50 @@ AI_PRIVACY_DISCLOSURE = (
 # ==============================================================================
 
 def get_authenticated_user(request) -> Optional[User]:
-    """Extracts and verifies authenticated User from Bearer token."""
+    """Extracts and verifies authenticated User from Bearer token or persistent guest device identity."""
     auth_header = request.headers.get("Authorization", "")
-    if not auth_header.startswith("Bearer "):
-        return None
-    raw_token = auth_header.split(" ", 1)[1].strip()
+    if auth_header.startswith("Bearer "):
+        raw_token = auth_header.split(" ", 1)[1].strip()
+        try:
+            from core.api import token_signer
+            data = token_signer.unsign_object(raw_token, max_age=86400 * 30)
+            user_id = data.get("user_id")
+            if user_id:
+                user = User.objects.filter(id=user_id).first()
+                if user:
+                    if hasattr(user, 'guest_device_identity') and not user.guest_device_identity.is_active:
+                        return None
+                    return user
+        except Exception:
+            pass
+
+    # Fallback to guest device cookie or X-Device-Token header
     try:
-        from core.api import token_signer
-        data = token_signer.unsign_object(raw_token, max_age=86400 * 30)
-        user_id = data.get("user_id")
-        if not user_id:
-            return None
-        return User.objects.filter(id=user_id).first()
+        from apps.authentication.guest_service import resolve_guest_identity_from_request
+        identity = resolve_guest_identity_from_request(request)
+        if identity and identity.is_active:
+            return identity.user
     except Exception:
-        return None
+        pass
+
+    return None
 
 
 def require_authenticated_user(request) -> User:
-    """Enforces Bearer authentication; raises 401 if unauthenticated."""
+    """Enforces Bearer authentication or auto-provisions persistent guest profile; raises 401/403."""
     user = get_authenticated_user(request)
     if not user:
-        raise HttpError(401, "Authentication required. Please provide a valid Bearer session token.")
+        from apps.authentication.guest_service import get_or_create_guest_identity, GuestRevokedError, GuestAbuseLimitError
+        try:
+            identity, raw_token, created = get_or_create_guest_identity(request)
+            user = identity.user
+        except GuestRevokedError as err:
+            raise HttpError(403, str(err))
+        except GuestAbuseLimitError as err:
+            raise HttpError(429, str(err))
+        except Exception:
+            raise HttpError(401, "Authentication required. Please provide a valid Bearer session token or continue as guest.")
+
     if getattr(user, 'ai_quota', None) and user.ai_quota.is_blocked:
         raise HttpError(403, "Your account has been suspended from using AI services. Please contact support.")
     return user
@@ -136,31 +160,53 @@ def require_authenticated_user(request) -> User:
 def validate_and_record_consent(request, consent_param: Optional[Any], user: Optional[User]) -> bool:
     """
     Validates explicit user consent for external AI processing.
-    Checks form parameter or 'X-Simatrix-AI-Consent' header.
-    Records consent timestamp and policy version on user quota.
+    Validates against stored DB consent record on user quota.
+    Allows request if:
+    1. The stored quota record has valid consent for the active policy version, OR
+    2. The request explicitly includes an affirmative consent parameter (which updates the stored record).
+    Does NOT blindly trust 'X-Simatrix-AI-Consent' without stored consent or explicit consent param.
     """
-    header_val = request.headers.get("X-Simatrix-AI-Consent")
-    is_consented = False
+    policy_ver = request.headers.get("X-Simatrix-Policy-Version") or "2026.1"
 
-    if header_val is not None:
-        is_consented = header_val.strip().lower() in ("true", "1", "yes")
-    elif consent_param is not None:
+    # 1. Check explicit consent parameter in request body/form
+    is_explicitly_true = False
+    is_explicitly_false = False
+    if consent_param is not None:
         if isinstance(consent_param, bool):
-            is_consented = consent_param
+            is_explicitly_true = consent_param is True
+            is_explicitly_false = consent_param is False
         elif isinstance(consent_param, str):
-            is_consented = consent_param.strip().lower() in ("true", "1", "yes")
+            clean = consent_param.strip().lower()
+            if clean in ("true", "1", "yes"):
+                is_explicitly_true = True
+            elif clean in ("false", "0", "no"):
+                is_explicitly_false = True
 
-    if not is_consented:
+    if is_explicitly_false:
         return False
 
+    # 2. Check stored database record on user.ai_quota
+    has_valid_stored_consent = False
     if user and hasattr(user, 'ai_quota') and user.ai_quota:
-        policy_ver = request.headers.get("X-Simatrix-Policy-Version", "2026.1")
-        if not user.ai_quota.consent_given_at or user.ai_quota.consent_policy_version != policy_ver:
-            user.ai_quota.consent_given_at = timezone.now()
-            user.ai_quota.consent_policy_version = policy_ver
-            user.ai_quota.save(update_fields=['consent_given_at', 'consent_policy_version', 'updated_at'])
+        has_valid_stored_consent = bool(
+            user.ai_quota.consent_given_at is not None and
+            user.ai_quota.consent_policy_version == policy_ver
+        )
 
-    return True
+    # 3. If explicit affirmative consent is provided, record it in DB
+    if is_explicitly_true:
+        if user and hasattr(user, 'ai_quota') and user.ai_quota:
+            if not user.ai_quota.consent_given_at or user.ai_quota.consent_policy_version != policy_ver:
+                user.ai_quota.consent_given_at = timezone.now()
+                user.ai_quota.consent_policy_version = policy_ver
+                user.ai_quota.save(update_fields=['consent_given_at', 'consent_policy_version', 'updated_at'])
+        return True
+
+    # 4. If no explicit param, verify stored record
+    if has_valid_stored_consent:
+        return True
+
+    return False
 
 
 def safe_unlink(path: Path) -> None:
@@ -300,7 +346,7 @@ def summarize_endpoint(
         return 400, {
             "success": False,
             "code": "AI_CONSENT_REQUIRED",
-            "message": "Explicit user consent is required before processing document content with external AI providers (DeepSeek and Google Gemini).",
+            "message": "Explicit user consent is required before processing document content with Simatrix AI.",
             "disclosure": AI_PRIVACY_DISCLOSURE
         }
 
@@ -426,7 +472,7 @@ def chat_pdf_endpoint(
         return 400, {
             "success": False,
             "code": "AI_CONSENT_REQUIRED",
-            "message": "Explicit user consent is required before processing document content with external AI providers (DeepSeek and Google Gemini).",
+            "message": "Explicit user consent is required before processing document content with Simatrix AI.",
             "disclosure": AI_PRIVACY_DISCLOSURE
         }
 
@@ -737,7 +783,7 @@ def translate_endpoint(
         return 400, {
             "success": False,
             "code": "AI_CONSENT_REQUIRED",
-            "message": "Explicit user consent is required before processing document content with external AI providers (DeepSeek and Google Gemini).",
+            "message": "Explicit user consent is required before processing document content with Simatrix AI.",
             "disclosure": AI_PRIVACY_DISCLOSURE
         }
 
@@ -840,6 +886,47 @@ def get_user_quota_endpoint(request):
     }
 
 
+@ai_router.post(
+    "/consent",
+    response={
+        200: AIConsentOut,
+        400: AIErrorResponse,
+        401: AIErrorResponse
+    }
+)
+def record_consent_endpoint(request, payload: AIConsentIn):
+    """
+    Explicitly records or revokes user/guest consent for Simatrix AI processing.
+    Stores identity, policy version, timestamp, and consent status in database.
+    """
+    user = require_authenticated_user(request)
+    if not hasattr(user, 'ai_quota') or not user.ai_quota:
+        from apps.authentication.models import AIUserQuota
+        quota, _ = AIUserQuota.objects.get_or_create(user=user, defaults={"total_allowed": 5, "used_count": 0})
+    else:
+        quota = user.ai_quota
+
+    policy_ver = payload.policy_version or "2026.1"
+    if payload.consent:
+        quota.consent_given_at = timezone.now()
+        quota.consent_policy_version = policy_ver
+        quota.save(update_fields=['consent_given_at', 'consent_policy_version', 'updated_at'])
+    else:
+        quota.consent_given_at = None
+        quota.consent_policy_version = ""
+        quota.save(update_fields=['consent_given_at', 'consent_policy_version', 'updated_at'])
+
+    identity_str = getattr(user, 'email', '') or (getattr(user.guest_device_identity, 'guest_id', '') if hasattr(user, 'guest_device_identity') else '') or str(user.id)
+
+    return 200, {
+        "success": True,
+        "consent_given": bool(quota.consent_given_at),
+        "consent_policy_version": quota.consent_policy_version,
+        "timestamp": quota.consent_given_at.isoformat() if quota.consent_given_at else None,
+        "identity": identity_str
+    }
+
+
 # ==============================================================================
 # ENDPOINTS 4-8: FULLY OPERATIONAL AI DOCUMENT PROCESSORS
 # ==============================================================================
@@ -862,20 +949,7 @@ def _execute_generic_ai_processor(
             "expected_phase": "Phase 5"
         }
 
-    user = get_authenticated_user(request)
-    if not user:
-        # Instant guest fallback for seamless access
-        user = User.objects.filter(email__endswith="@simatrix.local").order_by('-created_at').first()
-        if not user:
-            guest_id = uuid.uuid4().hex[:6]
-            user = User.objects.create(
-                email=f"guest_{guest_id}@simatrix.local",
-                username=f"guest_{guest_id}",
-                full_name="Guest User",
-                role="user"
-            )
-            user.set_unusable_password()
-            user.save(update_fields=['password'])
+    user = require_authenticated_user(request)
 
     client_ip = get_client_ip(request)
 

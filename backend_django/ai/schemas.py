@@ -95,6 +95,19 @@ class AIQuotaOut(Schema):
     consent_policy_version: str = ""
 
 
+class AIConsentIn(Schema):
+    consent: bool = True
+    policy_version: Optional[str] = "2026.1"
+
+
+class AIConsentOut(Schema):
+    success: bool
+    consent_given: bool
+    consent_policy_version: str
+    timestamp: Optional[str] = None
+    identity: str
+
+
 class AIFeatureNotReadyOut(Schema):
     success: bool = False
     code: str = "FEATURE_NOT_READY"

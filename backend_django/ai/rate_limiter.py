@@ -43,9 +43,9 @@ def is_guest_user(user: Optional[User]) -> bool:
     """Detects whether user is a temporary guest account."""
     if not user:
         return True
-    if not getattr(user, 'is_verified', False):
+    if hasattr(user, 'guest_device_identity'):
         return True
-    if user.email.lower().endswith('@simatrix.local') or getattr(user, 'role', '') == 'guest':
+    if getattr(user, 'role', '') == 'guest' or user.email.lower().endswith('@simatrix.local'):
         return True
     return False
 
@@ -122,14 +122,27 @@ def check_ai_rate_limits(request, user: Optional[User] = None) -> Tuple[bool, in
     client_ip = get_client_ip(request)
 
     # 1. Guest Lifetime Preview Cap
+    # Auto-resolve guest identity from cookie if user is not yet bound
+    if user is None:
+        try:
+            from apps.authentication.guest_service import resolve_guest_identity_from_request
+            gdi = resolve_guest_identity_from_request(request)
+            if gdi:
+                user = gdi.user
+        except Exception:
+            pass
+
     if user and is_guest_user(user):
+        device_identity = getattr(user, 'guest_device_identity', None)
         quota = getattr(user, 'ai_quota', None)
         if not quota:
             quota, _ = AIUserQuota.objects.get_or_create(
                 user=user,
                 defaults={'total_allowed': 1, 'used_count': 0}
             )
-        if quota.used_count >= 1:
+        used_count = max(quota.used_count, device_identity.ai_operations_used if device_identity else 0)
+        allowed = device_identity.ai_operations_allowed if device_identity else 1
+        if used_count >= allowed:
             return (
                 False,
                 0,

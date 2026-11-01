@@ -23,7 +23,7 @@ import {
   renderTextWithCitations
 } from '../components/ai';
 import { getPdfPageCount } from '../utils/pdfPageCounter';
-import { generateQuestionsAI, fetchAIQuota } from '../services/api';
+import { generateQuestionsAI, fetchAIQuota, recordAIConsent } from '../services/api';
 import './QuestionGenerator.css';
 
 export default function QuestionGenerator() {
@@ -39,6 +39,8 @@ export default function QuestionGenerator() {
   const [quotaLoading, setQuotaLoading] = useState(false);
   const [consentDialogOpen, setConsentDialogOpen] = useState(false);
   const [limitModalOpen, setLimitModalOpen] = useState(false);
+  const [consented, setConsented] = useState(() => hasUserGivenAIConsent());
+  const [consentError, setConsentError] = useState(false);
   const pendingOperationRef = useRef(null);
 
   useEffect(() => {
@@ -69,10 +71,22 @@ export default function QuestionGenerator() {
 
   const handleSelectFile = (file) => {
     setSelectedFile(file);
+    setConsentError(false);
     setResult(null);
     setSelectedAnswers({});
     setRevealedAnswers({});
     setActiveError(null);
+  };
+
+  const handleConsentChange = async (checked) => {
+    setConsented(checked);
+    setUserAIConsent(checked);
+    setConsentError(false);
+    try {
+      await recordAIConsent(checked);
+    } catch (e) {
+      console.warn('Could not record AI consent:', e);
+    }
   };
 
   const handleClearFile = () => {
@@ -101,8 +115,9 @@ export default function QuestionGenerator() {
       return;
     }
 
-    if (!hasUserGivenAIConsent()) {
-      setUserAIConsent(true);
+    if (!consented && !hasUserGivenAIConsent()) {
+      setConsentError(true);
+      return;
     }
 
     setIsProcessing(true);
@@ -205,7 +220,9 @@ export default function QuestionGenerator() {
           isProcessing={isProcessing}
           title="Select or drop PDF to generate study questions"
           subtitle="Supports PDF documents up to 15MB"
-        />
+          consented={consented}
+          onConsentChange={handleConsentChange}
+          consentError={consentError}        />
 
         {/* Step 2: Action Button */}
         {selectedFile && !result && !isProcessing && (

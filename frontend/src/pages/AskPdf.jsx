@@ -18,6 +18,7 @@ import {
 import {
   AIQuotaBanner,
   AIConsentDialog,
+  AIConsentDisclosure,
   hasUserGivenAIConsent,
   setUserAIConsent,
   AIFileUploader,
@@ -28,7 +29,7 @@ import {
   AIPageCitation
 } from '../components/ai';
 import { getPdfPageCount } from '../utils/pdfPageCounter';
-import { chatPdfAI, deleteAIChatSession, fetchAIQuota } from '../services/api';
+import { chatPdfAI, deleteAIChatSession, fetchAIQuota, recordAIConsent } from '../services/api';
 import './AskPdf.css';
 
 const SUGGESTED_QUESTIONS = [
@@ -51,6 +52,8 @@ export default function AskPdf() {
   const [quotaLoading, setQuotaLoading] = useState(false);
   const [consentDialogOpen, setConsentDialogOpen] = useState(false);
   const [limitModalOpen, setLimitModalOpen] = useState(false);
+  const [consented, setConsented] = useState(() => hasUserGivenAIConsent());
+  const [consentError, setConsentError] = useState(false);
 
   const messagesEndRef = useRef(null);
   const pendingQueryRef = useRef(null);
@@ -131,8 +134,9 @@ export default function AskPdf() {
       return;
     }
 
-    if (!hasUserGivenAIConsent()) {
-      setUserAIConsent(true);
+    if (!consented && !hasUserGivenAIConsent()) {
+      setConsentError(true);
+      return;
     }
 
     // Add user message to UI immediately
@@ -260,6 +264,9 @@ export default function AskPdf() {
             onClear={handleClearFile}
             title="Select or drop PDF to begin conversation"
             subtitle="Chat across up to 15MB PDF documents"
+            consented={consented}
+            onConsentChange={handleConsentChange}
+            consentError={consentError}
           />
         ) : (
           <div className="ask-pdf-chat-layout">
@@ -400,6 +407,17 @@ export default function AskPdf() {
                   )}
 
                   <div ref={messagesEndRef} />
+                </div>
+              )}
+
+              {!consented && (
+                <div style={{ padding: '0 1rem 0.5rem 1rem' }}>
+                  <AIConsentDisclosure
+                    consented={consented}
+                    onConsentChange={handleConsentChange}
+                    error={consentError}
+                    compact
+                  />
                 </div>
               )}
 

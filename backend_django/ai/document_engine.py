@@ -243,8 +243,7 @@ def extract_document(
         # 5. Scanned / Image-Only PDF Detection
         if total_chars < 50 and total_images > 0:
             raise ScannedPdfError(
-                "This document appears to be a scanned image or image-only PDF with no extractable text. "
-                "Please upload a PDF containing digital text."
+                "This PDF contains image-based pages. Text extraction is not available for this document yet. Please try a digitally generated PDF."
             )
 
         # 6. Completely Empty PDF Detection

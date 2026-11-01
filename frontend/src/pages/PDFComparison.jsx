@@ -25,7 +25,7 @@ import {
   renderTextWithCitations
 } from '../components/ai';
 import { formatBytes } from '../utils/fileUtils';
-import { comparePdfAI, fetchAIQuota } from '../services/api';
+import { comparePdfAI, fetchAIQuota, recordAIConsent } from '../services/api';
 import './PDFComparison.css';
 
 export default function PDFComparison() {
@@ -39,6 +39,8 @@ export default function PDFComparison() {
   const [quotaLoading, setQuotaLoading] = useState(false);
   const [consentDialogOpen, setConsentDialogOpen] = useState(false);
   const [limitModalOpen, setLimitModalOpen] = useState(false);
+  const [consented, setConsented] = useState(() => hasUserGivenAIConsent());
+  const [consentError, setConsentError] = useState(false);
 
   const fileInputRef1 = useRef(null);
   const fileInputRef2 = useRef(null);
@@ -78,6 +80,17 @@ export default function PDFComparison() {
   };
 
 
+  const handleConsentChange = async (checked) => {
+    setConsented(checked);
+    setUserAIConsent(checked);
+    setConsentError(false);
+    try {
+      await recordAIConsent(checked);
+    } catch (e) {
+      console.warn('Could not record AI consent:', e);
+    }
+  };
+
   const handleClearAll = () => {
     setFile1(null);
     setFile2(null);
@@ -102,8 +115,9 @@ export default function PDFComparison() {
       return;
     }
 
-    if (!hasUserGivenAIConsent()) {
-      setUserAIConsent(true);
+    if (!consented && !hasUserGivenAIConsent()) {
+      setConsentError(true);
+      return;
     }
 
     setIsProcessing(true);
@@ -280,7 +294,12 @@ export default function PDFComparison() {
           </div>
         </div>
 
-        <AIConsentDisclosure />
+        <AIConsentDisclosure
+          consented={consented}
+          onConsentChange={handleConsentChange}
+          error={consentError}
+          disabled={isProcessing}
+        />
 
         {/* Action Controls */}
         <div className="cmp-actions-center">

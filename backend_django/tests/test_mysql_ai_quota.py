@@ -6,6 +6,7 @@ deadlock retries, heartbeat renewal, expiry, and sanitized logging on MySQL.
 
 import time
 import uuid
+import unittest
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import timedelta
 
@@ -68,6 +69,7 @@ class MySQLAIQuotaConcurrencyTests(TransactionTestCase):
             AIUserQuota.objects.filter(user=new_user).delete()
             new_user.delete()
 
+    @unittest.skipIf(connection.vendor == 'sqlite', "InnoDB row-level locking test requires MySQL server")
     def test_ten_concurrent_reservation_attempts_strict_cap(self):
         """
         Requirement 9: Test 10 concurrent threads simultaneously requesting a quota slot.

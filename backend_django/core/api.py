@@ -133,12 +133,14 @@ class UserProfileOut(Schema):
     avatar_url: Optional[str] = None
     role: str
     is_verified: bool
+    guest_id: Optional[str] = None
 
 
 class AuthResponse(Schema):
     success: bool
     token: str
     user: UserProfileOut
+    quota: Optional[Dict[str, Any]] = None
 
 
 class ConversionSuccessResponse(Schema):
@@ -186,6 +188,8 @@ class CleanupResponse(Schema):
     deleted_files_count: int
     freed_bytes: int
     duration_ms: int
+    expired_sessions_count: Optional[int] = 0
+    expired_reservations_count: Optional[int] = 0
 
 
 class ErrorResponse(Schema):
@@ -322,12 +326,36 @@ def trigger_storage_cleanup(request, max_age_seconds: int = 900):
                 except Exception as e:
                     logger.warning(f"Failed to clean file {item}: {e}")
 
+    from django.utils import timezone
+    from apps.authentication.models import AIChatSession, AIQuotaReservation
+
+    now_dt = timezone.now()
+    expired_sessions_count = 0
+    try:
+        expired_sessions = AIChatSession.objects.filter(expires_at__lt=now_dt)
+        expired_sessions_count = expired_sessions.count()
+        if expired_sessions_count > 0:
+            expired_sessions.delete()
+    except Exception as exc:
+        logger.warning(f"Failed to purge chat sessions: {exc}")
+
+    expired_reservations_count = 0
+    try:
+        expired_reservations_count = AIQuotaReservation.objects.filter(
+            status='RESERVED',
+            expires_at__lt=now_dt
+        ).update(status='EXPIRED')
+    except Exception as exc:
+        logger.warning(f"Failed to expire reservations: {exc}")
+
     duration = int((time.time() - start) * 1000)
     return {
         "success": True,
         "deleted_files_count": deleted_count,
         "freed_bytes": freed_bytes,
-        "duration_ms": duration
+        "duration_ms": duration,
+        "expired_sessions_count": expired_sessions_count,
+        "expired_reservations_count": expired_reservations_count
     }
 
 
@@ -1144,17 +1172,108 @@ def download_converted_file(request, token: str, inline: bool = False):
 # AUTHENTICATION & IDENTITY ENDPOINTS
 # ==============================================================================
 
+@api.post("/auth/guest", response=AuthResponse)
+def auth_guest(request, response: HttpResponse):
+    """
+    Persistent Anonymous Guest Identity Endpoint.
+    Resolves or generates a persistent device-bound guest profile via HttpOnly cookie.
+    Reuses existing guest ID on subsequent calls from the same browser.
+    """
+    from apps.authentication.guest_service import (
+        get_or_create_guest_identity,
+        GuestRevokedError,
+        GuestAbuseLimitError
+    )
+    try:
+        identity, raw_token, created = get_or_create_guest_identity(request, response=response)
+        user = identity.user
+        token = token_signer.sign_object({
+            'user_id': str(user.id),
+            'email': user.email,
+            'guest_id': identity.guest_id,
+            'ts': int(time.time())
+        })
+        return {
+            "success": True,
+            "token": token,
+            "user": {
+                "id": str(user.id),
+                "email": user.email,
+                "full_name": user.full_name or "Guest User",
+                "avatar_url": None,
+                "role": "guest",
+                "is_verified": False,
+                "guest_id": identity.guest_id,
+            },
+            "quota": {
+                "used": identity.ai_operations_used,
+                "limit": identity.ai_operations_allowed,
+                "remaining": max(0, identity.ai_operations_allowed - identity.ai_operations_used)
+            }
+        }
+    except GuestRevokedError as err:
+        raise HttpError(403, str(err))
+    except GuestAbuseLimitError as err:
+        raise HttpError(429, str(err))
+    except Exception as exc:
+        logger.error(f"Guest auth error: {exc}", exc_info=True)
+        raise HttpError(500, f"Guest authentication failed: {str(exc)}")
+
+
 @api.post("/auth/google", response=AuthResponse)
-def auth_google(request, payload: GoogleAuthPayload):
+def auth_google(request, response: HttpResponse, payload: GoogleAuthPayload):
     """
     Authenticate or register a user using Google OAuth token, email, custom name, or instant guest access.
     Issues a cryptographically signed 30-day session token.
     """
     import re
+    from apps.authentication.guest_service import (
+        get_or_create_guest_identity,
+        link_guest_device_to_account,
+        GuestRevokedError,
+        GuestAbuseLimitError
+    )
+
+    is_guest = bool(payload.is_guest)
+
+    # 1. Direct Guest Path: Delegate to Persistent Guest Device Identity
+    if is_guest or (not payload.email and not payload.credential):
+        try:
+            identity, raw_token, created = get_or_create_guest_identity(request, response=response)
+            user = identity.user
+            token = token_signer.sign_object({
+                'user_id': str(user.id),
+                'email': user.email,
+                'guest_id': identity.guest_id,
+                'ts': int(time.time())
+            })
+            return {
+                "success": True,
+                "token": token,
+                "user": {
+                    "id": str(user.id),
+                    "email": user.email,
+                    "full_name": user.full_name or "Guest User",
+                    "avatar_url": None,
+                    "role": "guest",
+                    "is_verified": False,
+                    "guest_id": identity.guest_id,
+                },
+                "quota": {
+                    "used": identity.ai_operations_used,
+                    "limit": identity.ai_operations_allowed,
+                    "remaining": max(0, identity.ai_operations_allowed - identity.ai_operations_used)
+                }
+            }
+        except GuestRevokedError as err:
+            raise HttpError(403, str(err))
+        except GuestAbuseLimitError as err:
+            raise HttpError(429, str(err))
+
+    # 2. Registered Google User Path
     email = (payload.email or '').strip()
     full_name = (payload.name or '').strip()
     avatar_url = (payload.avatar_url or '').strip()
-    is_guest = bool(payload.is_guest)
 
     # If Google credential JWT is provided, verify via Google's tokeninfo API with payload decode fallback
     if payload.credential:
@@ -1187,22 +1306,6 @@ def auth_google(request, payload: GoogleAuthPayload):
             except Exception as jwt_err:
                 logger.warning(f"JWT payload decoding fallback warning: {jwt_err}")
 
-    # Instant Guest / No-Email Access
-    if is_guest or not email:
-        guest_id = uuid.uuid4().hex[:6]
-        if full_name and full_name.lower() != 'guest user':
-            clean_slug = re.sub(r'[^a-zA-Z0-9_]', '', full_name.lower())[:15] or 'guest'
-            email = f"{clean_slug}_{guest_id}@simatrix.local"
-        else:
-            email = f"guest_{guest_id}@simatrix.local"
-            full_name = "Guest User"
-    elif '@' not in email:
-        # User typed just a name or handle into the sign-in input field
-        clean_slug = re.sub(r'[^a-zA-Z0-9_]', '', email.lower())[:20] or 'user'
-        if not full_name:
-            full_name = email
-        email = f"{clean_slug}@simatrix.local"
-
     email = email.lower().strip()
     try:
         user = User.objects.filter(email__iexact=email).first()
@@ -1214,7 +1317,7 @@ def auth_google(request, payload: GoogleAuthPayload):
                 username = f"{base_username}_{counter}"
                 counter += 1
 
-            is_verified_flag = bool(payload.credential or (not is_guest and '@' in (payload.email or '') and not email.endswith('@simatrix.local')))
+            is_verified_flag = bool(payload.credential or ('@' in (payload.email or '') and not email.endswith('@simatrix.local')))
             user = User.objects.create(
                 email=email,
                 username=username,
@@ -1236,6 +1339,9 @@ def auth_google(request, payload: GoogleAuthPayload):
                 updated = True
             if updated:
                 user.save(update_fields=['full_name', 'avatar_url'])
+
+        # Link active browser guest device profile to this Google account
+        link_guest_device_to_account(request, user)
 
         user_id = str(user.id)
         user_email = user.email
@@ -1277,32 +1383,66 @@ def auth_google(request, payload: GoogleAuthPayload):
 @api.get("/auth/me")
 def auth_me(request):
     """
-    Retrieve current authenticated user profile using Bearer token.
+    Retrieve current authenticated user profile using Bearer token or guest device cookie.
     """
-    auth_header = request.headers.get("Authorization", "")
-    if not auth_header.startswith("Bearer "):
-        raise HttpError(401, "Authentication required.")
+    from apps.authentication.guest_service import resolve_guest_identity_from_request
 
-    raw_token = auth_header.split(" ", 1)[1].strip()
-    try:
-        data = token_signer.unsign_object(raw_token, max_age=86400 * 30) # 30 days
-        user_id = data.get("user_id")
-        user = User.objects.filter(id=user_id).first()
-        if not user:
-            raise HttpError(404, "User not found.")
+    auth_header = request.headers.get("Authorization", "")
+    if auth_header.startswith("Bearer "):
+        raw_token = auth_header.split(" ", 1)[1].strip()
+        try:
+            data = token_signer.unsign_object(raw_token, max_age=86400 * 30) # 30 days
+            user_id = data.get("user_id")
+            user = User.objects.filter(id=user_id).first()
+            if not user:
+                raise HttpError(404, "User not found.")
+
+            guest_id = None
+            if hasattr(user, 'guest_device_identity'):
+                if not user.guest_device_identity.is_active:
+                    raise HttpError(403, "Guest profile has been revoked.")
+                guest_id = user.guest_device_identity.guest_id
+
+            return {
+                "authenticated": True,
+                "user": {
+                    "id": str(user.id),
+                    "email": user.email,
+                    "full_name": user.full_name or user.username,
+                    "avatar_url": user.avatar_url,
+                    "role": user.role,
+                    "is_verified": user.is_verified,
+                    "guest_id": guest_id
+                }
+            }
+        except (BadSignature, SignatureExpired):
+            raise HttpError(401, "Session has expired or is invalid.")
+
+    # Check if guest device cookie or header is present
+    identity = resolve_guest_identity_from_request(request)
+    if identity and identity.is_active:
+        user = identity.user
+        token = token_signer.sign_object({
+            'user_id': str(user.id),
+            'email': user.email,
+            'guest_id': identity.guest_id,
+            'ts': int(time.time())
+        })
         return {
             "authenticated": True,
+            "token": token,
             "user": {
                 "id": str(user.id),
                 "email": user.email,
-                "full_name": user.full_name or user.username,
-                "avatar_url": user.avatar_url,
-                "role": user.role,
-                "is_verified": user.is_verified,
+                "full_name": user.full_name or "Guest User",
+                "avatar_url": None,
+                "role": "guest",
+                "is_verified": False,
+                "guest_id": identity.guest_id
             }
         }
-    except (BadSignature, SignatureExpired):
-        raise HttpError(401, "Session has expired or is invalid.")
+
+    raise HttpError(401, "Authentication required.")
 
 
 @api.post("/auth/logout")

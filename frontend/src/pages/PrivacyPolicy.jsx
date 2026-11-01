@@ -69,13 +69,16 @@ export default function PrivacyPolicy() {
             <h2 className="privacy-section-heading">3. Simatrix AI Processing & Infrastructure</h2>
           </div>
           <p>
-            Our document intelligence features (including <strong>AI Summarizer</strong>, <strong>Ask PDF</strong>, <strong>PDF Translator</strong>, <strong>Key Points Extractor</strong>, <strong>Data Extractor</strong>, <strong>Question Generator</strong>, <strong>PDF Rewriter</strong>, and <strong>PDF Comparison</strong>) leverage advanced cloud artificial intelligence infrastructure.
+            Our document intelligence features (including <strong>AI Summarizer</strong>, <strong>Ask PDF</strong>, <strong>PDF Translator</strong>, <strong>Key Points Extractor</strong>, <strong>Data Extractor</strong>, <strong>Question Generator</strong>, <strong>PDF Rewriter</strong>, and <strong>PDF Comparison</strong>) operate under the <strong>Simatrix AI</strong> product identity.
           </p>
           <p>
-            <strong>Underlying Model Infrastructure:</strong> Simatrix PDF does not operate a proprietary foundation model. To provide high-accuracy semantic document processing, extracted document text is transmitted to enterprise cloud AI infrastructure providers under contracted business agreements.
+            <strong>Underlying Model Infrastructure:</strong> Simatrix PDF does not operate a proprietary foundation model. To deliver high-accuracy semantic document processing, extracted document text is transmitted to commercial cloud AI API providers.
           </p>
           <p>
-            <strong>Zero Public Model Training:</strong> All AI processing operates under commercial enterprise terms. <em>Your document text, prompts, queries, and outputs are never used to train, retrain, or improve public foundation models.</em>
+            <strong>Zero Public Model Training:</strong> Under standard commercial API developer agreements, customer data submitted through paid API endpoints is not used to train, retrain, or improve public foundation models. We do not publish inflated claims of custom bespoke enterprise guarantees where standard commercial developer API terms govern.
+          </p>
+          <p>
+            <strong>Explicit User Consent:</strong> Document text is only transmitted to external cloud AI infrastructure after you explicitly opt in by checking the Simatrix AI Processing agreement. Your consent status is recorded on your profile and respected across sessions.
           </p>
         </section>
 
@@ -83,17 +86,17 @@ export default function PrivacyPolicy() {
         <section className="privacy-section">
           <div className="privacy-section-icon-row">
             <FontAwesomeIcon icon={faClock} className="privacy-icon" />
-            <h2 className="privacy-section-heading">4. Temporary File Retention</h2>
+            <h2 className="privacy-section-heading">4. Temporary File Retention & Scheduled Cleanup</h2>
           </div>
           <p>
-            We do not make misleading claims of instantaneous or zero retention. To deliver reliable file downloads and handle multi-page processing:
+            We do not make misleading claims of instantaneous or zero retention. To deliver reliable file downloads and execute multi-step conversions:
           </p>
           <ul className="privacy-bullet-list">
             <li>
-              <strong>Uploaded Files & Conversions:</strong> Uploaded PDFs and generated output files (e.g. converted DOCX, compressed PDFs, ZIP archives) are stored temporarily in isolated server storage exclusively to execute the operation and serve your authenticated download.
+              <strong>Uploaded Files & Conversions:</strong> Uploaded PDFs and generated output files (e.g. converted DOCX, compressed PDFs, ZIP archives) are stored temporarily in isolated server storage solely to complete the requested operation and serve your authenticated download.
             </li>
             <li>
-              <strong>Automated File Cleanup:</strong> An automated server cleanup worker periodically expunges temporary files and expired download tokens. Files are not retained indefinitely.
+              <strong>15-Minute Automated Cleanup:</strong> A production background timer runs every 15 minutes to delete temporary files and invalidate expired download tokens (TTL 900 seconds). Files are never retained permanently.
             </li>
           </ul>
         </section>
@@ -112,7 +115,7 @@ export default function PrivacyPolicy() {
               Document text chunks, BM25 retrieval metadata, and conversational turn history are retained in database storage for <strong>up to 24 hours</strong> from creation.
             </li>
             <li>
-              After 24 hours, active sessions and their associated document chunks automatically expire and are purged by scheduled maintenance tasks.
+              After 24 hours, expired sessions and their associated document chunks automatically expire and are purged by our 15-minute scheduled cleanup worker.
             </li>
             <li>
               You can permanently delete your active Ask PDF session and all indexed chunk context immediately at any time by clicking <strong>&quot;Delete Chat&quot;</strong> in the chat interface.
