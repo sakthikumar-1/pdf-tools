@@ -28,7 +28,8 @@ import {
   faTable,
   faCircleQuestion,
   faPenNib,
-  faScaleBalanced
+  faScaleBalanced,
+  faPenToSquare
 } from '@fortawesome/free-solid-svg-icons';
 
 export const TOOL_CATEGORIES = [
@@ -415,17 +416,17 @@ export const TOOLS_DATA = [
     popular: false,
   },
   {
-    id: 'edit-metadata',
-    title: 'Edit PDF Metadata',
-    path: '/tools/edit-metadata',
-    legacyPath: '/edit-metadata',
-    description: 'Inspect and update PDF properties including Title, Author, and Keywords.',
+    id: 'edit-pdf',
+    title: 'Edit PDF',
+    path: '/tools/edit-pdf',
+    legacyPath: '/edit-pdf',
+    description: 'Add text, shapes, annotations, images, and inspect document properties in your PDF.',
     category: 'security-protect',
     categorySlug: 'edit-secure',
     categoryLabel: 'Edit & Secure PDF',
-    icon: faTag,
-    keywords: ['metadata', 'properties', 'author', 'title', 'subject', 'keywords', 'info', 'document info'],
-    popular: false,
+    icon: faPenToSquare,
+    keywords: ['edit', 'editor', 'text', 'annotate', 'markup', 'draw', 'shapes', 'image', 'whiteout', 'metadata', 'properties', 'author', 'title', 'subject', 'keywords', 'info'],
+    popular: true,
   },
   {
     id: 'sign-pdf',
@@ -459,7 +460,7 @@ export function getToolsByCategory(categoryIdOrSlug) {
 export function getToolById(toolId) {
   if (!toolId) return null;
   const id = toolId.toLowerCase();
-  return TOOLS_DATA.find(t => t.id === id || t.path.endsWith(`/${id}`) || t.legacyPath === `/${id}`) || null;
+  return TOOLS_DATA.find(t => t.id === id || t.path.endsWith(`/${id}`) || t.legacyPath === `/${id}` || (id === 'edit-metadata' && t.id === 'edit-pdf')) || null;
 }
 
 export function filterTools(query, category = 'all') {
