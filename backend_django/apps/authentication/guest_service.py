@@ -25,8 +25,8 @@ logger = logging.getLogger(__name__)
 # Constants
 GUEST_DEVICE_COOKIE_NAME = "simatrix_device_token"
 GUEST_COOKIE_MAX_AGE = 365 * 24 * 3600  # 1 year in seconds
-GUEST_CREATION_LIMIT_PER_IP = 20        # Max 20 new guest accounts per IP / 10 minutes
-GUEST_CREATION_WINDOW_SECONDS = 600     # 10 minutes sliding window
+GUEST_CREATION_LIMIT_PER_IP = 5         # Max 5 new guest accounts per IP / 15 minutes
+GUEST_CREATION_WINDOW_SECONDS = 900     # 15 minutes sliding window
 
 
 class GuestIdentityException(Exception):

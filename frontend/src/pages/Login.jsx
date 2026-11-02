@@ -15,6 +15,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '../context/AuthContext';
 import { GOOGLE_CLIENT_ID } from '../config/auth';
+import { loadGoogleGsi } from '../utils/loadGoogleGsi';
 import './Login.css';
 
 export default function Login() {
@@ -26,7 +27,9 @@ export default function Login() {
   const tokenClientRef = useRef(null);
 
   useEffect(() => {
+    let mounted = true;
     const setupTokenClient = () => {
+      if (!mounted) return;
       if (window.google?.accounts?.oauth2) {
         try {
           tokenClientRef.current = window.google.accounts.oauth2.initTokenClient({
@@ -104,10 +107,38 @@ export default function Login() {
     }
   }, [loginWithGoogle, navigate]);
 
-  const handleGoogleSignInClick = () => {
+  const handleGoogleSignInClick = async () => {
     setIsLoading(true);
     setError(null);
     try {
+      if (!tokenClientRef.current) {
+        await loadGoogleGsi();
+        if (window.google?.accounts?.oauth2) {
+          tokenClientRef.current = window.google.accounts.oauth2.initTokenClient({
+            client_id: GOOGLE_CLIENT_ID,
+            scope: 'email profile openid',
+            callback: async (tokenResponse) => {
+              if (tokenResponse.access_token) {
+                const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                  headers: { Authorization: `Bearer ${tokenResponse.access_token}` }
+                });
+                const info = await res.json();
+                await loginWithGoogle({
+                  email: info.email,
+                  name: info.name,
+                  avatar_url: info.picture
+                });
+                setSuccess(true);
+                setTimeout(() => { navigate('/account'); }, 700);
+              }
+            },
+            error_callback: () => {
+              setError('Google Sign-In was closed. You can continue as Guest below.');
+              setIsLoading(false);
+            }
+          });
+        }
+      }
       if (tokenClientRef.current) {
         tokenClientRef.current.requestAccessToken({ prompt: 'select_account' });
       } else if (window.google?.accounts?.oauth2) {
@@ -281,7 +312,7 @@ export default function Login() {
                   <FontAwesomeIcon icon={faShieldHalved} className="privacy-shield-icon" />
                   <span>Privacy & Document Protection</span>
                 </div>
-                <span className="privacy-trust-pill">Zero Model Training</span>
+                <span className="privacy-trust-pill">Private AI Processing</span>
               </div>
 
               <div className="privacy-trust-grid">

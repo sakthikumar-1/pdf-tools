@@ -15,6 +15,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '../context/AuthContext';
 import { GOOGLE_CLIENT_ID } from '../config/auth';
+import { loadGoogleGsi } from '../utils/loadGoogleGsi';
 import './LoginModal.css';
 
 export default function LoginModal({ isOpen, onClose }) {
@@ -27,8 +28,10 @@ export default function LoginModal({ isOpen, onClose }) {
   // Initialize Google OAuth2 Token Client
   useEffect(() => {
     if (!isOpen) return;
+    let mounted = true;
 
     const setupTokenClient = () => {
+      if (!mounted) return;
       if (window.google?.accounts?.oauth2) {
         try {
           tokenClientRef.current = window.google.accounts.oauth2.initTokenClient({
@@ -109,10 +112,38 @@ export default function LoginModal({ isOpen, onClose }) {
 
   if (!isOpen) return null;
 
-  const handleGoogleSignInClick = () => {
+  const handleGoogleSignInClick = async () => {
     setIsLoading(true);
     setError(null);
     try {
+      if (!tokenClientRef.current) {
+        await loadGoogleGsi();
+        if (window.google?.accounts?.oauth2) {
+          tokenClientRef.current = window.google.accounts.oauth2.initTokenClient({
+            client_id: GOOGLE_CLIENT_ID,
+            scope: 'email profile openid',
+            callback: async (tokenResponse) => {
+              if (tokenResponse.access_token) {
+                const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                  headers: { Authorization: `Bearer ${tokenResponse.access_token}` }
+                });
+                const info = await res.json();
+                await loginWithGoogle({
+                  email: info.email,
+                  name: info.name,
+                  avatar_url: info.picture
+                });
+                setSuccess(true);
+                setTimeout(() => { setSuccess(false); onClose(); }, 700);
+              }
+            },
+            error_callback: () => {
+              setError('Google Sign-In was closed. You can continue as Guest below.');
+              setIsLoading(false);
+            }
+          });
+        }
+      }
       if (tokenClientRef.current) {
         tokenClientRef.current.requestAccessToken({ prompt: 'select_account' });
       } else if (window.google?.accounts?.oauth2) {
@@ -262,7 +293,7 @@ export default function LoginModal({ isOpen, onClose }) {
                     <FontAwesomeIcon icon={faShieldHalved} className="privacy-shield-icon" />
                     <span>Privacy & Document Protection</span>
                   </div>
-                  <span className="privacy-trust-pill">Zero Model Training</span>
+                  <span className="privacy-trust-pill">Private AI Processing</span>
                 </div>
 
                 <div className="privacy-trust-grid">

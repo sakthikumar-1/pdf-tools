@@ -45,3 +45,30 @@ services:
           type: web
           name: simatrix-pdf-backend
           property: host
+
+  # ==============================================================================
+  # 3. Scheduled Storage & Database Cleanup Cron Job (Every 15 minutes)
+  # NOTE: Systemd timers (simatrix_cleanup.timer) do not run in containerized Render
+  # environments. On Render, cleanup is executed via this native Render Cron Job or
+  # by triggering POST /api/v1/maintenance/cleanup with X-Simatrix-Maintenance-Key.
+  # ==============================================================================
+  - type: cron
+    name: simatrix-storage-cleanup
+    runtime: python
+    region: oregon
+    plan: starter
+    schedule: "*/15 * * * *"
+    buildCommand: pip install -r requirements.txt
+    startCommand: python backend_django/manage.py cleanup_storage --max-age 900
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.0
+      - key: DJANGO_SETTINGS_MODULE
+        value: core.settings.production
+      - key: SECRET_KEY
+        fromService:
+          type: web
+          name: simatrix-pdf-backend
+          property: secretKey
+      - key: STORAGE_ROOT
+        value: storage

@@ -97,7 +97,7 @@ function PDFToJPGInner() {
       // Fallback or Direct client-side PDF rendering
       if (useClientRendering) {
         const arrayBuffer = await file.arrayBuffer();
-        const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+        const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer, isEvalSupported: false });
         const pdf = await loadingTask.promise;
         const total = pdf.numPages;
         setTotalPages(total);

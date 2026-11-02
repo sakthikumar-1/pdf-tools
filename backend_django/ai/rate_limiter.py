@@ -150,6 +150,29 @@ def check_ai_rate_limits(request, user: Optional[User] = None) -> Tuple[bool, in
                 "GUEST_PREVIEW_LIMIT"
             )
 
+        # 1b. Guest IP-level abuse protection: maximum 5 guest operations per IP / 15 minutes
+        guest_ip_key = f"guest_ip_ai:{client_ip}"
+        try:
+            g_allowed, g_remaining, g_retry = _update_db_bucket(
+                key=guest_ip_key,
+                limit=5,
+                window_seconds=900
+            )
+        except DatabaseError:
+            g_allowed, g_remaining, g_retry = _update_memory_bucket(
+                key=guest_ip_key,
+                limit=5,
+                window_seconds=900
+            )
+
+        if not g_allowed:
+            return (
+                False,
+                0,
+                g_retry,
+                "Too many guest AI operations from this network. Please sign in with Google to continue."
+            )
+
     # 2. IP Rate Limit (30 req / 60s)
     ip_key = f"ip:{client_ip}"
     try:

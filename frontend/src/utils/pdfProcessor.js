@@ -1,5 +1,6 @@
 import { PDFDocument, PDFHexString, degrees, rgb, StandardFonts } from 'pdf-lib';
 import { pdfjsLib } from './pdfjsConfig.js';
+import { API_BASE_URL } from '../services/api.js';
 import JSZip from 'jszip';
 import * as XLSX from 'xlsx';
 import { getPdfPageCount } from './pdfPageCounter.js';
@@ -11,7 +12,7 @@ export { getPdfPageCount };
  */
 export async function extractTextFromPdf(file, onProgress) {
   const arrayBuffer = await file.arrayBuffer();
-  const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+  const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer, isEvalSupported: false });
   const pdf = await loadingTask.promise;
   const numPages = pdf.numPages;
 
@@ -64,7 +65,7 @@ export async function extractTextFromPdf(file, onProgress) {
  */
 export async function renderPdfToPngs(file, onProgress) {
   const arrayBuffer = await file.arrayBuffer();
-  const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+  const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer, isEvalSupported: false });
   const pdf = await loadingTask.promise;
   const totalPages = pdf.numPages;
   const images = [];
@@ -269,7 +270,7 @@ export async function compressPdf(file, compressionLevel = 'recommended', onProg
 
   if (typeof document !== 'undefined') {
     try {
-      const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+      const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer, isEvalSupported: false });
     const pdf = await loadingTask.promise;
     const numPages = pdf.numPages;
 
@@ -485,7 +486,7 @@ export async function protectPdf(file, password, onProgress) {
     formData.append('file', file);
     formData.append('password', password);
 
-    const res = await fetch('/api/v1/security/protect-pdf', {
+    const res = await fetch(`${API_BASE_URL}/security/protect-pdf`, {
       method: 'POST',
       body: formData
     });
@@ -696,7 +697,7 @@ export async function extractStructuredPdfPages(fileOrBuffer, onProgress) {
     arrayBuffer = fileOrBuffer;
   }
 
-  const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+  const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer, isEvalSupported: false });
   const doc = await loadingTask.promise;
   const numPages = doc.numPages;
   const pages = [];
@@ -1778,7 +1779,7 @@ export async function pdfToPptx(file, conversionMode = 'editable', onProgress) {
   let loadingTask;
   let pdf;
   try {
-    loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+    loadingTask = pdfjsLib.getDocument({ data: arrayBuffer, isEvalSupported: false });
     pdf = await loadingTask.promise;
   } catch (err) {
     if (err && err.name === 'PasswordException') {

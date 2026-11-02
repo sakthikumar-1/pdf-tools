@@ -28,7 +28,7 @@ from django.test import TransactionTestCase, Client
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import connection, connections
 
-from apps.authentication.models import User, GuestDeviceIdentity, AIUserQuota
+from apps.authentication.models import User, GuestDeviceIdentity, AIUserQuota, AIRateLimitBucket
 from apps.authentication.guest_service import (
     GUEST_DEVICE_COOKIE_NAME,
     hash_device_token,
@@ -50,12 +50,18 @@ def make_test_pdf(text: str = "Simatrix Unique Guest Test Document Content") -> 
     return SimpleUploadedFile("guest_test.pdf", pdf_bytes, content_type="application/pdf")
 
 
+from django.core.cache import cache
+from ai.rate_limiter import reset_rate_limit_memory
+
 class GuestIdentityAndDeviceLimitTests(TransactionTestCase):
     """Integration test suite covering all persistent guest identity and quota requirements."""
 
     def setUp(self):
         super().setUp()
-        self.client = Client()
+        cache.clear()
+        AIRateLimitBucket.objects.all().delete()
+        reset_rate_limit_memory()
+        self.client = Client(REMOTE_ADDR=f"10.42.{uuid.uuid4().int % 250 + 1}.{uuid.uuid4().int % 250 + 1}")
 
     def tearDown(self):
         super().tearDown()
@@ -469,3 +475,57 @@ class GuestIdentityAndDeviceLimitTests(TransactionTestCase):
 
         successful_reservations = [r for r in results if r is True]
         self.assertEqual(len(successful_reservations), 1, f"Expected exactly 1 slot won, got {len(successful_reservations)}")
+
+    def test_14_guest_creation_abuse_limit_on_cookie_clearing(self):
+        """14. Repeatedly clearing cookies from the same IP hits the guest creation abuse limit (5 / 15 min)."""
+        fixed_ip = "192.168.100.42"
+        # 5 guest registrations should succeed from this IP
+        for i in range(5):
+            self.client.cookies.clear()
+            res = self.client.post("/api/v1/auth/guest", REMOTE_ADDR=fixed_ip)
+            self.assertEqual(res.status_code, 200, f"Guest creation {i+1} should succeed")
+            self.assertTrue(res.json()["success"])
+
+        # 6th guest registration from the same IP must be blocked by abuse protection
+        self.client.cookies.clear()
+        res_blocked = self.client.post("/api/v1/auth/guest", REMOTE_ADDR=fixed_ip)
+        self.assertEqual(res_blocked.status_code, 429)
+        self.assertIn("Too many guest registrations", res_blocked.json().get("detail", ""))
+
+    def test_15_guest_ip_ai_operation_abuse_limit(self):
+        """15. Visitors attempting to bypass guest quota by clearing cookies are capped at 5 operations / 15 min per IP."""
+        test_router = AIProviderRouter(primary_provider=MockAIProvider())
+        fixed_ip = "192.168.100.99"
+
+        with patch('ai.api.global_ai_router', test_router):
+            # Create 6 distinct guest profiles from distinct setup IPs
+            tokens = []
+            for i in range(6):
+                self.client.cookies.clear()
+                res_auth = self.client.post("/api/v1/auth/guest", REMOTE_ADDR=f"10.0.1.{i+1}")
+                self.assertEqual(res_auth.status_code, 200)
+                tokens.append(res_auth.json()["token"])
+
+            # Guests 1 through 5 execute their 1 free AI operation from fixed_ip
+            for i in range(5):
+                pdf = make_test_pdf(f"Document for guest IP abuse test {i}")
+                res_ai = self.client.post(
+                    "/api/v1/ai/summarize",
+                    {"file": pdf, "mode": "quick", "consent": "true"},
+                    HTTP_AUTHORIZATION=f"Bearer {tokens[i]}",
+                    HTTP_X_SIMATRIX_AI_CONSENT="true",
+                    REMOTE_ADDR=fixed_ip
+                )
+                self.assertEqual(res_ai.status_code, 200, f"Guest {i+1} AI operation should succeed")
+
+            # 6th guest has not used their credit yet, but fixed_ip has exceeded 5 guest operations / 15 min
+            pdf6 = make_test_pdf("Document 6 exceeding guest IP limit")
+            res_ai6 = self.client.post(
+                "/api/v1/ai/summarize",
+                {"file": pdf6, "mode": "quick", "consent": "true"},
+                HTTP_AUTHORIZATION=f"Bearer {tokens[5]}",
+                HTTP_X_SIMATRIX_AI_CONSENT="true",
+                REMOTE_ADDR=fixed_ip
+            )
+            self.assertEqual(res_ai6.status_code, 429)
+            self.assertIn("Too many guest AI operations", res_ai6.json().get("detail", ""))

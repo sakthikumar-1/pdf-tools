@@ -1366,6 +1366,24 @@ def auth_google(request, response: HttpResponse, payload: GoogleAuthPayload):
         'ts': int(time.time())
     })
 
+    # Retrieve or initialize quota for registered user response
+    quota_dict = None
+    try:
+        from apps.authentication.models import AIUserQuota
+        user_obj = User.objects.filter(id=user_id).first()
+        if user_obj:
+            q_obj, _ = AIUserQuota.objects.get_or_create(
+                user=user_obj,
+                defaults={'total_allowed': 5, 'used_count': 0, 'is_blocked': False}
+            )
+            quota_dict = {
+                "used": q_obj.used_count,
+                "limit": q_obj.total_allowed,
+                "remaining": max(0, q_obj.total_allowed - q_obj.used_count)
+            }
+    except Exception as q_err:
+        logger.warning(f"Error fetching quota for auth response: {q_err}")
+
     return {
         "success": True,
         "token": token,
@@ -1376,7 +1394,8 @@ def auth_google(request, response: HttpResponse, payload: GoogleAuthPayload):
             "avatar_url": user_avatar,
             "role": user_role,
             "is_verified": user_verified,
-        }
+        },
+        "quota": quota_dict
     }
 
 

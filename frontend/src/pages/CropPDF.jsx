@@ -92,7 +92,7 @@ export default function CropPDF() {
         setIsLoadingPdf(true);
         setError(null);
         const arrayBuffer = await file.arrayBuffer();
-        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer, isEvalSupported: false }).promise;
         if (!isMounted) return;
 
         setPdfDocProxy(pdf);

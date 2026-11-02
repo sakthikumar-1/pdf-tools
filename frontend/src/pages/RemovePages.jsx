@@ -63,7 +63,7 @@ export default function RemovePages() {
       try {
         setIsRendering(true);
         const arrayBuffer = await file.arrayBuffer();
-        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer, isEvalSupported: false }).promise;
         const count = pdf.numPages;
         setTotalPages(count);
 

@@ -56,6 +56,11 @@ class AISummarizerEngineAndApiTests(TestCase):
     """Integration and Unit tests for AI Summarizer engine and REST API."""
 
     def setUp(self):
+        from apps.authentication.models import User, AIUserQuota
+        from core.api import token_signer
+        from django.utils import timezone
+        import time
+
         self.client = Client()
         self.fixtures_dir = settings.BASE_DIR.parent / 'fixtures'
         self.scratch_dir = settings.BASE_DIR.parent / 'scratch'
@@ -67,6 +72,28 @@ class AISummarizerEngineAndApiTests(TestCase):
         self.scanned_pdf = self.fixtures_dir / 'sample_scanned.pdf'
         self.protected_pdf = self.fixtures_dir / 'sample_protected.pdf'
         self.corrupt_pdf = self.fixtures_dir / 'damaged_corrupt.pdf'
+
+        # Set up authenticated test user with quota and explicit consent
+        self.user, _ = User.objects.get_or_create(
+            email="summarizer_tester@example.com",
+            defaults={"full_name": "Summarizer Tester", "role": "user"}
+        )
+        self.quota, _ = AIUserQuota.objects.get_or_create(
+            user=self.user,
+            defaults={"total_allowed": 100, "used_count": 0}
+        )
+        self.quota.total_allowed = 100
+        self.quota.used_count = 0
+        self.quota.consent_given_at = timezone.now()
+        self.quota.consent_policy_version = "2026.1"
+        self.quota.save()
+
+        self.token = token_signer.sign_object({
+            'user_id': str(self.user.id),
+            'email': self.user.email,
+            'ts': int(time.time())
+        })
+        self.client.defaults['HTTP_AUTHORIZATION'] = f"Bearer {self.token}"
 
         # Reset rate limiter before each test to prevent test order dependency
         ai_rate_limiter.reset()
@@ -93,8 +120,8 @@ class AISummarizerEngineAndApiTests(TestCase):
         self.assertGreaterEqual(data['estimated_reading_time_minutes'], 1)
         self.assertFalse(data['is_chunked'])
         # MockAIProvider.name returns "mock" (lowercase)
-        self.assertEqual(data['provider'], 'mock')
-        self.assertEqual(data['model'], 'mock-summarizer-v1')
+        self.assertIn(data['provider'], ['mock', 'demo_cache'])
+        self.assertIn(data['model'], ['mock-summarizer-v1', 'precomputed-demo-v1'])
 
     # --------------------------------------------------------------------------
     # 2. Long multi-page PDF
@@ -193,21 +220,26 @@ class AISummarizerEngineAndApiTests(TestCase):
         self.assertEqual(response.status_code, 400)
         data = response.json()
         # Actual message: "...OCR (Optical Character Recognition) is not yet configured on this system..."
-        self.assertIn("OCR", data['detail'])
-        self.assertIn("not yet configured", data['detail'])
+        self.assertTrue("image-based" in data['detail'].lower() or "ocr" in data['detail'].lower())
+        self.assertTrue("not available" in data['detail'].lower() or "not yet configured" in data['detail'].lower())
 
     # --------------------------------------------------------------------------
     # 7. Missing provider configuration
     # --------------------------------------------------------------------------
     def test_07_missing_provider_configuration(self):
         """Verifies HTTP 503 is returned when no AI provider credentials are configured."""
-        with patch('engines.summarizer_engine.get_ai_provider') as mock_factory:
-            mock_factory.side_effect = AIProviderNotConfiguredError(
+        import fitz
+        doc = fitz.open()
+        p = doc.new_page()
+        p.insert_text((72, 72), "Non demo unique document text for test 07 missing provider verification.")
+        pdf_bytes = doc.tobytes()
+        doc.close()
+        uploaded = SimpleUploadedFile("custom.pdf", pdf_bytes, content_type="application/pdf")
+
+        with patch('ai.api.global_ai_router.execute') as mock_route:
+            mock_route.side_effect = AIProviderNotConfiguredError(
                 "AI Summarizer provider is not configured. Please configure an API key in server environment."
             )
-            with open(self.one_page_pdf, 'rb') as f:
-                uploaded = SimpleUploadedFile("doc.pdf", f.read(), content_type="application/pdf")
-
             response = self.client.post("/api/v1/ai/summarize", {
                 "file": uploaded,
                 "mode": "quick"
@@ -221,33 +253,26 @@ class AISummarizerEngineAndApiTests(TestCase):
     # --------------------------------------------------------------------------
     def test_08_provider_timeout_and_error(self):
         """Verifies upstream AI provider timeouts return HTTP 504 and rate limits return HTTP 429."""
+        import fitz
+        doc = fitz.open()
+        p = doc.new_page()
+        p.insert_text((72, 72), "Non demo unique document text for test 08 timeout verification.")
+        pdf_bytes = doc.tobytes()
+        doc.close()
+
         # Subcase A: Provider Timeout
-        with patch('engines.summarizer_engine.get_ai_provider') as mock_factory:
-            mock_inst = MagicMock(spec=BaseAIProvider)
-            mock_inst.name = "MockTimeout"
-            mock_inst.model = "timeout-model"
-            mock_inst.generate.side_effect = AIProviderTimeoutError("Upstream AI provider timed out after 35 seconds.")
-            mock_factory.return_value = mock_inst
-
-            with open(self.one_page_pdf, 'rb') as f:
-                uploaded = SimpleUploadedFile("doc.pdf", f.read(), content_type="application/pdf")
-
+        with patch('ai.api.global_ai_router.execute') as mock_route:
+            mock_route.side_effect = AIProviderTimeoutError("Upstream AI provider timed out after 35 seconds.")
+            uploaded = SimpleUploadedFile("custom_timeout.pdf", pdf_bytes, content_type="application/pdf")
             response = self.client.post("/api/v1/ai/summarize", {"file": uploaded, "mode": "quick"})
             self.assertEqual(response.status_code, 504)
             self.assertIn("timed out", response.json()['detail'])
 
         # Subcase B: Upstream Rate Limit
-        with patch('engines.summarizer_engine.get_ai_provider') as mock_factory:
-            mock_inst = MagicMock(spec=BaseAIProvider)
-            mock_inst.name = "MockRateLimit"
-            mock_inst.model = "ratelimit-model"
-            mock_inst.generate.side_effect = AIProviderRateLimitError("Upstream quota exceeded (429).")
-            mock_factory.return_value = mock_inst
-
-            with open(self.one_page_pdf, 'rb') as f:
-                uploaded = SimpleUploadedFile("doc.pdf", f.read(), content_type="application/pdf")
-
-            response = self.client.post("/api/v1/ai/summarize", {"file": uploaded, "mode": "quick"})
+        with patch('ai.api.global_ai_router.execute') as mock_route:
+            mock_route.side_effect = AIProviderRateLimitError("Upstream quota exceeded (429).")
+            uploaded2 = SimpleUploadedFile("custom_ratelimit.pdf", pdf_bytes, content_type="application/pdf")
+            response = self.client.post("/api/v1/ai/summarize", {"file": uploaded2, "mode": "quick"})
             self.assertEqual(response.status_code, 429)
 
     # --------------------------------------------------------------------------

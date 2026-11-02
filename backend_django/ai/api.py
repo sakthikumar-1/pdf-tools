@@ -138,19 +138,10 @@ def get_authenticated_user(request) -> Optional[User]:
 
 
 def require_authenticated_user(request) -> User:
-    """Enforces Bearer authentication or auto-provisions persistent guest profile; raises 401/403."""
+    """Enforces Bearer authentication or active guest identity; raises 401/403."""
     user = get_authenticated_user(request)
     if not user:
-        from apps.authentication.guest_service import get_or_create_guest_identity, GuestRevokedError, GuestAbuseLimitError
-        try:
-            identity, raw_token, created = get_or_create_guest_identity(request)
-            user = identity.user
-        except GuestRevokedError as err:
-            raise HttpError(403, str(err))
-        except GuestAbuseLimitError as err:
-            raise HttpError(429, str(err))
-        except Exception:
-            raise HttpError(401, "Authentication required. Please provide a valid Bearer session token or continue as guest.")
+        raise HttpError(401, "Authentication required. Please sign in or continue as guest.")
 
     if getattr(user, 'ai_quota', None) and user.ai_quota.is_blocked:
         raise HttpError(403, "Your account has been suspended from using AI services. Please contact support.")
@@ -259,77 +250,18 @@ def summarize_endpoint(
     Preserves backwards compatibility with existing Phase 1 anonymous test suite.
     """
     client_ip = get_client_ip(request)
-    user = get_authenticated_user(request)
 
-    # 1. Unauthenticated Legacy Path (preserves test_ai_summarizer.py and anonymous access)
-    if not user:
-        is_allowed, remaining, retry_after = legacy_ai_rate_limiter.check(client_ip)
-        if not is_allowed:
-            raise HttpError(
-                429,
-                f"Rate limit exceeded. You can make at most 15 AI requests per hour. Please try again in {retry_after} seconds."
-            )
+    # Legacy rate limiter check for backwards compatibility
+    legacy_allowed, _, retry_after = legacy_ai_rate_limiter.check(client_ip)
+    if not legacy_allowed:
+        raise HttpError(
+            429,
+            f"Rate limit exceeded. You can make at most 15 AI requests per hour. Please try again in {retry_after} seconds."
+        )
 
-        orig_name = file.name or "document.pdf"
-        if not orig_name.lower().endswith('.pdf'):
-            raise HttpError(400, "Invalid file format. Please upload a standard PDF document (.pdf).")
+    user = require_authenticated_user(request)
 
-        max_size = 25 * 1024 * 1024
-        if file.size > max_size:
-            raise HttpError(400, f"File size ({file.size} bytes) exceeds the maximum allowed limit of 25MB.")
-
-        valid_modes = ('quick', 'detailed', 'key_points', 'section_by_section')
-        clean_mode = (mode or 'quick').lower().strip()
-        if clean_mode not in valid_modes:
-            raise HttpError(
-                400,
-                f"Invalid summary mode '{clean_mode}'. Supported modes are: {', '.join(valid_modes)}."
-            )
-
-        job_uuid = uuid.uuid4().hex
-        input_filename = f"{job_uuid}_summarize.pdf"
-        input_path = settings.UPLOADS_DIR / input_filename
-
-        try:
-            with open(input_path, 'wb') as dest:
-                for chunk in file.chunks():
-                    dest.write(chunk)
-
-            result = summarize_pdf(str(input_path), mode=clean_mode)
-            legacy_ai_rate_limiter.record(client_ip)
-            result["quota"] = {"total": 5, "used": 0, "remaining": 5}
-            result["is_demo"] = False
-            result["quota_deducted"] = False
-            return 200, result
-
-        except ScannedPdfError as err:
-            raise HttpError(400, str(err))
-        except SummarizerPasswordProtectedPdfError as err:
-            raise HttpError(400, str(err))
-        except (EmptyPdfError, FileLimitExceededError, SummarizerInvalidPdfError) as err:
-            raise HttpError(400, str(err))
-        except SummarizerEngineException as err:
-            raise HttpError(400, str(err))
-        except AIProviderNotConfiguredError as err:
-            raise HttpError(503, str(err))
-        except AIProviderAuthenticationError as err:
-            raise HttpError(502, f"AI provider authentication failed: {str(err)}")
-        except AIProviderRateLimitError as err:
-            raise HttpError(429, f"Upstream AI provider rate limit reached: {str(err)}")
-        except AIProviderTimeoutError as err:
-            raise HttpError(504, f"AI provider timed out: {str(err)}")
-        except AIProviderContextLengthError as err:
-            raise HttpError(413, f"Document context length exceeded: {str(err)}")
-        except AIProviderException as err:
-            raise HttpError(502, f"AI provider error: {str(err)}")
-        except Exception as exc:
-            logger.error(f"Summarizer error: {exc}", exc_info=True)
-            raise HttpError(500, f"Failed to generate summary: {str(exc)}")
-        finally:
-            safe_unlink(input_path)
-
-    # 2. Authenticated Phase 4 Path
-    # Rate Limits (10 req/min for user, 30 req/min for IP)
+    # 1. Rate Limits (10 req/min for user, 30 req/min for IP)
     is_allowed, remaining, retry_after, rate_err = check_ai_rate_limits(request, user)
     if not is_allowed:
         if rate_err == "GUEST_PREVIEW_LIMIT":
@@ -385,10 +317,11 @@ def summarize_endpoint(
             ip_address=client_ip,
             mode=clean_mode
         )
+        legacy_ai_rate_limiter.record(client_ip)
         return 200, result
 
     except QuotaExceededException as qe:
-        return 400, {
+        return 403, {
             "success": False,
             "code": "AI_LIMIT_REACHED",
             "message": str(qe),
@@ -631,7 +564,7 @@ def chat_pdf_endpoint(
         return 200, result
 
     except QuotaExceededException as qe:
-        return 400, {
+        return 403, {
             "success": False,
             "code": "AI_LIMIT_REACHED",
             "message": str(qe),
@@ -826,7 +759,7 @@ def translate_endpoint(
         return 200, result
 
     except QuotaExceededException as qe:
-        return 400, {
+        return 403, {
             "success": False,
             "code": "AI_LIMIT_REACHED",
             "message": str(qe),
@@ -1005,7 +938,7 @@ def _execute_generic_ai_processor(
         return 200, result
 
     except QuotaExceededException as qe:
-        return 400, {
+        return 403, {
             "success": False,
             "code": "AI_LIMIT_REACHED",
             "message": str(qe),

@@ -4,28 +4,51 @@ import MainLayout from './layouts/MainLayout';
 import ErrorBoundary from './components/ErrorBoundary';
 import { checkBackendHealth } from './services/api';
 
-const Home = lazy(() => import('./pages/Home'));
-const CategoryPage = lazy(() => import('./pages/CategoryPage'));
-const PDFToJPG = lazy(() => import('./pages/PDFToJPG'));
-const GenericTool = lazy(() => import('./pages/GenericTool'));
-const RemovePages = lazy(() => import('./pages/RemovePages'));
-const ReorderPages = lazy(() => import('./pages/ReorderPages'));
-const CropPDF = lazy(() => import('./pages/CropPDF'));
-const SignPDF = lazy(() => import('./pages/SignPDF'));
-const AISummarizer = lazy(() => import('./pages/AISummarizer'));
-const AskPdf = lazy(() => import('./pages/AskPdf'));
-const PDFTranslator = lazy(() => import('./pages/PDFTranslator'));
-const KeyPointsExtractor = lazy(() => import('./pages/KeyPointsExtractor'));
-const DataExtractor = lazy(() => import('./pages/DataExtractor'));
-const QuestionGenerator = lazy(() => import('./pages/QuestionGenerator'));
-const PDFRewriter = lazy(() => import('./pages/PDFRewriter'));
-const PDFComparison = lazy(() => import('./pages/PDFComparison'));
-const ComingSoonTool = lazy(() => import('./pages/ComingSoonTool'));
-const Login = lazy(() => import('./pages/Login'));
-const Account = lazy(() => import('./pages/Account'));
-const History = lazy(() => import('./pages/History'));
-const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
-const NotFound = lazy(() => import('./pages/NotFound'));
+// Safe dynamic import with automatic chunk-mismatch reload guard (Issue 3)
+function safeLazy(importFn) {
+  return lazy(async () => {
+    try {
+      return await importFn();
+    } catch (err) {
+      console.warn('[SafeLazy] Chunk loading failure:', err);
+      const isChunkOrCssError =
+        err?.message?.includes('Failed to fetch dynamically imported module') ||
+        err?.message?.includes('Unable to preload CSS') ||
+        err?.name === 'ChunkLoadError';
+
+      const reloadKey = `simatrix_lazy_reload_${window.location.pathname}`;
+      if (isChunkOrCssError && !sessionStorage.getItem(reloadKey)) {
+        sessionStorage.setItem(reloadKey, 'true');
+        window.location.reload();
+        return new Promise(() => {});
+      }
+      throw err;
+    }
+  });
+}
+
+const Home = safeLazy(() => import('./pages/Home'));
+const CategoryPage = safeLazy(() => import('./pages/CategoryPage'));
+const PDFToJPG = safeLazy(() => import('./pages/PDFToJPG'));
+const GenericTool = safeLazy(() => import('./pages/GenericTool'));
+const RemovePages = safeLazy(() => import('./pages/RemovePages'));
+const ReorderPages = safeLazy(() => import('./pages/ReorderPages'));
+const CropPDF = safeLazy(() => import('./pages/CropPDF'));
+const SignPDF = safeLazy(() => import('./pages/SignPDF'));
+const AISummarizer = safeLazy(() => import('./pages/AISummarizer'));
+const AskPdf = safeLazy(() => import('./pages/AskPdf'));
+const PDFTranslator = safeLazy(() => import('./pages/PDFTranslator'));
+const KeyPointsExtractor = safeLazy(() => import('./pages/KeyPointsExtractor'));
+const DataExtractor = safeLazy(() => import('./pages/DataExtractor'));
+const QuestionGenerator = safeLazy(() => import('./pages/QuestionGenerator'));
+const PDFRewriter = safeLazy(() => import('./pages/PDFRewriter'));
+const PDFComparison = safeLazy(() => import('./pages/PDFComparison'));
+const ComingSoonTool = safeLazy(() => import('./pages/ComingSoonTool'));
+const Login = safeLazy(() => import('./pages/Login'));
+const Account = safeLazy(() => import('./pages/Account'));
+const History = safeLazy(() => import('./pages/History'));
+const PrivacyPolicy = safeLazy(() => import('./pages/PrivacyPolicy'));
+const NotFound = safeLazy(() => import('./pages/NotFound'));
 
 function PageLoader() {
   return (

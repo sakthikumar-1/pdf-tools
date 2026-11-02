@@ -179,7 +179,7 @@ class AIAPIIntegrationTests(TransactionTestCase):
             {"file": uploaded, "mode": "quick", "consent": "true"},
             **self.auth_headers_a
         )
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 403)
         data = response.json()
         self.assertEqual(data.get("code"), "AI_LIMIT_REACHED")
         self.assertEqual(data["quota"]["used"], 5)

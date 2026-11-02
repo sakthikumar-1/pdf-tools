@@ -18,6 +18,16 @@ export default class ErrorBoundary extends React.Component {
   }
 
   handleReset = () => {
+    try {
+      // Clear reload guard flags so fresh HTML is requested
+      sessionStorage.removeItem('simatrix_vite_preload_reload');
+      const keys = Object.keys(sessionStorage);
+      for (const k of keys) {
+        if (k.startsWith('simatrix_chunk_reload_') || k.startsWith('simatrix_lazy_reload_')) {
+          sessionStorage.removeItem(k);
+        }
+      }
+    } catch (e) {}
     this.setState({ hasError: false, error: null, errorInfo: null });
     window.location.reload();
   };
@@ -64,23 +74,37 @@ export default class ErrorBoundary extends React.Component {
               <FontAwesomeIcon icon={faTriangleExclamation} />
             </div>
 
-            <h2 style={{
-              fontSize: '1.5rem',
-              fontWeight: 700,
-              color: '#FFFCF6',
-              marginBottom: '0.75rem'
-            }}>
-              Something went wrong loading this tool
-            </h2>
+            {(() => {
+              const errMsg = this.state.error?.message || '';
+              const isChunkOrCssError =
+                errMsg.includes('Unable to preload CSS') ||
+                errMsg.includes('Failed to fetch dynamically imported module') ||
+                this.state.error?.name === 'ChunkLoadError';
 
-            <p style={{
-              fontSize: '0.95rem',
-              color: 'rgba(245, 240, 231, 0.75)',
-              lineHeight: 1.6,
-              marginBottom: '1.75rem'
-            }}>
-              An unexpected display issue occurred while rendering this component. You can reload the tool or return to the main dashboard.
-            </p>
+              return (
+                <>
+                  <h2 style={{
+                    fontSize: '1.5rem',
+                    fontWeight: 700,
+                    color: '#FFFCF6',
+                    marginBottom: '0.75rem'
+                  }}>
+                    {isChunkOrCssError ? 'Application Update Available' : 'Something went wrong loading this tool'}
+                  </h2>
+
+                  <p style={{
+                    fontSize: '0.95rem',
+                    color: 'rgba(245, 240, 231, 0.75)',
+                    lineHeight: 1.6,
+                    marginBottom: '1.75rem'
+                  }}>
+                    {isChunkOrCssError
+                      ? 'A new version of Simatrix PDF has been deployed. Please refresh to load the latest tools, styles, and features.'
+                      : 'An unexpected display issue occurred while rendering this component. You can reload the tool or return to the main dashboard.'}
+                  </p>
+                </>
+              );
+            })()}
 
             {this.state.error && (
               <div style={{
@@ -125,7 +149,7 @@ export default class ErrorBoundary extends React.Component {
                 onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#C62828'}
                 onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#E53935'}
               >
-                <FontAwesomeIcon icon={faRotateRight} /> Reload Page
+                <FontAwesomeIcon icon={faRotateRight} /> {this.state.error?.message?.includes('Unable to preload CSS') ? 'Refresh Application' : 'Reload Page'}
               </button>
 
               <a

@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { API_BASE_URL } from '../services/api';
 
 const AuthContext = createContext();
 
@@ -29,7 +30,7 @@ export function AuthProvider({ children }) {
           headers['Authorization'] = `Bearer ${savedToken}`;
         }
 
-        const res = await fetch('/api/v1/auth/me', {
+        const res = await fetch(`${API_BASE_URL}/auth/me`, {
           headers,
           credentials: 'include'
         });
@@ -61,7 +62,7 @@ export function AuthProvider({ children }) {
 
   const loginWithGoogle = async (payload = {}) => {
     try {
-      const res = await fetch('/api/v1/auth/google', {
+      const res = await fetch(`${API_BASE_URL}/auth/google`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -89,7 +90,7 @@ export function AuthProvider({ children }) {
 
   const loginAsGuest = async () => {
     try {
-      const res = await fetch('/api/v1/auth/guest', {
+      const res = await fetch(`${API_BASE_URL}/auth/guest`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -116,7 +117,7 @@ export function AuthProvider({ children }) {
 
   const logout = async () => {
     try {
-      await fetch('/api/v1/auth/logout', {
+      await fetch(`${API_BASE_URL}/auth/logout`, {
         method: 'POST',
         credentials: 'include'
       }).catch(() => {});

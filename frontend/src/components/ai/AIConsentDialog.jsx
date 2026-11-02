@@ -105,7 +105,7 @@ export default function AIConsentDialog({
                 <FontAwesomeIcon icon={faCircleCheck} />
               </div>
               <div className="ai-point-text">
-                <strong>No Public Model Training:</strong> Your documents are processed under strict enterprise agreements and are not used to train public foundation models.{' '}
+                <strong>Private API Processing:</strong> Your documents are processed through commercial API tiers with strict data segregation and are not used to train public foundation models.{' '}
                 <Link to="/privacy" target="_blank" rel="noopener noreferrer">
                   Learn more
                 </Link>

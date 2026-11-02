@@ -11,6 +11,7 @@ import {
   faFont
 } from '@fortawesome/free-solid-svg-icons';
 import { downloadFile } from '../../utils/fileUtils';
+import { API_BASE_URL } from '../../services/api';
 import './AIResultToolbar.css';
 
 export default function AIResultToolbar({
@@ -52,7 +53,7 @@ export default function AIResultToolbar({
     if (downloadUrl) {
       window.open(downloadUrl, '_blank');
     } else if (downloadToken) {
-      window.open(`/api/v1/download/${downloadToken}`, '_blank');
+      window.open(`${API_BASE_URL}/download/${downloadToken}`, '_blank');
     }
   };
 
