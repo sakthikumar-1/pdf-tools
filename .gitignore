@@ -30,6 +30,8 @@ frontend/.env
 
 
 # Python / Django cache and virtualenvs
+venv/
+.venv/
 __pycache__/
 *.py[cod]
 *$py.class

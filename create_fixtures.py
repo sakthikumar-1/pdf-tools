@@ -108,4 +108,4 @@ doc7.close()
 
 print("All 9 test fixture categories created successfully.")
 for p in sorted(FIXTURES_DIR.glob('*')):
-    print(f" - {p.name} ({p.stat().st_size} bytes)")
+    print(f" - {p.name.encode('ascii', 'replace').decode('ascii')} ({p.stat().st_size} bytes)")
