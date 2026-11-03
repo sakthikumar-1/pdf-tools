@@ -35,6 +35,7 @@ const RemovePages = safeLazy(() => import('./pages/RemovePages'));
 const ReorderPages = safeLazy(() => import('./pages/ReorderPages'));
 const CropPDF = safeLazy(() => import('./pages/CropPDF'));
 const SignPDF = safeLazy(() => import('./pages/SignPDF'));
+const EditPDF = safeLazy(() => import('./pages/EditPDF'));
 const AISummarizer = safeLazy(() => import('./pages/AISummarizer'));
 const AskPdf = safeLazy(() => import('./pages/AskPdf'));
 const PDFTranslator = safeLazy(() => import('./pages/PDFTranslator'));
@@ -328,15 +329,13 @@ export default function App() {
               <Route path="/tools/crop-pdf" element={<CropPDF />} />
               <Route path="/crop-pdf" element={<CropPDF />} />
 
-              {/* Edit Metadata */}
-              <Route 
-                path="/tools/edit-metadata" 
-                element={<GenericTool title="Edit PDF Metadata" description="Inspect and update PDF document properties including Title, Author, and Keywords." icon={faTag} actionLabel="Update Metadata Now" />} 
-              />
-              <Route 
-                path="/edit-metadata" 
-                element={<GenericTool title="Edit PDF Metadata" description="Inspect and update PDF document properties including Title, Author, and Keywords." icon={faTag} actionLabel="Update Metadata Now" />} 
-              />
+              {/* Edit PDF (Upgraded dedicated workspace) */}
+              <Route path="/tools/edit-pdf" element={<EditPDF />} />
+              <Route path="/edit-pdf" element={<EditPDF />} />
+
+              {/* Backward compatibility redirects for Edit Metadata */}
+              <Route path="/tools/edit-metadata" element={<Navigate to="/tools/edit-pdf" replace />} />
+              <Route path="/edit-metadata" element={<Navigate to="/tools/edit-pdf" replace />} />
 
               {/* Reorder PDF */}
               <Route path="/tools/reorder-pdf" element={<ReorderPages />} />

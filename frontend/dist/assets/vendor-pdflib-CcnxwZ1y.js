@@ -1,4 +1,8 @@
+<<<<<<<< HEAD:frontend/dist/assets/vendor-pdflib-CcnxwZ1y.js
 import{g as Xu}from"./vendor-react-DhmVQmFn.js";import"./vendor-fontawesome-BMzV3kTf.js";/*! *****************************************************************************
+========
+import{a as Xu}from"./vendor-react-CNXNrMNR.js";import"./vendor-fontawesome-B5N2ATEz.js";/*! *****************************************************************************
+>>>>>>>> 73a3444d41df80ac83c7f92e75e26bfa3b4bda84:frontend/dist/assets/vendor-pdflib-4VwDCjyp.js
 Copyright (c) Microsoft Corporation.
 
 Permission to use, copy, modify, and/or distribute this software for any
