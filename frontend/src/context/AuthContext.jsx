@@ -19,31 +19,32 @@ export function AuthProvider({ children }) {
 
   const [isLoading, setIsLoading] = useState(true);
 
-  // Verify session on mount (supports Bearer token and persistent guest device cookie)
+  // Verify session on mount (only if a saved token exists)
   useEffect(() => {
     async function verifySession() {
       const savedToken = localStorage.getItem('simatrix_auth_token');
 
-      try {
-        const headers = {};
-        if (savedToken) {
-          headers['Authorization'] = `Bearer ${savedToken}`;
-        }
+      if (!savedToken) {
+        setUser(null);
+        setToken(null);
+        setIsLoading(false);
+        return;
+      }
 
+      try {
         const res = await fetch(`${API_BASE_URL}/auth/me`, {
-          headers,
+          headers: {
+            'Authorization': `Bearer ${savedToken}`,
+            'Accept': 'application/json'
+          },
           credentials: 'include'
         });
 
         if (res.ok) {
           const data = await res.json();
           setUser(data.user);
-          if (data.token) {
-            setToken(data.token);
-            localStorage.setItem('simatrix_auth_token', data.token);
-          }
           localStorage.setItem('simatrix_auth_user', JSON.stringify(data.user));
-        } else if (savedToken) {
+        } else {
           // Token expired or invalid
           setUser(null);
           setToken(null);
@@ -88,33 +89,6 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const loginAsGuest = async () => {
-    try {
-      const res = await fetch(`${API_BASE_URL}/auth/guest`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include'
-      });
-
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.detail || errData.message || 'Guest sign-in failed. Please try again.');
-      }
-
-      const data = await res.json();
-      setToken(data.token);
-      setUser(data.user);
-      localStorage.setItem('simatrix_auth_token', data.token);
-      localStorage.setItem('simatrix_auth_user', JSON.stringify(data.user));
-      return data.user;
-    } catch (err) {
-      console.error('Guest login error:', err);
-      throw err;
-    }
-  };
-
   const logout = async () => {
     try {
       await fetch(`${API_BASE_URL}/auth/logout`, {
@@ -137,7 +111,6 @@ export function AuthProvider({ children }) {
         isAuthenticated: !!user,
         isLoading,
         loginWithGoogle,
-        loginAsGuest,
         logout
       }}
     >

@@ -11,6 +11,9 @@ load_dotenv(BASE_DIR / '.env')
 # Security Settings
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'simatrix-pdf-tools-fallback-dev-secret-key-change-me')
 DEBUG = os.getenv('DJANGO_DEBUG', 'True').lower() in ('true', '1', 'yes')
+SIMATRIX_MAINTENANCE_KEY = os.getenv('SIMATRIX_MAINTENANCE_KEY', '')
+SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
+GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID', os.getenv('VITE_GOOGLE_CLIENT_ID', ''))
 
 # Allowed Hosts (Permissive for Render and Local Development)
 raw_hosts = os.getenv('DJANGO_ALLOWED_HOSTS', '*').strip()
@@ -50,6 +53,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'core.security_headers.SecurityHeadersMiddleware',
     'django.middleware.gzip.GZipMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',

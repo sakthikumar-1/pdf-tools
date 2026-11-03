@@ -60,9 +60,10 @@ export async function fetchServerCapabilities() {
  * @param {Function} onProgress
  * @returns {Promise<{ blob: Blob, filename: string, isScanned: boolean, pageCount: number }>}
  */
-export async function convertPdfToWordPython(file, onProgress) {
+export async function convertPdfToWordPython(file, onProgress, mode = 'editable') {
   const formData = new FormData();
   formData.append('file', file);
+  formData.append('mode', mode);
 
   const xhr = new XMLHttpRequest();
   const url = `${API_BASE_URL}/convert/pdf-to-word`;
@@ -115,6 +116,9 @@ export async function convertPdfToWordPython(file, onProgress) {
     filename: data.filename || `${file.name.replace(/\.[^/.]+$/, '')}_converted.docx`,
     isScanned: Boolean(data.is_scanned),
     pageCount: data.page_count || 1,
+    conversionMode: data.conversion_mode || mode,
+    scannedNotice: data.scanned_notice || null,
+    validation: data.validation || null,
   };
 }
 
@@ -667,7 +671,7 @@ export async function fetchAIQuota() {
 }
 
 /**
- * Records explicit user or guest consent for Simatrix AI processing.
+ * Records explicit user consent for Simatrix AI processing.
  * @param {boolean} [consent=true]
  * @param {string} [policyVersion='2026.1']
  * @returns {Promise<Object>}

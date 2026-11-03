@@ -1,17 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faArrowLeft, 
-  faShieldHalved, 
   faSpinner,
-  faCircleCheck,
-  faBolt,
-  faTrashCan,
-  faBrain,
-  faClock,
-  faLock,
-  faArrowRight
+  faCircleCheck
 } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '../context/AuthContext';
 import { GOOGLE_CLIENT_ID } from '../config/auth';
@@ -20,174 +13,109 @@ import './Login.css';
 
 export default function Login() {
   const navigate = useNavigate();
-  const { loginWithGoogle, loginAsGuest, isAuthenticated, user } = useAuth();
+  const { loginWithGoogle, isAuthenticated, user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
-  const tokenClientRef = useRef(null);
+  const googleBtnRef = useRef(null);
 
-  useEffect(() => {
-    let mounted = true;
-    const setupTokenClient = () => {
-      if (!mounted) return;
-      if (window.google?.accounts?.oauth2) {
-        try {
-          tokenClientRef.current = window.google.accounts.oauth2.initTokenClient({
-            client_id: GOOGLE_CLIENT_ID,
-            scope: 'email profile openid',
-            callback: async (tokenResponse) => {
-              if (tokenResponse.error) {
-                console.error('Google OAuth error:', tokenResponse);
-                if (tokenResponse.error === 'popup_closed_by_user') {
-                  setError('Google popup was closed. You can also continue as Guest below.');
-                } else {
-                  setError(`Google sign-in error (${tokenResponse.error}). You can continue as Guest below.`);
-                }
-                setIsLoading(false);
-                return;
-              }
-
-              if (tokenResponse.access_token) {
-                try {
-                  const userinfoRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-                    headers: {
-                      Authorization: `Bearer ${tokenResponse.access_token}`
-                    }
-                  });
-
-                  if (!userinfoRes.ok) {
-                    throw new Error('Failed to retrieve Google profile information.');
-                  }
-
-                  const userInfo = await userinfoRes.json();
-                  
-                  await loginWithGoogle({
-                    email: userInfo.email,
-                    name: userInfo.name || userInfo.email.split('@')[0],
-                    avatar_url: userInfo.picture || ''
-                  });
-
-                  setSuccess(true);
-                  setTimeout(() => {
-                    navigate('/account');
-                  }, 700);
-                } catch (err) {
-                  setError(err.message || 'Authentication failed. Please try again.');
-                } finally {
-                  setIsLoading(false);
-                }
-              }
-            },
-            error_callback: (err) => {
-              console.warn('Google Identity error_callback:', err);
-              if (err.type === 'origin_mismatch') {
-                setError('Google OAuth origin mismatch for local address. You can continue as Guest below.');
-              } else {
-                setError('Google Sign-In encountered an issue. You can continue as Guest below.');
-              }
-              setIsLoading(false);
-            }
-          });
-        } catch (err) {
-          console.warn('Google OAuth Token Client setup error:', err);
-        }
-      }
-    };
-
-    if (window.google?.accounts?.oauth2) {
-      setupTokenClient();
-    } else {
-      const interval = setInterval(() => {
-        if (window.google?.accounts?.oauth2) {
-          clearInterval(interval);
-          setupTokenClient();
-        }
-      }, 100);
-      return () => clearInterval(interval);
-    }
-  }, [loginWithGoogle, navigate]);
-
-  const handleGoogleSignInClick = async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      if (!tokenClientRef.current) {
-        await loadGoogleGsi();
-        if (window.google?.accounts?.oauth2) {
-          tokenClientRef.current = window.google.accounts.oauth2.initTokenClient({
-            client_id: GOOGLE_CLIENT_ID,
-            scope: 'email profile openid',
-            callback: async (tokenResponse) => {
-              if (tokenResponse.access_token) {
-                const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-                  headers: { Authorization: `Bearer ${tokenResponse.access_token}` }
-                });
-                const info = await res.json();
-                await loginWithGoogle({
-                  email: info.email,
-                  name: info.name,
-                  avatar_url: info.picture
-                });
-                setSuccess(true);
-                setTimeout(() => { navigate('/account'); }, 700);
-              }
-            },
-            error_callback: () => {
-              setError('Google Sign-In was closed. You can continue as Guest below.');
-              setIsLoading(false);
-            }
-          });
-        }
-      }
-      if (tokenClientRef.current) {
-        tokenClientRef.current.requestAccessToken({ prompt: 'select_account' });
-      } else if (window.google?.accounts?.oauth2) {
-        const client = window.google.accounts.oauth2.initTokenClient({
-          client_id: GOOGLE_CLIENT_ID,
-          scope: 'email profile openid',
-          callback: async (tokenResponse) => {
-            if (tokenResponse.access_token) {
-              const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-                headers: { Authorization: `Bearer ${tokenResponse.access_token}` }
-              });
-              const info = await res.json();
-              await loginWithGoogle({
-                email: info.email,
-                name: info.name,
-                avatar_url: info.picture
-              });
-              setSuccess(true);
-              setTimeout(() => { navigate('/account'); }, 700);
-            }
-          },
-          error_callback: (err) => {
-            setError('Google Sign-In was closed. You can continue as Guest below.');
-            setIsLoading(false);
-          }
-        });
-        client.requestAccessToken({ prompt: 'select_account' });
-      } else {
-        setError('Google Sign-In is still connecting. You can continue as Guest below.');
-        setIsLoading(false);
-      }
-    } catch (e) {
-      setError('Could not connect to Google. You can continue as Guest below.');
+  const handleCredentialResponse = useCallback(async (response) => {
+    if (!response || !response.credential) {
+      setError('Google Sign-In was cancelled or did not return an ID token.');
       setIsLoading(false);
+      return;
     }
-  };
 
-  const handleGuestSignIn = async () => {
     setIsLoading(true);
     setError(null);
+
     try {
-      await loginAsGuest();
+      // Send Google ID token to backend for cryptographic signature & claim verification
+      await loginWithGoogle({
+        credential: response.credential,
+        token_type: 'id_token'
+      });
+
       setSuccess(true);
       setTimeout(() => {
         navigate('/account');
       }, 700);
     } catch (err) {
-      setError(err.message || 'Guest sign-in failed. Please try again.');
+      setError(err.message || 'Authentication failed. Please try again.');
     } finally {
+      setIsLoading(false);
+    }
+  }, [loginWithGoogle, navigate]);
+
+  const initGoogleId = useCallback(() => {
+    if (window.google?.accounts?.id) {
+      try {
+        window.google.accounts.id.initialize({
+          client_id: GOOGLE_CLIENT_ID,
+          callback: handleCredentialResponse,
+          auto_select: false,
+          cancel_on_tap_outside: true,
+        });
+
+        if (googleBtnRef.current) {
+          googleBtnRef.current.innerHTML = '';
+          window.google.accounts.id.renderButton(googleBtnRef.current, {
+            type: 'standard',
+            theme: document.documentElement.getAttribute('data-theme') === 'dark' ? 'filled_black' : 'outline',
+            size: 'large',
+            text: 'continue_with',
+            shape: 'rectangular',
+            logo_alignment: 'left',
+            width: 320
+          });
+        }
+      } catch (err) {
+        console.warn('Google GSI initialization error:', err);
+      }
+    }
+  }, [handleCredentialResponse]);
+
+  useEffect(() => {
+    let mounted = true;
+    loadGoogleGsi()
+      .then(() => {
+        if (mounted) initGoogleId();
+      })
+      .catch((err) => {
+        console.warn('GSI load warning:', err);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [initGoogleId]);
+
+  const handleGoogleSignInClick = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      await loadGoogleGsi();
+      if (window.google?.accounts?.id) {
+        initGoogleId();
+        window.google.accounts.id.prompt((notification) => {
+          if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+            setIsLoading(false);
+            const renderedBtn = googleBtnRef.current?.querySelector('div[role="button"]');
+            if (renderedBtn) {
+              renderedBtn.click();
+            } else {
+              setError('Google Sign-In prompt could not open. Please ensure popups and third-party cookies are allowed.');
+            }
+          } else if (notification.isDismissedMoment()) {
+            setIsLoading(false);
+          }
+        });
+      } else {
+        setError('Google Sign-In is still connecting. Please try again in a moment.');
+        setIsLoading(false);
+      }
+    } catch (e) {
+      setError('Could not connect to Google. Please check your connection and try again.');
       setIsLoading(false);
     }
   };
@@ -234,134 +162,65 @@ export default function Login() {
           </div>
           <h1 className="login-title">Sign in to Simatrix PDF</h1>
           <p className="login-subtitle">
-            Choose how you would like to proceed with Simatrix PDF.
+            Sign in with Google and get five free AI requests.
           </p>
         </div>
 
         {success ? (
-          <div style={{ textAlign: 'center', padding: '2rem 1rem' }}>
-            <FontAwesomeIcon icon={faCircleCheck} size="3x" style={{ color: 'var(--color-success)', marginBottom: '1rem' }} />
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--color-heading)', marginBottom: '0.5rem' }}>Successfully Signed In</h2>
-            <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>Redirecting to your workspace...</p>
+          <div style={{ textAlign: 'center', padding: '1.5rem 1rem' }}>
+            <FontAwesomeIcon icon={faCircleCheck} size="3x" style={{ color: 'var(--color-success)', marginBottom: '0.75rem' }} />
+            <h2 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--color-heading)', marginBottom: '0.25rem' }}>Successfully Signed In</h2>
+            <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>Redirecting to your workspace...</p>
           </div>
         ) : (
           <>
             {error && (
-              <div style={{ padding: '0.75rem 1rem', background: 'rgba(217, 75, 75, 0.1)', border: '1px solid rgba(217, 75, 75, 0.35)', borderRadius: '8px', color: 'var(--color-error)', fontSize: '0.86rem', fontWeight: 600 }}>
+              <div style={{ padding: '0.65rem 0.85rem', background: 'rgba(217, 75, 75, 0.1)', border: '1px solid rgba(217, 75, 75, 0.35)', borderRadius: '8px', color: 'var(--color-error)', fontSize: '0.82rem', fontWeight: 500, textAlign: 'center' }}>
                 {error}
               </div>
             )}
 
             <div className="login-actions">
-              {/* 1. Continue as Guest Button */}
-              <button
-                type="button"
-                className="guest-signin-btn"
-                onClick={handleGuestSignIn}
-                disabled={isLoading}
-              >
-                <div className="btn-content-stacked">
-                  <div className="btn-title-row">
-                    {isLoading ? (
-                      <FontAwesomeIcon icon={faSpinner} spin />
-                    ) : (
-                      <FontAwesomeIcon icon={faBolt} className="guest-bolt-icon" />
-                    )}
-                    <span className="btn-main-title">Continue as Guest</span>
-                  </div>
-                  <span className="btn-sub-copy">
-                    One guest profile per browser. Includes one free AI request.
+              <div className="google-signin-wrapper" style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <div ref={googleBtnRef} style={{ display: 'flex', justifyContent: 'center', width: '100%' }} />
+                
+                {/* Fallback branded button if GSI container is not yet populated */}
+                <button
+                  type="button"
+                  className="google-signin-btn"
+                  onClick={handleGoogleSignInClick}
+                  disabled={isLoading}
+                  style={googleBtnRef.current?.children?.length ? { display: 'none' } : { marginTop: '0.25rem' }}
+                >
+                  {isLoading ? (
+                    <FontAwesomeIcon icon={faSpinner} spin />
+                  ) : (
+                    <svg viewBox="0 0 24 24" width="20" height="20" className="google-svg-icon" aria-hidden="true">
+                      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+                      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+                    </svg>
+                  )}
+                  <span className="btn-main-title">
+                    {isLoading ? 'Connecting to Google...' : 'Continue with Google'}
                   </span>
-                </div>
-              </button>
-
-              {/* 2. Continue with Google Button */}
-              <button 
-                type="button" 
-                className="google-signin-btn"
-                onClick={handleGoogleSignInClick}
-                disabled={isLoading}
-              >
-                <div className="btn-content-stacked">
-                  <div className="btn-title-row">
-                    {isLoading ? (
-                      <FontAwesomeIcon icon={faSpinner} spin />
-                    ) : (
-                      <svg className="google-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
-                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-                      </svg>
-                    )}
-                    <span className="btn-main-title">
-                      {isLoading ? 'Connecting to Google...' : 'Continue with Google'}
-                    </span>
-                  </div>
-                  <span className="btn-sub-copy">
-                    Get five AI requests and a personalized workspace.
-                  </span>
-                </div>
-              </button>
-            </div>
-
-            {/* 3. Privacy & Trust Information Panel */}
-            <div className="login-privacy-card">
-              <div className="privacy-card-header">
-                <div className="privacy-card-title-row">
-                  <FontAwesomeIcon icon={faShieldHalved} className="privacy-shield-icon" />
-                  <span>Privacy & Document Protection</span>
-                </div>
-                <span className="privacy-trust-pill">Private AI Processing</span>
+                </button>
               </div>
 
-              <div className="privacy-trust-grid">
-                <div className="privacy-trust-item">
-                  <div className="privacy-trust-icon-box">
-                    <FontAwesomeIcon icon={faTrashCan} />
-                  </div>
-                  <div className="privacy-trust-info">
-                    <strong>Automatic File Deletion</strong>
-                    <p>Uploaded documents are purged within 15 minutes of completion.</p>
-                  </div>
-                </div>
+              <p className="login-modal-support-text" style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', textAlign: 'center', margin: '0.5rem 0 0 0', fontWeight: 500 }}>
+                Five AI requests included with your account.
+              </p>
 
-                <div className="privacy-trust-item">
-                  <div className="privacy-trust-icon-box">
-                    <FontAwesomeIcon icon={faBrain} />
-                  </div>
-                  <div className="privacy-trust-info">
-                    <strong>Zero Model Training</strong>
-                    <p>Your document text and queries are never used to train public AI models.</p>
-                  </div>
-                </div>
-
-                <div className="privacy-trust-item">
-                  <div className="privacy-trust-icon-box">
-                    <FontAwesomeIcon icon={faClock} />
-                  </div>
-                  <div className="privacy-trust-info">
-                    <strong>Ask PDF Session TTL</strong>
-                    <p>Conversational chunks expire and are purged after 24 hours.</p>
-                  </div>
-                </div>
-
-                <div className="privacy-trust-item">
-                  <div className="privacy-trust-icon-box">
-                    <FontAwesomeIcon icon={faLock} />
-                  </div>
-                  <div className="privacy-trust-info">
-                    <strong>Anonymous Device Token</strong>
-                    <p>Private 1-request guest access without requiring email or password.</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="privacy-card-footer">
-                <Link to="/privacy" className="privacy-policy-link">
-                  <span>Read our full Privacy & Governance Policy</span>
-                  <FontAwesomeIcon icon={faArrowRight} />
-                </Link>
+              <div className="login-modal-legal" style={{ fontSize: '0.74rem', color: 'var(--color-text-muted)', textAlign: 'center', marginTop: '0.5rem', lineHeight: 1.45 }}>
+                By signing in, you agree to our{' '}
+                <Link to="/privacy" style={{ color: 'var(--color-primary)', textDecoration: 'underline' }}>
+                  Terms of Service
+                </Link>{' '}
+                and{' '}
+                <Link to="/privacy" style={{ color: 'var(--color-primary)', textDecoration: 'underline' }}>
+                  Privacy Policy
+                </Link>.
               </div>
             </div>
           </>

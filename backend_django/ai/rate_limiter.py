@@ -30,23 +30,13 @@ _memory_buckets: Dict[str, List[float]] = {}
 
 
 def get_client_ip(request) -> str:
-    """Extracts client IP from Django request, respecting X-Forwarded-For headers."""
-    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-    if x_forwarded_for:
-        ip = x_forwarded_for.split(',')[0].strip()
-    else:
-        ip = request.META.get('REMOTE_ADDR', '127.0.0.1')
-    return ip or '127.0.0.1'
+    """Extracts secure validated client IP without header spoofing."""
+    from core.rate_limiter import get_client_ip as core_get_client_ip
+    return core_get_client_ip(request)
 
 
 def is_guest_user(user: Optional[User]) -> bool:
-    """Detects whether user is a temporary guest account."""
-    if not user:
-        return True
-    if hasattr(user, 'guest_device_identity'):
-        return True
-    if getattr(user, 'role', '') == 'guest' or user.email.lower().endswith('@simatrix.local'):
-        return True
+    """Legacy stub: Guest users have been removed; all users are registered."""
     return False
 
 
@@ -112,68 +102,15 @@ def _update_memory_bucket(key: str, limit: int, window_seconds: int = 60) -> Tup
 def check_ai_rate_limits(request, user: Optional[User] = None) -> Tuple[bool, int, int, str]:
     """
     Evaluates hierarchical rate limits:
-    1. Guest preview limit: 1 request lifetime cap.
-    2. IP rate limit: 30 requests/minute.
-    3. Authenticated user rate limit: 10 requests/minute.
+    1. IP rate limit: 30 requests/minute.
+    2. Authenticated user rate limit: 10 requests/minute.
 
     Returns:
         (is_allowed: bool, remaining: int, retry_after: int, error_code: str)
     """
     client_ip = get_client_ip(request)
 
-    # 1. Guest Lifetime Preview Cap
-    # Auto-resolve guest identity from cookie if user is not yet bound
-    if user is None:
-        try:
-            from apps.authentication.guest_service import resolve_guest_identity_from_request
-            gdi = resolve_guest_identity_from_request(request)
-            if gdi:
-                user = gdi.user
-        except Exception:
-            pass
-
-    if user and is_guest_user(user):
-        device_identity = getattr(user, 'guest_device_identity', None)
-        quota = getattr(user, 'ai_quota', None)
-        if not quota:
-            quota, _ = AIUserQuota.objects.get_or_create(
-                user=user,
-                defaults={'total_allowed': 1, 'used_count': 0}
-            )
-        used_count = max(quota.used_count, device_identity.ai_operations_used if device_identity else 0)
-        allowed = device_identity.ai_operations_allowed if device_identity else 1
-        if used_count >= allowed:
-            return (
-                False,
-                0,
-                0,
-                "GUEST_PREVIEW_LIMIT"
-            )
-
-        # 1b. Guest IP-level abuse protection: maximum 5 guest operations per IP / 15 minutes
-        guest_ip_key = f"guest_ip_ai:{client_ip}"
-        try:
-            g_allowed, g_remaining, g_retry = _update_db_bucket(
-                key=guest_ip_key,
-                limit=5,
-                window_seconds=900
-            )
-        except DatabaseError:
-            g_allowed, g_remaining, g_retry = _update_memory_bucket(
-                key=guest_ip_key,
-                limit=5,
-                window_seconds=900
-            )
-
-        if not g_allowed:
-            return (
-                False,
-                0,
-                g_retry,
-                "Too many guest AI operations from this network. Please sign in with Google to continue."
-            )
-
-    # 2. IP Rate Limit (30 req / 60s)
+    # 1. IP Rate Limit (30 req / 60s)
     ip_key = f"ip:{client_ip}"
     try:
         ip_allowed, ip_remaining, ip_retry_after = _update_db_bucket(

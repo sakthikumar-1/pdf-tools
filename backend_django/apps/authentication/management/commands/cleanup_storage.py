@@ -29,32 +29,40 @@ class Command(BaseCommand):
             default=900,  # 15 minutes
             help="Maximum age of files in seconds before they are purged (default: 900)."
         )
+        parser.add_argument(
+            '--db-only',
+            action='store_true',
+            default=False,
+            help="Perform only database maintenance (sessions and reservations), skipping local filesystem cleanup."
+        )
 
     def handle(self, *args, **options):
         max_age = options['max_age']
+        db_only = options.get('db_only', False)
         now_ts = time.time()
         now_dt = timezone.now()
         total_deleted = 0
         total_bytes = 0
 
-        # 1. Purge expired temporary files in storage directories
-        target_dirs = [settings.UPLOADS_DIR, settings.OUTPUTS_DIR, settings.PROCESSING_DIR]
+        # 1. Purge expired temporary files in storage directories (skipped if --db-only)
+        if not db_only:
+            target_dirs = [settings.UPLOADS_DIR, settings.OUTPUTS_DIR, settings.PROCESSING_DIR]
 
-        for target_dir in target_dirs:
-            if not target_dir.exists():
-                continue
+            for target_dir in target_dirs:
+                if not target_dir.exists():
+                    continue
 
-            for item in target_dir.iterdir():
-                if item.is_file() and not item.name.startswith('.'):
-                    try:
-                        file_age = now_ts - item.stat().st_mtime
-                        if file_age > max_age:
-                            file_size = item.stat().st_size
-                            item.unlink(missing_ok=True)
-                            total_deleted += 1
-                            total_bytes += file_size
-                    except Exception as exc:
-                        self.stderr.write(f"Error deleting {item}: {exc}")
+                for item in target_dir.iterdir():
+                    if item.is_file() and not item.name.startswith('.'):
+                        try:
+                            file_age = now_ts - item.stat().st_mtime
+                            if file_age > max_age:
+                                file_size = item.stat().st_size
+                                item.unlink(missing_ok=True)
+                                total_deleted += 1
+                                total_bytes += file_size
+                        except Exception as exc:
+                            self.stderr.write(f"Error deleting {item}: {exc}")
 
         mb_freed = total_bytes / (1024 * 1024)
 

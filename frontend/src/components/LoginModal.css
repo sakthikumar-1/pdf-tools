@@ -1,40 +1,44 @@
+/* ==============================================================================
+   SIMATRIX LOGIN MODAL — Compact, Centered Authentication Dialog
+   ============================================================================== */
+
 .login-modal-backdrop {
   position: fixed;
   inset: 0;
-  background-color: rgba(7, 17, 22, 0.75);
+  background-color: rgba(7, 17, 22, 0.72);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  padding: 1.5rem;
-  animation: fadeIn 150ms ease-out;
+  padding: 1rem;
+  animation: modalFadeIn 150ms ease-out;
 }
 
-@keyframes fadeIn {
+@keyframes modalFadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
 }
 
 .login-modal-dialog {
   width: 100%;
-  max-width: 440px;
-  background-color: var(--color-surface-card);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
-  padding: 2.25rem 2rem;
+  max-width: 420px;
+  background-color: var(--color-surface-card, #FFFFFF);
+  border: 1px solid var(--color-border, #E5E7EB);
+  border-radius: 16px;
+  box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.05);
+  padding: 1.85rem 1.75rem 1.5rem;
   position: relative;
   display: flex;
   flex-direction: column;
-  animation: scaleUp 180ms cubic-bezier(0.16, 1, 0.3, 1);
+  animation: modalScaleUp 180ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-@keyframes scaleUp {
+@keyframes modalScaleUp {
   from {
     opacity: 0;
-    transform: scale(0.96) translateY(8px);
+    transform: scale(0.96) translateY(6px);
   }
   to {
     opacity: 1;
@@ -44,154 +48,109 @@
 
 .login-modal-close {
   position: absolute;
-  top: 1.25rem;
-  right: 1.25rem;
+  top: 1rem;
+  right: 1rem;
   width: 32px;
   height: 32px;
-  border-radius: var(--radius-xs);
+  border-radius: 8px;
   background: transparent;
   border: 1px solid transparent;
-  color: var(--color-text-muted);
+  color: var(--color-text-muted, #6B7280);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  font-size: 1rem;
-  transition: all var(--transition-fast);
+  font-size: 0.95rem;
+  transition: all 150ms ease;
 }
 
 .login-modal-close:hover {
-  background-color: var(--color-surface-hover);
-  color: var(--color-heading);
-  border-color: var(--color-border);
+  background-color: var(--color-surface-hover, #F3F4F6);
+  color: var(--color-heading, #111827);
+  border-color: var(--color-border, #E5E7EB);
 }
 
 .login-modal-header {
   text-align: center;
-  margin-bottom: 1.75rem;
+  margin-bottom: 1.25rem;
 }
 
 .login-brand-icon {
-  width: 56px;
-  height: 56px;
+  width: 48px;
+  height: 48px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 1rem;
-  background: transparent;
+  margin-bottom: 0.65rem;
 }
 
 .modal-logo-img {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  filter: drop-shadow(0 4px 10px rgba(0, 163, 255, 0.35));
+  filter: drop-shadow(0 3px 8px rgba(0, 163, 255, 0.25));
 }
 
 .login-modal-title {
-  font-size: 1.35rem;
+  font-size: 1.25rem;
   font-weight: 700;
-  color: var(--color-heading);
-  margin-bottom: 0.5rem;
+  color: var(--color-heading, #111827);
+  margin-bottom: 0.35rem;
+  letter-spacing: -0.015em;
 }
 
 .login-modal-subtitle {
-  font-size: 0.875rem;
-  color: var(--color-text-secondary);
-  line-height: 1.5;
+  font-size: 0.88rem;
+  color: var(--color-text-secondary, #4B5563);
+  line-height: 1.45;
+  margin: 0;
 }
 
 .login-modal-body {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
-}
-
-.google-gsi-wrapper {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  min-height: 44px;
-}
-
-.google-gsi-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
-}
-
-.google-gsi-container iframe {
-  margin: 0 auto !important;
-}
-
-.guest-signin-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
   gap: 0.75rem;
-  width: 100%;
-  padding: 0.85rem 1.25rem;
-  border-radius: var(--radius-md);
-  background-color: var(--color-primary) !important;
-  border: 1px solid var(--color-primary) !important;
-  color: #FFFFFF !important;
-  font-size: 0.95rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: background-color var(--transition-fast), border-color var(--transition-fast);
 }
 
-.guest-signin-btn * {
-  color: #FFFFFF !important;
+.login-error-alert {
+  padding: 0.6rem 0.85rem;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 8px;
+  color: #DC2626;
+  font-size: 0.82rem;
+  font-weight: 500;
+  text-align: center;
 }
 
-.guest-signin-btn .guest-bolt-icon {
-  color: #FFD54F !important;
-  font-size: 1.05rem;
-}
-
-.guest-signin-btn:hover:not(:disabled) {
-  background-color: var(--color-primary-hover) !important;
-  border-color: var(--color-primary-hover) !important;
-}
-
-.guest-signin-btn:disabled {
-  background-color: var(--color-primary) !important;
-  opacity: 0.65 !important;
-  color: #FFFFFF !important;
-  cursor: not-allowed;
-}
+/* ==============================================================================
+   CONTINUE WITH GOOGLE BUTTON
+   ============================================================================== */
 
 .google-signin-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.85rem;
+  gap: 0.75rem;
   width: 100%;
-  padding: 0.85rem 1.25rem;
-  border-radius: var(--radius-sm);
+  height: 46px;
+  padding: 0 1rem;
+  border-radius: 9px;
   background-color: #FFFFFF;
   border: 1px solid #D1D5DB;
   color: #1F2937 !important;
-  font-size: 0.95rem;
+  font-size: 0.94rem;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-  transition: all var(--transition-fast);
-}
-
-.google-signin-btn * {
-  color: #1F2937;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: all 150ms ease;
 }
 
 .google-signin-btn:hover:not(:disabled) {
+  background-color: #F9FAFB;
   border-color: #9CA3AF;
-  background-color: #F8FAFC;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
   transform: translateY(-1px);
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
 }
 
 .google-signin-btn:disabled {
@@ -199,84 +158,81 @@
   cursor: not-allowed;
 }
 
-.login-privacy-callout {
-  display: flex;
-  gap: 0.75rem;
-  padding: 0.85rem 1rem;
-  border-radius: var(--radius-sm);
-  background-color: var(--color-surface-inset);
-  border: 1px solid var(--color-border);
-  font-size: 0.8rem;
-  line-height: 1.5;
-  color: var(--color-text-muted);
-}
-
-.callout-icon {
-  color: var(--color-primary);
-  font-size: 0.95rem;
+.google-svg-icon {
   flex-shrink: 0;
-  margin-top: 0.1rem;
 }
 
-.login-privacy-callout p {
-  color: var(--color-text-muted);
+.google-spinner-icon {
+  color: #4B5563;
+  font-size: 1rem;
+}
+
+.btn-main-title {
+  color: #1F2937;
+  font-weight: 600;
+}
+
+/* Short supporting text */
+.login-modal-support-text {
   font-size: 0.8rem;
-}
-
-.login-privacy-callout strong {
-  color: var(--color-heading);
-}
-
-.login-modal-footer {
-  margin-top: 1.5rem;
-  padding-top: 1.25rem;
-  border-top: 1px solid var(--color-border);
+  color: var(--color-text-muted, #6B7280);
   text-align: center;
-}
-
-.continue-free-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  background: transparent;
-  border: none;
-  color: var(--color-text-secondary);
-  font-size: 0.85rem;
+  margin: 0;
   font-weight: 500;
-  cursor: pointer;
-  transition: color var(--transition-fast);
 }
 
-.continue-free-btn:hover {
-  color: var(--color-primary);
-}
-
-.login-divider {
-  display: flex;
-  align-items: center;
+/* Legal text & links */
+.login-modal-legal {
+  font-size: 0.74rem;
+  color: var(--color-text-muted, #6B7280);
   text-align: center;
-  color: var(--color-text-muted);
-  font-size: 0.75rem;
-  margin: -0.25rem 0;
+  margin-top: 0.25rem;
+  line-height: 1.45;
 }
 
-.login-divider::before,
-.login-divider::after {
-  content: '';
-  flex: 1;
-  border-bottom: 1px solid var(--color-border);
+.login-legal-link {
+  color: var(--color-primary, #0070F3);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color 150ms ease;
 }
 
-.login-divider span {
-  padding: 0 0.5rem;
+.login-legal-link:hover {
+  color: var(--color-primary-hover, #0051B3);
+}
+
+/* Success state */
+.login-success-state {
+  text-align: center;
+  padding: 1.25rem 0;
+}
+
+.login-success-icon {
+  font-size: 2.25rem;
+  color: #10B981;
+  margin-bottom: 0.5rem;
+}
+
+.login-success-state h3 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--color-heading, #111827);
+  margin-bottom: 0.2rem;
+}
+
+.login-success-state p {
+  font-size: 0.85rem;
+  color: var(--color-text-secondary, #4B5563);
+  margin: 0;
 }
 
 /* ==============================================================================
    DARK THEME SPECIFIC OVERRIDES
    ============================================================================== */
+
 [data-theme="dark"] .login-modal-dialog {
   background-color: #131B24;
-  border: 1px solid #283546;
+  border-color: #283546;
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
@@ -302,309 +258,40 @@
   background-color: #1E293B !important;
   border-color: #334155 !important;
   color: #F8FAFC !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
-[data-theme="dark"] .google-signin-btn * {
+[data-theme="dark"] .google-signin-btn .btn-main-title {
   color: #F8FAFC !important;
 }
 
 [data-theme="dark"] .google-signin-btn:hover:not(:disabled) {
-  background-color: #2D3B4F !important;
-  border-color: var(--color-border-hover) !important;
-  color: #FFFFFF !important;
+  background-color: #2A384C !important;
+  border-color: #475569 !important;
 }
 
-[data-theme="dark"] .login-text-input {
-  background-color: #0B1017;
-  border: 1px solid #283546;
-  color: #F8FAFC;
+[data-theme="dark"] .login-modal-support-text {
+  color: #94A3B8;
 }
 
-[data-theme="dark"] .login-text-input::placeholder {
+[data-theme="dark"] .login-modal-legal {
   color: #64748B;
 }
 
-[data-theme="dark"] .login-text-input:focus {
-  border-color: var(--color-border-focus);
-  box-shadow: var(--focus-ring);
+[data-theme="dark"] .login-legal-link {
+  color: #38BDF8;
 }
 
-[data-theme="dark"] .login-privacy-callout {
-  background-color: var(--color-hover-bg);
-  border: 1px solid var(--color-border);
-  color: #94A3B8;
+[data-theme="dark"] .login-legal-link:hover {
+  color: #7DD3FC;
 }
 
-[data-theme="dark"] .login-privacy-callout strong {
-  color: #F8FAFC;
-}
-
-[data-theme="dark"] .continue-free-btn {
-  color: #94A3B8;
-}
-
-[data-theme="dark"] .continue-free-btn:hover {
-  color: #EF5350;
-}
-
-.email-login-form {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.login-text-input {
-  flex: 1;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  padding: 0.65rem 0.85rem;
-  font-size: 0.88rem;
-  color: var(--color-heading);
-  outline: none;
-  transition: border-color var(--transition-fast);
-}
-
-.login-text-input:focus {
-  border-color: var(--color-primary);
-}
-
-.login-submit-btn {
-  white-space: nowrap;
-}
-
-.login-error-alert {
-  padding: 0.65rem 0.85rem;
-  background: rgba(217, 75, 75, 0.1);
-  border: 1px solid rgba(217, 75, 75, 0.35);
-  border-radius: var(--radius-sm);
-  color: var(--color-error);
-  font-size: 0.82rem;
-  font-weight: 600;
-}
-
-.login-success-state {
-  text-align: center;
-  padding: 1.5rem 0;
-}
-
-.login-success-icon {
-  font-size: 2.5rem;
-  color: var(--color-success);
-  margin-bottom: 0.75rem;
-}
-
-.login-success-state h3 {
-  font-size: 1.2rem;
-  font-weight: 800;
-  color: var(--color-heading);
-  margin-bottom: 0.25rem;
-}
-
-.login-success-state p {
-  font-size: 0.88rem;
-  color: var(--color-text-secondary);
-  margin: 0;
-}
-
-/* Redesigned Button Subtitles & Privacy Disclosures */
-.btn-content-stacked {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.25rem;
-  width: 100%;
-}
-
-.btn-title-row {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.65rem;
-  font-size: 0.98rem;
-  font-weight: 700;
-}
-
-.guest-signin-btn .btn-sub-copy {
-  font-size: 0.76rem;
-  font-weight: 400;
-  opacity: 0.92;
-  color: #FFFFFF !important;
-}
-
-.google-signin-btn .btn-sub-copy {
-  font-size: 0.76rem;
-  font-weight: 400;
-  color: #6B7280 !important;
-}
-
-[data-theme="dark"] .google-signin-btn .btn-sub-copy {
-  color: #9CA3AF !important;
-}
-
-.privacy-callout-header {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.82rem;
-  color: var(--color-heading);
-  font-weight: 700;
-  margin-bottom: 0.4rem;
-}
-
-.privacy-disclosure-list {
-  margin: 0;
-  padding-left: 1.25rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.45rem;
-  font-size: 0.74rem;
-  color: var(--color-text-secondary);
-  line-height: 1.45;
-}
-
-.privacy-disclosure-list li strong {
-  color: var(--color-heading);
-}
-
-
-
-
-/* ==============================================================================
-   SIMATRIX LOGIN PRIVACY & TRUST CARD — Clean Modern Responsive Grid
-   ============================================================================== */
-
-.login-privacy-card {
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  padding: 1.15rem 1.25rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.85rem;
-  margin-top: 1.25rem;
-  text-align: left;
-  transition: border-color var(--transition-fast), background-color var(--transition-fast);
-}
-
-.privacy-card-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-bottom: 0.65rem;
-  border-bottom: 1px solid var(--color-border);
-  gap: 0.75rem;
-  flex-wrap: wrap;
-}
-
-.privacy-card-title-row {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.84rem;
-  font-weight: 700;
-  color: var(--color-heading);
-}
-
-.privacy-shield-icon {
-  color: var(--color-heading);
-  font-size: 0.95rem;
-}
-
-.privacy-trust-pill {
-  font-size: 0.6875rem;
-  font-weight: 700;
-  padding: 0.15rem 0.55rem;
-  border-radius: 9999px;
-  background: rgba(43, 138, 62, 0.12);
-  color: var(--color-success);
-  border: 1px solid rgba(43, 138, 62, 0.25);
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-}
-
-.privacy-trust-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.75rem 1rem;
-}
-
-@media (max-width: 580px) {
-  .privacy-trust-grid {
-    grid-template-columns: 1fr;
+/* Mobile responsive width */
+@media (max-width: 480px) {
+  .login-modal-dialog {
+    width: calc(100% - 32px);
+    max-width: 420px;
+    padding: 1.5rem 1.25rem 1.25rem;
+    margin: 0 auto;
   }
-}
-
-.privacy-trust-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.65rem;
-}
-
-.privacy-trust-icon-box {
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
-  background: rgba(48, 56, 64, 0.08);
-  color: var(--color-heading);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.8rem;
-  flex-shrink: 0;
-  margin-top: 2px;
-}
-
-[data-theme="dark"] .privacy-trust-icon-box {
-  background: rgba(255, 255, 255, 0.08);
-  color: #E2E8F0;
-}
-
-.privacy-trust-info {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-  min-width: 0;
-  flex: 1;
-}
-
-.privacy-trust-info strong {
-  font-size: 0.785rem;
-  font-weight: 700;
-  color: var(--color-heading);
-  line-height: 1.3;
-}
-
-.privacy-trust-info p {
-  font-size: 0.725rem;
-  line-height: 1.4;
-  color: var(--color-text-secondary);
-  margin: 0;
-}
-
-.privacy-card-footer {
-  padding-top: 0.5rem;
-  border-top: 1px solid var(--color-border);
-}
-
-.privacy-policy-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-size: 0.775rem;
-  font-weight: 600;
-  color: var(--color-heading);
-  text-decoration: underline;
-  text-underline-offset: 2px;
-  transition: color var(--transition-fast);
-}
-
-.privacy-policy-link:hover {
-  color: var(--color-primary);
-}
-
-[data-theme="dark"] .login-privacy-card {
-  background: #131B24;
-  border-color: #283546;
 }

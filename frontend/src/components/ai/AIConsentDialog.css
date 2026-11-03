@@ -19,11 +19,40 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
-  max-width: 520px;
+  max-width: 440px;
   width: 100%;
   overflow: hidden;
   display: flex;
   flex-direction: column;
+}
+
+.ai-point-bullet {
+  color: var(--color-primary);
+  font-size: 0.85rem;
+  margin-top: 0.15rem;
+  flex-shrink: 0;
+}
+
+.ai-consent-learn-more {
+  font-size: 0.775rem;
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.ai-consent-link {
+  color: var(--color-primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.ai-consent-error {
+  padding: 0.5rem 0.75rem;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 6px;
+  color: #DC2626;
+  font-size: 0.775rem;
+  font-weight: 500;
 }
 
 .ai-consent-header {

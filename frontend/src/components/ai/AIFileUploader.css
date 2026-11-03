@@ -102,24 +102,19 @@
 
 
 
-[data-theme="dark"] 
-
-
-
-
-
 /* Selected File Card */
 .ai-file-selected-card {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding: 1rem 1.25rem;
+  padding: 0.85rem 1.25rem;
   background-color: var(--color-surface);
   border: 1.5px solid var(--color-border);
   border-radius: var(--radius-lg);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   transition: all 0.2s ease;
+  flex-wrap: nowrap;
 }
 
 [data-theme="dark"] .ai-file-selected-card {
@@ -225,6 +220,7 @@
   align-items: center;
   gap: 0.5rem;
   flex-shrink: 0;
+  margin-left: auto;
 }
 
 .ai-file-btn-change {

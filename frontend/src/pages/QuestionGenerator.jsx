@@ -1,3 +1,5 @@
+import { useAuth } from '../context/AuthContext';
+import LoginModal from '../components/LoginModal';
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -13,7 +15,6 @@ import {
 import {
   AIQuotaBanner,
   AIConsentDialog,
-  AIConsentDisclosure,
   hasUserGivenAIConsent,
   setUserAIConsent,
   AIFileUploader,
@@ -28,6 +29,9 @@ import { generateQuestionsAI, fetchAIQuota, recordAIConsent } from '../services/
 import './QuestionGenerator.css';
 
 export default function QuestionGenerator() {
+  const { isAuthenticated } = useAuth();
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
+
   const [selectedFile, setSelectedFile] = useState(null);
   const [docPageCount, setDocPageCount] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -41,7 +45,6 @@ export default function QuestionGenerator() {
   const [consentDialogOpen, setConsentDialogOpen] = useState(false);
   const [limitModalOpen, setLimitModalOpen] = useState(false);
   const [consented, setConsented] = useState(() => hasUserGivenAIConsent());
-  const [consentError, setConsentError] = useState(false);
   const pendingOperationRef = useRef(null);
 
   useEffect(() => {
@@ -79,17 +82,6 @@ export default function QuestionGenerator() {
     setActiveError(null);
   };
 
-  const handleConsentChange = async (checked) => {
-    setConsented(checked);
-    setUserAIConsent(checked);
-    setConsentError(false);
-    try {
-      await recordAIConsent(checked);
-    } catch (e) {
-      console.warn('Could not record AI consent:', e);
-    }
-  };
-
   const handleClearFile = () => {
     setSelectedFile(null);
     setResult(null);
@@ -101,6 +93,11 @@ export default function QuestionGenerator() {
   };
 
   const executeGeneration = async () => {
+    if (!isAuthenticated) {
+      setLoginModalOpen(true);
+      return;
+    }
+
     if (!selectedFile || isProcessing) return;
 
     if (typeof navigator !== 'undefined' && !navigator.onLine) {
@@ -116,8 +113,9 @@ export default function QuestionGenerator() {
       return;
     }
 
-    if (!consented && !hasUserGivenAIConsent()) {
-      setConsentError(true);
+    if (!hasUserGivenAIConsent(quota)) {
+      pendingOperationRef.current = executeGeneration;
+      setConsentDialogOpen(true);
       return;
     }
 
@@ -156,6 +154,9 @@ export default function QuestionGenerator() {
 
   const handleConsentConfirm = () => {
     setUserAIConsent(true);
+    if (quota) {
+      setQuota((prev) => prev ? { ...prev, consent_given: true, consent_policy_version: '2026.1' } : prev);
+    }
     setConsentDialogOpen(false);
     if (pendingOperationRef.current) {
       const op = pendingOperationRef.current;
@@ -220,20 +221,11 @@ export default function QuestionGenerator() {
           pageCount={docPageCount}
           isProcessing={isProcessing}
           title="Select or drop PDF to generate study questions"
-          subtitle="Supports PDF documents up to 15MB"
-          consented={consented}
-          onConsentChange={handleConsentChange}
-          consentError={consentError}        />
+          subtitle="Supports PDF documents up to 15MB"        />
 
         {/* Step 2: Action Button */}
         {selectedFile && !result && !isProcessing && (
           <div className="qg-action-row">
-            <AIConsentDisclosure
-              consented={consented}
-              onConsentChange={handleConsentChange}
-              error={consentError}
-              disabled={isProcessing}
-            />
             <button
               type="button"
               className="ai-btn-generate-main"
@@ -244,7 +236,7 @@ export default function QuestionGenerator() {
               <span>Generate Questions Now</span>
             </button>
             <span className="ai-btn-quota-hint">
-              Consumes 1 AI credit {quota ? `• ${quota.remaining} remaining` : ''}
+              {isAuthenticated ? `Consumes 1 AI credit • ${quota ? quota.remaining : 5} remaining` : "Sign in with Google to get 5 free AI credits"}
             </span>
           </div>
         )}
@@ -370,6 +362,7 @@ export default function QuestionGenerator() {
         isOpen={limitModalOpen}
         onClose={() => setLimitModalOpen(false)}
       />
+          <LoginModal isOpen={loginModalOpen} onClose={() => setLoginModalOpen(false)} />
     </div>
   );
 }

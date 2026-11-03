@@ -1,3 +1,5 @@
+import { useAuth } from '../context/AuthContext';
+import LoginModal from '../components/LoginModal';
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -15,7 +17,6 @@ import {
 import {
   AIQuotaBanner,
   AIConsentDialog,
-  AIConsentDisclosure,
   hasUserGivenAIConsent,
   setUserAIConsent,
   AIFileUploader,
@@ -32,6 +33,9 @@ import { translatePdfAI, fetchAIQuota, recordAIConsent } from '../services/api';
 import './PDFTranslator.css';
 
 export default function PDFTranslator() {
+  const { isAuthenticated } = useAuth();
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
+
   const [selectedFile, setSelectedFile] = useState(null);
   const [docPageCount, setDocPageCount] = useState(null);
   const [targetLanguage, setTargetLanguage] = useState('tamil');
@@ -44,7 +48,6 @@ export default function PDFTranslator() {
   const [consentDialogOpen, setConsentDialogOpen] = useState(false);
   const [limitModalOpen, setLimitModalOpen] = useState(false);
   const [consented, setConsented] = useState(() => hasUserGivenAIConsent());
-  const [consentError, setConsentError] = useState(false);
 
   const pendingTranslateRef = useRef(null);
 
@@ -81,17 +84,6 @@ export default function PDFTranslator() {
     setActiveError(null);
   };
 
-  const handleConsentChange = async (checked) => {
-    setConsented(checked);
-    setUserAIConsent(checked);
-    setConsentError(false);
-    try {
-      await recordAIConsent(checked);
-    } catch (e) {
-      console.warn('Could not record AI consent:', e);
-    }
-  };
-
   const handleClearFile = () => {
     setSelectedFile(null);
     setTranslationResult(null);
@@ -101,6 +93,11 @@ export default function PDFTranslator() {
   };
 
   const executeTranslate = async () => {
+    if (!isAuthenticated) {
+      setLoginModalOpen(true);
+      return;
+    }
+
     if (!selectedFile || isProcessing) return;
 
     if (typeof navigator !== 'undefined' && !navigator.onLine) {
@@ -116,8 +113,9 @@ export default function PDFTranslator() {
       return;
     }
 
-    if (!consented && !hasUserGivenAIConsent()) {
-      setConsentError(true);
+    if (!hasUserGivenAIConsent(quota)) {
+      pendingTranslateRef.current = () => executeTranslate();
+      setConsentDialogOpen(true);
       return;
     }
 
@@ -155,6 +153,9 @@ export default function PDFTranslator() {
 
   const handleConsentConfirm = () => {
     setUserAIConsent(true);
+    if (quota) {
+      setQuota((prev) => prev ? { ...prev, consent_given: true, consent_policy_version: '2026.1' } : prev);
+    }
     setConsentDialogOpen(false);
     if (pendingTranslateRef.current) {
       const op = pendingTranslateRef.current;
@@ -251,20 +252,11 @@ export default function PDFTranslator() {
           pageCount={docPageCount}
           isProcessing={isProcessing}
           title="Select or drop PDF document to translate"
-          subtitle="Supports PDF documents up to 15MB"
-          consented={consented}
-          onConsentChange={handleConsentChange}
-          consentError={consentError}        />
+          subtitle="Supports PDF documents up to 15MB"        />
 
         {/* Step 2: Language Selector & Translate Button */}
         {selectedFile && !isProcessing && (
           <div className="translator-config-panel">
-            <AIConsentDisclosure
-              consented={consented}
-              onConsentChange={handleConsentChange}
-              error={consentError}
-              disabled={isProcessing}
-            />
             <div className="translator-controls-row">
               <div className="translator-lang-wrapper">
                 <AILanguageSelector
@@ -287,10 +279,10 @@ export default function PDFTranslator() {
                 disabled={isProcessing}
               >
                 <FontAwesomeIcon icon={faLanguage} />
-                <span>Translate Document Now</span>
+                <span>{isAuthenticated ? "Translate Document Now" : "Sign in to Translate"}</span>
               </button>
             <span className="ai-btn-quota-hint">
-              Consumes 1 AI credit {quota ? `• ${quota.remaining} remaining` : ''}
+              {isAuthenticated ? `Consumes 1 AI credit • ${quota ? quota.remaining : 5} remaining` : "Sign in with Google to get 5 free AI credits"}
             </span>
             </div>
           </div>
@@ -364,6 +356,7 @@ export default function PDFTranslator() {
         isOpen={limitModalOpen}
         onClose={() => setLimitModalOpen(false)}
       />
+          <LoginModal isOpen={loginModalOpen} onClose={() => setLoginModalOpen(false)} />
     </div>
   );
 }

@@ -9,7 +9,6 @@ import {
   faBookOpen
 } from '@fortawesome/free-solid-svg-icons';
 import { formatBytes } from '../../utils/fileUtils';
-import AIConsentDisclosure from './AIConsentDisclosure';
 import './AIFileUploader.css';
 
 const MAX_FILE_SIZE_BYTES = 15 * 1024 * 1024; // 15MB
@@ -23,10 +22,6 @@ export default function AIFileUploader({
   error: externalError,
   title = 'Select or drop your PDF document here',
   subtitle = 'Supports PDF documents up to 15MB',
-  showConsentDisclosure = true,
-  consented = false,
-  onConsentChange,
-  consentError = false
 }) {
   const [isDragging, setIsDragging] = useState(false);
   const [internalError, setInternalError] = useState(null);
@@ -199,14 +194,6 @@ export default function AIFileUploader({
         </div>
       )}
 
-      {showConsentDisclosure && (
-        <AIConsentDisclosure
-          consented={consented}
-          onConsentChange={onConsentChange}
-          error={consentError}
-          disabled={isProcessing}
-        />
-      )}
     </div>
   );
 }

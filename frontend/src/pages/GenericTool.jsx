@@ -110,7 +110,7 @@ export default function GenericTool({
   const [scannedWarning, setScannedWarning] = useState(false);
   const [pptMode, setPptMode] = useState('editable');
   const [pptMeta, setPptMeta] = useState(null);
-  const [wordEngine, setWordEngine] = useState('server'); // 'server' (Python cloud with font recovery) or 'instant' (client)
+  const [wordMode, setWordMode] = useState('editable'); // 'editable' (flow-based reflow) or 'layout_preserved' (geometry-locked)
   const [pptEngine, setPptEngine] = useState('instant'); // 'instant' (~1s in-browser) or 'server' (Python cloud)
 
   // Phase 2A: Add Page Numbers States
@@ -271,19 +271,8 @@ export default function GenericTool({
         blob = createTxtFile(fullText);
         filename = `${baseName}_converted.txt`;
       } else if (titleLower.includes('word')) {
-        let res;
-        if (wordEngine === 'instant') {
-          // Blazing-fast client-side conversion (~1s, private, zero wait)
-          res = await pdfToDocx(primaryFile, (p) => setProgress(p));
-        } else {
-          // Cloud server engine with automatic fast fallback
-          try {
-            res = await convertPdfToWordPython(primaryFile, (p) => setProgress(p));
-          } catch (backendErr) {
-            console.warn('[PDFToWord] Server error or timeout, running instant fallback:', backendErr);
-            res = await pdfToDocx(primaryFile, (p) => setProgress(p));
-          }
-        }
+        // High-fidelity Python backend conversion with dual modes (no silent low-fidelity client degradation)
+        const res = await convertPdfToWordPython(primaryFile, (p) => setProgress(p), wordMode);
         blob = res.blob;
         filename = res.filename || `${baseName}_converted.docx`;
         if (res.isScanned || res.isScannedOnly) {
@@ -710,70 +699,70 @@ export default function GenericTool({
                   </div>
                 </div>
               ) : titleLower.includes('word') ? (
-                /* WORD CONVERSION ENGINE SELECTOR */
+                /* WORD CONVERSION MODE SELECTOR */
                 <div className="utility-options-form">
                   <div className="utility-form-group">
                     <label className="option-label" style={{ fontWeight: 600, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span>Conversion Engine:</span>
-                      <span style={{ fontSize: '0.75rem', fontWeight: 600, color: wordEngine === 'server' ? '#0284c7' : 'var(--color-text-secondary)' }}>
-                        {wordEngine === 'server' ? '☁️ Server Engine (Recommended)' : '⚡ Fast Client'}
+                      <span>Conversion Mode:</span>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 600, color: wordMode === 'editable' ? '#0284c7' : '#059669' }}>
+                        {wordMode === 'editable' ? '📝 Flow-Based (Editable)' : '📐 Layout-Preserved (Geometric)'}
                       </span>
                     </label>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.75rem', marginTop: '0.5rem' }}>
                       <button
                         type="button"
-                        onClick={() => setWordEngine('instant')}
+                        onClick={() => setWordMode('editable')}
                         style={{
                           display: 'flex',
                           flexDirection: 'column',
                           gap: '0.25rem',
                           padding: '0.85rem 1rem',
                           borderRadius: '8px',
-                          border: wordEngine === 'instant' ? '2px solid #303840' : '1px solid #D4D9DF',
-                          backgroundColor: wordEngine === 'instant' ? '#FFFFFF' : '#F8F9FA',
+                          border: wordMode === 'editable' ? '2px solid #303840' : '1px solid #D4D9DF',
+                          backgroundColor: wordMode === 'editable' ? '#FFFFFF' : '#F8F9FA',
                           textAlign: 'left',
                           cursor: 'pointer',
                           transition: 'all 0.15s ease'
                         }}
                       >
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                          <span style={{ fontWeight: 600, color: '#171C24', fontSize: '0.9rem' }}>⚡ Instant Mode</span>
-                          <span style={{ fontSize: '0.7rem', padding: '2px 6px', background: '#e0f2fe', color: '#0369a1', borderRadius: '4px', fontWeight: 700 }}>~1 sec</span>
+                          <span style={{ fontWeight: 600, color: '#171C24', fontSize: '0.9rem' }}>📝 Editable Flow</span>
+                          <span style={{ fontSize: '0.7rem', padding: '2px 6px', background: '#e0f2fe', color: '#0369a1', borderRadius: '4px', fontWeight: 700 }}>Recommended</span>
                         </div>
                         <span style={{ fontSize: '0.78rem', color: '#667085', lineHeight: '1.4' }}>
-                          Instant in-browser processing. Zero upload wait, 100% private.
+                          Standard paragraph flow and reflowable text. Best for editing documents in Word.
                         </span>
                       </button>
 
                       <button
                         type="button"
-                        onClick={() => setWordEngine('server')}
+                        onClick={() => setWordMode('layout_preserved')}
                         style={{
                           display: 'flex',
                           flexDirection: 'column',
                           gap: '0.25rem',
                           padding: '0.85rem 1rem',
                           borderRadius: '8px',
-                          border: wordEngine === 'server' ? '2px solid #303840' : '1px solid #D4D9DF',
-                          backgroundColor: wordEngine === 'server' ? '#FFFFFF' : '#F8F9FA',
+                          border: wordMode === 'layout_preserved' ? '2px solid #303840' : '1px solid #D4D9DF',
+                          backgroundColor: wordMode === 'layout_preserved' ? '#FFFFFF' : '#F8F9FA',
                           textAlign: 'left',
                           cursor: 'pointer',
                           transition: 'all 0.15s ease'
                         }}
                       >
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                          <span style={{ fontWeight: 600, color: '#171C24', fontSize: '0.9rem' }}>☁️ Cloud Engine</span>
-                          <span style={{ fontSize: '0.7rem', padding: '2px 6px', background: '#f1f5f9', color: '#475569', borderRadius: '4px', fontWeight: 600 }}>Server</span>
+                          <span style={{ fontWeight: 600, color: '#171C24', fontSize: '0.9rem' }}>📐 Layout-Preserved</span>
+                          <span style={{ fontSize: '0.7rem', padding: '2px 6px', background: '#ecfdf5', color: '#047857', borderRadius: '4px', fontWeight: 600 }}>Visual</span>
                         </div>
                         <span style={{ fontSize: '0.78rem', color: '#667085', lineHeight: '1.4' }}>
-                          Deep layout reconstruction with python-docx on Render.
+                          Tighter coordinate constraints for multi-column flyers, brochures, and visual forms.
                         </span>
                       </button>
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem', color: 'var(--color-text-secondary)', fontSize: '0.8rem' }}>
                     <FontAwesomeIcon icon={faCheck} style={{ color: "var(--color-success)" }} />
-                    <span>Preserves text hierarchy, bold headings, page breaks, and genuine formatted tables.</span>
+                    <span>Preserves Tamil/Indic Unicode fonts, tables with valid grids, and 1:1 scanned page dimensions.</span>
                   </div>
                 </div>
               ) : (titleLower.includes('number') || titleLower.includes('page-number')) ? (

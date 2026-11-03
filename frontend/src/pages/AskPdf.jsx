@@ -1,3 +1,5 @@
+import { useAuth } from '../context/AuthContext';
+import LoginModal from '../components/LoginModal';
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -18,7 +20,6 @@ import {
 import {
   AIQuotaBanner,
   AIConsentDialog,
-  AIConsentDisclosure,
   hasUserGivenAIConsent,
   setUserAIConsent,
   AIFileUploader,
@@ -40,6 +41,9 @@ const SUGGESTED_QUESTIONS = [
 ];
 
 export default function AskPdf() {
+  const { isAuthenticated } = useAuth();
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
+
   const [selectedFile, setSelectedFile] = useState(null);
   const [docPageCount, setDocPageCount] = useState(null);
   const [sessionId, setSessionId] = useState(null);
@@ -53,7 +57,6 @@ export default function AskPdf() {
   const [consentDialogOpen, setConsentDialogOpen] = useState(false);
   const [limitModalOpen, setLimitModalOpen] = useState(false);
   const [consented, setConsented] = useState(() => hasUserGivenAIConsent());
-  const [consentError, setConsentError] = useState(false);
 
   const messagesEndRef = useRef(null);
   const pendingQueryRef = useRef(null);
@@ -110,6 +113,11 @@ export default function AskPdf() {
   };
 
   const handleSendMessage = async (queryToSend = null) => {
+    if (!isAuthenticated) {
+      setLoginModalOpen(true);
+      return;
+    }
+
     const q = (queryToSend || inputQuery).trim();
     if (!q || isProcessing) return;
 
@@ -134,8 +142,9 @@ export default function AskPdf() {
       return;
     }
 
-    if (!consented && !hasUserGivenAIConsent()) {
-      setConsentError(true);
+    if (!hasUserGivenAIConsent(quota)) {
+      pendingQueryRef.current = q;
+      setConsentDialogOpen(true);
       return;
     }
 
@@ -201,6 +210,9 @@ export default function AskPdf() {
 
   const handleConsentConfirm = () => {
     setUserAIConsent(true);
+    if (quota) {
+      setQuota((prev) => prev ? { ...prev, consent_given: true, consent_policy_version: '2026.1' } : prev);
+    }
     setConsentDialogOpen(false);
     if (pendingQueryRef.current) {
       const q = pendingQueryRef.current;
@@ -410,17 +422,6 @@ export default function AskPdf() {
                 </div>
               )}
 
-              {!consented && (
-                <div style={{ padding: '0 1rem 0.5rem 1rem' }}>
-                  <AIConsentDisclosure
-                    consented={consented}
-                    onConsentChange={handleConsentChange}
-                    error={consentError}
-                    compact
-                  />
-                </div>
-              )}
-
               {/* Chat Input Bar */}
               <div className="ask-input-container">
                 <textarea
@@ -460,6 +461,7 @@ export default function AskPdf() {
         isOpen={limitModalOpen}
         onClose={() => setLimitModalOpen(false)}
       />
+          <LoginModal isOpen={loginModalOpen} onClose={() => setLoginModalOpen(false)} />
     </div>
   );
 }

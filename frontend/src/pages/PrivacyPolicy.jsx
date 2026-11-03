@@ -123,24 +123,27 @@ export default function PrivacyPolicy() {
           </ul>
         </section>
 
-        {/* Section 6: Guest Identity & Device Tokens */}
+        {/* Section 6: Authentication & Zero Fingerprinting */}
         <section className="privacy-section">
           <div className="privacy-section-icon-row">
             <FontAwesomeIcon icon={faLock} className="privacy-icon" />
-            <h2 className="privacy-section-heading">6. Guest Device Tokens & Privacy</h2>
+            <h2 className="privacy-section-heading">6. Account Authentication & No Device Fingerprinting</h2>
           </div>
           <p>
-            To provide frictionless access without requiring registration, Simatrix PDF supports anonymous guest usage with one free lifetime AI request:
+            Simatrix PDF operates with strict privacy principles and clear access boundaries:
           </p>
           <ul className="privacy-bullet-list">
             <li>
-              Guest identity is maintained using an anonymous, cryptographically random token stored in a secure <code>HttpOnly</code> browser cookie.
+              <strong>Standard PDF Utilities:</strong> All 19 standard PDF utilities (PDF to Word, Merge, Split, Protect, Crop, Rotate, Watermark, etc.) remain fully accessible without requiring user registration or authentication.
             </li>
             <li>
-              Only a SHA-256 cryptographic hash of this token is stored on our servers. The raw token is never logged or exposed.
+              <strong>Simatrix AI Features:</strong> Access to advanced AI features requires an authenticated registered account via Google OAuth. Each registered user receives 5 free lifetime AI operations.
             </li>
             <li>
-              We <strong>do not</strong> use invasive hardware fingerprinting (e.g., canvas or audio fingerprinting). Guest profiles require no email, name, or password.
+              <strong>Zero Persistent Tracking:</strong> We do not issue guest tracking cookies or anonymous device tokens, and we <strong>do not</strong> use invasive hardware or browser fingerprinting (such as canvas, WebGL, font, or audio fingerprinting).
+            </li>
+            <li>
+              <strong>Short-Lived Abuse Prevention:</strong> IP addresses are utilized solely for short-lived sliding-window security rate limiting to prevent automated denial-of-service attacks, and are never used as a permanent visitor identity.
             </li>
           </ul>
         </section>

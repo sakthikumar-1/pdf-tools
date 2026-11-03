@@ -319,107 +319,81 @@ class AIQuotaEnforcementRemediationTests(TestCase):
         self.assertEqual(r_cmp.status_code, 403)
         self.assertEqual(r_cmp.json()["code"], "AI_LIMIT_REACHED")
 
-    def test_guest_preview_limit_shared_across_all_eight_ai_tools(self):
+    def test_anonymous_requests_to_all_eight_ai_tools_rejected_with_401(self):
         """
-        Verifies that the 1-request guest preview limit is shared across all eight AI tools:
-        Consuming the 1 guest allowance on one tool blocks access to ALL eight tools.
+        Verifies that unauthenticated visitors have zero AI access:
+        All eight AI tools strictly require authentication and reject anonymous calls with HTTP 401.
+        No guest accounts, device cookies, or quotas are provisioned.
         """
-        # 1. New anonymous guest visitor
-        guest_client = Client(REMOTE_ADDR=f"10.99.{uuid.uuid4().int % 250 + 1}.{uuid.uuid4().int % 250 + 1}")
-        res_guest = guest_client.post("/api/v1/auth/guest")
-        self.assertEqual(res_guest.status_code, 200)
-        guest_token = res_guest.json()["token"]
-        guest_headers = {
-            'HTTP_AUTHORIZATION': f"Bearer {guest_token}",
-            'HTTP_X_SIMATRIX_AI_CONSENT': "true"
-        }
-
-        # 2. Guest uses their single operation on Summarize
-        pdf_guest = create_unique_pdf("Guest initial document")
-        r_g1 = guest_client.post(
+        anon_client = Client(REMOTE_ADDR="10.99.12.34")
+        
+        # Tool 1: Summarize -> HTTP 401
+        r_sum = anon_client.post(
             "/api/v1/ai/summarize",
-            {"file": pdf_guest, "mode": "quick", "consent": "true"},
-            **guest_headers
+            {"file": create_unique_pdf("Anon request - Summarize"), "mode": "quick", "consent": "true"}
         )
-        self.assertEqual(r_g1.status_code, 200)
-        self.assertEqual(r_g1.json()["quota"]["used"], 1)
-        self.assertEqual(r_g1.json()["quota"]["remaining"], 0)
+        self.assertEqual(r_sum.status_code, 401)
+        self.assertIn("Authentication required", r_sum.json().get("detail", ""))
 
-        # 3. Guest tries any of the other AI tools -> ALL BLOCKED with HTTP 403 GUEST_PREVIEW_LIMIT
-        AIRateLimitBucket.objects.all().delete()
-        reset_rate_limit_memory()
-
-        # Tool 1: Summarize -> BLOCKED
-        r_sum = guest_client.post(
-            "/api/v1/ai/summarize",
-            {"file": create_unique_pdf("Guest over limit - Summarize"), "mode": "quick", "consent": "true"},
-            **guest_headers
-        )
-        self.assertEqual(r_sum.status_code, 403)
-        self.assertEqual(r_sum.json()["code"], "GUEST_PREVIEW_LIMIT")
-
-        # Tool 2: Translate -> BLOCKED
-        r_trans = guest_client.post(
+        # Tool 2: Translate -> HTTP 401
+        r_trans = anon_client.post(
             "/api/v1/ai/translate",
-            {"file": create_unique_pdf("Guest over limit - Translate"), "target_language": "tamil", "consent": "true"},
-            **guest_headers
+            {"file": create_unique_pdf("Anon request - Translate"), "target_language": "tamil", "consent": "true"}
         )
-        self.assertEqual(r_trans.status_code, 403)
-        self.assertEqual(r_trans.json()["code"], "GUEST_PREVIEW_LIMIT")
+        self.assertEqual(r_trans.status_code, 401)
+        self.assertIn("Authentication required", r_trans.json().get("detail", ""))
 
-        # Tool 3: Chat PDF -> BLOCKED
-        r_chat = guest_client.post(
+        # Tool 3: Chat PDF -> HTTP 401
+        r_chat = anon_client.post(
             "/api/v1/ai/chat-pdf",
-            {"file": create_unique_pdf("Guest over limit - Chat PDF"), "query": "Ask question", "consent": "true"},
-            **guest_headers
+            {"file": create_unique_pdf("Anon request - Chat PDF"), "query": "Ask question", "consent": "true"}
         )
-        self.assertEqual(r_chat.status_code, 403)
-        self.assertEqual(r_chat.json()["code"], "GUEST_PREVIEW_LIMIT")
+        self.assertEqual(r_chat.status_code, 401)
+        self.assertIn("Authentication required", r_chat.json().get("detail", ""))
 
-        # Tool 4: Key Points -> BLOCKED
-        r_kp = guest_client.post(
+        # Tool 4: Key Points -> HTTP 401
+        r_kp = anon_client.post(
             "/api/v1/ai/key-points",
-            {"file": create_unique_pdf("Guest over limit - Key Points"), "consent": True},
-            **guest_headers
+            {"file": create_unique_pdf("Anon request - Key Points"), "consent": True}
         )
-        self.assertEqual(r_kp.status_code, 403)
-        self.assertEqual(r_kp.json()["code"], "GUEST_PREVIEW_LIMIT")
+        self.assertEqual(r_kp.status_code, 401)
+        self.assertIn("Authentication required", r_kp.json().get("detail", ""))
 
-        # Tool 5: Extract Data -> BLOCKED
-        r_ed = guest_client.post(
+        # Tool 5: Extract Data -> HTTP 401
+        r_ed = anon_client.post(
             "/api/v1/ai/extract-data",
-            {"file": create_unique_pdf("Guest over limit - Extract Data"), "consent": True},
-            **guest_headers
+            {"file": create_unique_pdf("Anon request - Extract Data"), "consent": True}
         )
-        self.assertEqual(r_ed.status_code, 403)
-        self.assertEqual(r_ed.json()["code"], "GUEST_PREVIEW_LIMIT")
+        self.assertEqual(r_ed.status_code, 401)
+        self.assertIn("Authentication required", r_ed.json().get("detail", ""))
 
-        # Tool 6: Generate Questions -> BLOCKED
-        r_gq = guest_client.post(
+        # Tool 6: Generate Questions -> HTTP 401
+        r_gq = anon_client.post(
             "/api/v1/ai/generate-qns",
-            {"file": create_unique_pdf("Guest over limit - Generate Qs"), "consent": True},
-            **guest_headers
+            {"file": create_unique_pdf("Anon request - Generate Qs"), "consent": True}
         )
-        self.assertEqual(r_gq.status_code, 403)
-        self.assertEqual(r_gq.json()["code"], "GUEST_PREVIEW_LIMIT")
+        self.assertEqual(r_gq.status_code, 401)
+        self.assertIn("Authentication required", r_gq.json().get("detail", ""))
 
-        # Tool 7: Rewrite -> BLOCKED
-        r_rw = guest_client.post(
+        # Tool 7: Rewrite -> HTTP 401
+        r_rw = anon_client.post(
             "/api/v1/ai/rewrite",
-            {"file": create_unique_pdf("Guest over limit - Rewrite"), "consent": True},
-            **guest_headers
+            {"file": create_unique_pdf("Anon request - Rewrite"), "consent": True}
         )
-        self.assertEqual(r_rw.status_code, 403)
-        self.assertEqual(r_rw.json()["code"], "GUEST_PREVIEW_LIMIT")
+        self.assertEqual(r_rw.status_code, 401)
+        self.assertIn("Authentication required", r_rw.json().get("detail", ""))
 
-        # Tool 8: Compare -> BLOCKED
-        r_cmp = guest_client.post(
+        # Tool 8: Compare -> HTTP 401
+        r_cmp = anon_client.post(
             "/api/v1/ai/compare",
-            {"file": create_unique_pdf("Guest over limit - Compare"), "consent": True},
-            **guest_headers
+            {"file": create_unique_pdf("Anon request - Compare"), "consent": True}
         )
-        self.assertEqual(r_cmp.status_code, 403)
-        self.assertEqual(r_cmp.json()["code"], "GUEST_PREVIEW_LIMIT")
+        self.assertEqual(r_cmp.status_code, 401)
+        self.assertIn("Authentication required", r_cmp.json().get("detail", ""))
+
+        # Ensure no guest cookies or guest profiles were generated
+        self.assertNotIn(GUEST_DEVICE_COOKIE_NAME, r_sum.cookies)
+        self.assertNotIn(GUEST_DEVICE_COOKIE_NAME, r_cmp.cookies)
 
     def test_direct_endpoint_calls_cannot_bypass_either_quota(self):
         """

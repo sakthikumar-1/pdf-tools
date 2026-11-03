@@ -47,7 +47,7 @@ export default function Account() {
 
   const userInitial = user?.full_name ? user.full_name.charAt(0).toUpperCase() : (user?.email ? user.email.charAt(0).toUpperCase() : 'S');
   const userDisplayName = user?.full_name || (user?.email ? user.email.split('@')[0] : 'Simatrix User');
-  const userDisplayEmail = user?.email || (isAuthenticated ? 'user@example.com' : 'guest@simatrix.local');
+  const userDisplayEmail = user?.email || (isAuthenticated ? 'user@example.com' : 'Not signed in');
 
   return (
     <div className="account-page-wrapper">
@@ -110,7 +110,7 @@ export default function Account() {
                   <p className="profile-email">{userDisplayEmail}</p>
                   <div className="profile-verified-badge">
                     <FontAwesomeIcon icon={faCircleCheck} className="verified-check-icon" />
-                    <span>{isAuthenticated ? 'Verified with Google' : 'Anonymous Guest Session'}</span>
+                    <span>{isAuthenticated ? 'Verified with Google' : 'Not Signed In'}</span>
                   </div>
                 </div>
               </div>
@@ -122,7 +122,7 @@ export default function Account() {
                     <FontAwesomeIcon icon={faUser} className="menu-fa-icon" />
                     <div>
                       <span className="menu-title">Account Information</span>
-                      <span className="menu-sub">Role: {user?.role || (isAuthenticated ? 'Verified User' : 'Guest')}</span>
+                      <span className="menu-sub">Role: {user?.role || (isAuthenticated ? 'Verified User' : 'Visitor')}</span>
                     </div>
                   </div>
                   <FontAwesomeIcon icon={faChevronRight} className="menu-arrow" />

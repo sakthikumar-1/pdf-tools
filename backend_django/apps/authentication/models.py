@@ -209,15 +209,12 @@ def auto_create_user_quota(sender, instance, created, **kwargs):
     """
     Ensures every newly created User automatically has an AIUserQuota row
     initialized, preventing race conditions on first AI request.
-    Registered users receive 5 lifetime requests.
-    Guest users receive 1 lifetime request.
+    Registered users receive 5 lifetime requests across all eight AI tools.
     """
     if created:
-        is_guest = getattr(instance, 'role', '') == 'guest' or instance.email.lower().endswith('@simatrix.local') or hasattr(instance, 'guest_device_identity')
-        allowed = 1 if is_guest else 5
         AIUserQuota.objects.get_or_create(
             user=instance,
-            defaults={'total_allowed': allowed, 'used_count': 0, 'is_blocked': False}
+            defaults={'total_allowed': 5, 'used_count': 0, 'is_blocked': False}
         )
 
 

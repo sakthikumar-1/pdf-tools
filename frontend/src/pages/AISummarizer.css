@@ -1113,8 +1113,8 @@
 .ai-action-container {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
-  margin-top: 1.5rem;
+  align-items: center;
+  margin-top: 1.25rem;
   width: 100%;
 }
 
@@ -1123,8 +1123,8 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.65rem;
-  margin-top: 0.5rem;
+  gap: 0.5rem;
+  margin-top: 0;
 }
 
 .ai-btn-generate-main {

@@ -108,40 +108,37 @@ AI_PRIVACY_DISCLOSURE = (
 # ==============================================================================
 
 def get_authenticated_user(request) -> Optional[User]:
-    """Extracts and verifies authenticated User from Bearer token or persistent guest device identity."""
+    """Extracts and verifies authenticated User from Bearer token with revocation check."""
     auth_header = request.headers.get("Authorization", "")
     if auth_header.startswith("Bearer "):
         raw_token = auth_header.split(" ", 1)[1].strip()
         try:
             from core.api import token_signer
+            import hashlib
+            from django.core.cache import cache
             data = token_signer.unsign_object(raw_token, max_age=86400 * 30)
             user_id = data.get("user_id")
+            token_ts = data.get("ts", 0)
             if user_id:
+                token_hash = hashlib.sha256(raw_token.encode('utf-8')).hexdigest()
+                if cache.get(f"revoked_token:{token_hash}"):
+                    return None
+                if token_ts and token_ts < cache.get(f"user_logout:{user_id}", 0):
+                    return None
                 user = User.objects.filter(id=user_id).first()
-                if user:
-                    if hasattr(user, 'guest_device_identity') and not user.guest_device_identity.is_active:
-                        return None
+                if user and user.is_active:
                     return user
         except Exception:
             pass
-
-    # Fallback to guest device cookie or X-Device-Token header
-    try:
-        from apps.authentication.guest_service import resolve_guest_identity_from_request
-        identity = resolve_guest_identity_from_request(request)
-        if identity and identity.is_active:
-            return identity.user
-    except Exception:
-        pass
 
     return None
 
 
 def require_authenticated_user(request) -> User:
-    """Enforces Bearer authentication or active guest identity; raises 401/403."""
+    """Enforces Bearer authentication; raises HTTP 401 if unauthenticated, HTTP 403 if blocked."""
     user = get_authenticated_user(request)
     if not user:
-        raise HttpError(401, "Authentication required. Please sign in or continue as guest.")
+        raise HttpError(401, "Authentication required. Please sign in with Google to use Simatrix AI.")
 
     if getattr(user, 'ai_quota', None) and user.ai_quota.is_blocked:
         raise HttpError(403, "Your account has been suspended from using AI services. Please contact support.")
@@ -249,6 +246,7 @@ def summarize_endpoint(
     Enforces consent, multi-worker rate limiting, and two-phase MySQL quota settlement.
     Preserves backwards compatibility with existing Phase 1 anonymous test suite.
     """
+    user = require_authenticated_user(request)
     client_ip = get_client_ip(request)
 
     # Legacy rate limiter check for backwards compatibility
@@ -259,18 +257,9 @@ def summarize_endpoint(
             f"Rate limit exceeded. You can make at most 15 AI requests per hour. Please try again in {retry_after} seconds."
         )
 
-    user = require_authenticated_user(request)
-
     # 1. Rate Limits (10 req/min for user, 30 req/min for IP)
     is_allowed, remaining, retry_after, rate_err = check_ai_rate_limits(request, user)
     if not is_allowed:
-        if rate_err == "GUEST_PREVIEW_LIMIT":
-            return 403, {
-                "success": False,
-                "code": "GUEST_PREVIEW_LIMIT",
-                "message": "Guest preview limit reached (1 request). Please sign in with Google to continue using Simatrix AI.",
-                "quota": {"used": 1, "limit": 1, "remaining": 0}
-            }
         raise HttpError(429, rate_err)
 
     # Consent Validation
@@ -391,13 +380,6 @@ def chat_pdf_endpoint(
     # 1. Rate Limiting
     is_allowed, remaining, retry_after, rate_err = check_ai_rate_limits(request, user)
     if not is_allowed:
-        if rate_err == "GUEST_PREVIEW_LIMIT":
-            return 403, {
-                "success": False,
-                "code": "GUEST_PREVIEW_LIMIT",
-                "message": "Guest preview limit reached (1 request). Please sign in with Google to continue using Simatrix AI.",
-                "quota": {"used": 1, "limit": 1, "remaining": 0}
-            }
         raise HttpError(429, rate_err)
 
     # 2. Consent Validation
@@ -702,13 +684,6 @@ def translate_endpoint(
     # 1. Rate Limiting
     is_allowed, remaining, retry_after, rate_err = check_ai_rate_limits(request, user)
     if not is_allowed:
-        if rate_err == "GUEST_PREVIEW_LIMIT":
-            return 403, {
-                "success": False,
-                "code": "GUEST_PREVIEW_LIMIT",
-                "message": "Guest preview limit reached (1 request). Please sign in with Google to continue using Simatrix AI.",
-                "quota": {"used": 1, "limit": 1, "remaining": 0}
-            }
         raise HttpError(429, rate_err)
 
     # 2. Consent Validation
@@ -873,6 +848,8 @@ def _execute_generic_ai_processor(
     tool_name: str,
     **extra_kwargs
 ):
+    user = require_authenticated_user(request)
+
     if not file:
         return 501, {
             "success": False,
@@ -882,20 +859,11 @@ def _execute_generic_ai_processor(
             "expected_phase": "Phase 5"
         }
 
-    user = require_authenticated_user(request)
-
     client_ip = get_client_ip(request)
 
     # Rate limits
     is_allowed, remaining, retry_after, rate_err = check_ai_rate_limits(request, user)
     if not is_allowed:
-        if rate_err == "GUEST_PREVIEW_LIMIT":
-            return 403, {
-                "success": False,
-                "code": "GUEST_PREVIEW_LIMIT",
-                "message": "Guest preview limit reached. Sign in to continue.",
-                "quota": {"used": 1, "limit": 1, "remaining": 0}
-            }
         raise HttpError(429, rate_err)
 
     # Consent validation
@@ -1110,6 +1078,7 @@ def compare_endpoint(
     idempotency_key: Optional[str] = Form(None)
 ):
     """Performs structural and semantic comparison between PDF documents."""
+    user = require_authenticated_user(request)
     doc2_text = ""
     temp2_path = None
     if file2:

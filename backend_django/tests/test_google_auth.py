@@ -1,40 +1,37 @@
 """
-Simatrix PDF - End-to-End Google OAuth & Session Authentication Integration Tests.
+Simatrix PDF - Comprehensive Google ID-Token Authentication & Quota Regression Tests.
 Validates:
-1. Google OAuth ID token verification via tokeninfo endpoint.
-2. Offline / resilient JWT payload decode fallback when Google tokeninfo times out.
-3. User profile creation (is_verified=True, role='user').
-4. Automatic 5-request AI quota provisioning.
-5. Persistent guest device linking to the authenticated Google account.
-6. Session token verification on protected endpoints (/auth/me and /ai/quota).
-7. Preservation of existing user quota across multiple logins.
+1. Valid ID token verification via google.oauth2.id_token.verify_oauth2_token.
+2. Invalid cryptographic signature rejection (fail closed with HTTP 401).
+3. Expired ID token rejection (fail closed with HTTP 401).
+4. Wrong audience rejection (fail closed with HTTP 401).
+5. Untrusted issuer rejection (fail closed with HTTP 401).
+6. Unverified email rejection (fail closed with HTTP 401).
+7. Verification network timeout / TransportError (fail closed with HTTP 502).
+8. Existing user login & quota preservation (consumed credits retained, no duplicate accounts).
+9. New user registration & 5-request AI quota provisioning.
+10. Rejection of OAuth access tokens (HTTP 400 - genuine ID token strictly required).
+11. Immunity to untrusted client-supplied claims (browser payload ignored, verified claims take precedence).
+12. Missing stable Google sub identifier rejection (fail closed with HTTP 401).
+13. Session token authenticated protected endpoints (/auth/me and /ai/quota).
+14. Frontend Login.jsx and LoginModal.jsx integration verification (google.accounts.id.initialize).
 """
 
-import base64
 import json
 import time
-import uuid
+from pathlib import Path
 from unittest.mock import patch, MagicMock
 
-import requests
 from django.test import TestCase, Client
 from django.core.cache import cache
+from google.auth.exceptions import TransportError
 
-from apps.authentication.models import User, GuestDeviceIdentity, AIUserQuota, AIRateLimitBucket
-from apps.authentication.guest_service import GUEST_DEVICE_COOKIE_NAME, get_or_create_guest_identity
+from apps.authentication.models import User, AIUserQuota, AIRateLimitBucket
 from ai.rate_limiter import reset_rate_limit_memory
 
 
-def create_mock_jwt(payload_dict: dict) -> str:
-    """Creates an unsigned mock JWT (header.payload.signature) for testing decode fallbacks."""
-    header = base64.urlsafe_b64encode(json.dumps({"alg": "RS256", "typ": "JWT"}).encode("utf-8")).decode("utf-8").rstrip("=")
-    body = base64.urlsafe_b64encode(json.dumps(payload_dict).encode("utf-8")).decode("utf-8").rstrip("=")
-    signature = base64.urlsafe_b64encode(b"simulated_signature_bytes").decode("utf-8").rstrip("=")
-    return f"{header}.{body}.{signature}"
-
-
-class GoogleAuthEndToEndTests(TestCase):
-    """End-to-end test suite for Google authentication, token verification, and quota setup."""
+class GoogleAuthRegressionTests(TestCase):
+    """Exhaustive test suite for Google authentication, token verification, and quota preservation."""
 
     def setUp(self):
         super().setUp()
@@ -43,218 +40,303 @@ class GoogleAuthEndToEndTests(TestCase):
         reset_rate_limit_memory()
         self.client = Client()
 
-    def test_01_google_auth_with_verified_credential(self):
-        """1. Full Google OAuth flow: tokeninfo verification, profile creation, and 5-credit quota."""
-        mock_id_token = "google_id_token_test_123"
-        google_payload = {
+    def test_01_valid_google_id_token_authenticates_and_provisions_quota(self):
+        """1. Valid Google ID token verifies signature, provisions new user with 5 credits, and creates session."""
+        mock_claims = {
             "iss": "https://accounts.google.com",
-            "sub": "google-sub-1001",
-            "email": "jane.doe@example.com",
-            "email_verified": "true",
-            "name": "Jane Doe",
-            "picture": "https://lh3.googleusercontent.com/a/mock-photo",
-            "aud": "mock-client-id.apps.googleusercontent.com"
+            "sub": "google-sub-2001",
+            "email": "alice.wonderland@example.com",
+            "email_verified": True,
+            "name": "Alice Wonderland",
+            "picture": "https://lh3.googleusercontent.com/alice",
+            "aud": "mock-client-id.apps.googleusercontent.com",
+            "exp": int(time.time()) + 3600
         }
 
-        mock_resp = MagicMock()
-        mock_resp.status_code = 200
-        mock_resp.json.return_value = google_payload
-
-        with patch("requests.get", return_value=mock_resp) as mock_get:
+        with patch("google.oauth2.id_token.verify_oauth2_token", return_value=mock_claims):
             res = self.client.post(
                 "/api/v1/auth/google",
-                json.dumps({"credential": mock_id_token}),
+                json.dumps({"credential": "genuine.google.idtoken.xyz"}),
                 content_type="application/json"
-            )
-
-            # Verify tokeninfo endpoint was called with correct parameters
-            mock_get.assert_called_once_with(
-                "https://oauth2.googleapis.com/tokeninfo",
-                params={"id_token": mock_id_token},
-                timeout=5
             )
 
         self.assertEqual(res.status_code, 200)
         data = res.json()
         self.assertTrue(data["success"])
         self.assertIn("token", data)
-        self.assertEqual(data["user"]["email"], "jane.doe@example.com")
-        self.assertEqual(data["user"]["full_name"], "Jane Doe")
-        self.assertEqual(data["user"]["avatar_url"], "https://lh3.googleusercontent.com/a/mock-photo")
-        self.assertEqual(data["user"]["role"], "user")
+        self.assertEqual(data["user"]["email"], "alice.wonderland@example.com")
+        self.assertEqual(data["user"]["full_name"], "Alice Wonderland")
+        self.assertEqual(data["user"]["avatar_url"], "https://lh3.googleusercontent.com/alice")
         self.assertTrue(data["user"]["is_verified"])
 
-        # Quota verification in auth response
-        self.assertIsNotNone(data["quota"])
+        # Quota verification
         self.assertEqual(data["quota"]["limit"], 5)
         self.assertEqual(data["quota"]["used"], 0)
         self.assertEqual(data["quota"]["remaining"], 5)
 
-        # Database verification
-        user = User.objects.get(email="jane.doe@example.com")
-        self.assertEqual(user.full_name, "Jane Doe")
+        # Database assertions
+        user = User.objects.get(email="alice.wonderland@example.com")
         self.assertTrue(user.is_verified)
         self.assertFalse(user.has_usable_password())
-
         quota = AIUserQuota.objects.get(user=user)
         self.assertEqual(quota.total_allowed, 5)
         self.assertEqual(quota.used_count, 0)
-        self.assertFalse(quota.is_blocked)
 
-    def test_02_session_token_authenticates_protected_endpoints(self):
-        """2. Cryptographic session token allows access to /auth/me and /ai/quota."""
-        mock_resp = MagicMock()
-        mock_resp.status_code = 200
-        mock_resp.json.return_value = {
-            "email": "session.tester@example.com",
-            "name": "Session Tester",
-            "picture": "https://avatar.example.com/st",
-        }
-
-        with patch("requests.get", return_value=mock_resp):
-            res_login = self.client.post(
-                "/api/v1/auth/google",
-                json.dumps({"credential": "valid_token_xyz"}),
-                content_type="application/json"
-            )
-        token = res_login.json()["token"]
-
-        # Verify /auth/me with Bearer token
-        res_me = self.client.get(
-            "/api/v1/auth/me",
-            HTTP_AUTHORIZATION=f"Bearer {token}"
-        )
-        self.assertEqual(res_me.status_code, 200)
-        me_data = res_me.json()
-        self.assertTrue(me_data.get("authenticated", False))
-        self.assertEqual(me_data["user"]["email"], "session.tester@example.com")
-        self.assertEqual(me_data["user"]["full_name"], "Session Tester")
-
-        # Verify /ai/quota with Bearer token
-        res_quota = self.client.get(
-            "/api/v1/ai/quota",
-            HTTP_AUTHORIZATION=f"Bearer {token}"
-        )
-        self.assertEqual(res_quota.status_code, 200)
-        quota_data = res_quota.json()
-        self.assertEqual(quota_data["total_allowed"], 5)
-        self.assertEqual(quota_data["used_count"], 0)
-        self.assertEqual(quota_data["remaining"], 5)
-
-    def test_03_google_auth_jwt_payload_decode_fallback_on_tokeninfo_timeout(self):
-        """3. When Google's tokeninfo API times out, server safely decodes claims from JWT payload."""
-        fallback_jwt = create_mock_jwt({
-            "iss": "https://accounts.google.com",
-            "sub": "sub-offline-999",
-            "email": "offline.user@example.com",
-            "name": "Offline User",
-            "picture": "https://offline.avatar.com/pic.png",
-            "email_verified": True
-        })
-
-        # Simulate network timeout contacting tokeninfo
-        with patch("requests.get", side_effect=requests.Timeout("Google tokeninfo timeout after 5s")):
+    def test_02_invalid_signature_fails_closed(self):
+        """2. Forged or invalid token signature raises ValueError and fails closed with HTTP 401."""
+        with patch("google.oauth2.id_token.verify_oauth2_token", side_effect=ValueError("Invalid token signature")):
             res = self.client.post(
                 "/api/v1/auth/google",
-                json.dumps({"credential": fallback_jwt}),
+                json.dumps({"credential": "forged.signature.token"}),
+                content_type="application/json"
+            )
+
+        self.assertEqual(res.status_code, 401)
+        self.assertIn("Invalid, forged, or expired Google OAuth credential", res.json().get("detail", ""))
+        self.assertFalse(User.objects.filter(email="attacker@example.com").exists())
+
+    def test_03_expired_token_fails_closed(self):
+        """3. Expired ID token raises ValueError or fails expiration check with HTTP 401."""
+        with patch("google.oauth2.id_token.verify_oauth2_token", side_effect=ValueError("Token expired")):
+            res = self.client.post(
+                "/api/v1/auth/google",
+                json.dumps({"credential": "expired.id.token"}),
+                content_type="application/json"
+            )
+
+        self.assertEqual(res.status_code, 401)
+        self.assertIn("Invalid, forged, or expired Google OAuth credential", res.json().get("detail", ""))
+
+    def test_04_wrong_audience_fails_closed(self):
+        """4. ID token minted for a different application client ID fails closed with HTTP 401."""
+        with patch("google.oauth2.id_token.verify_oauth2_token", side_effect=ValueError("Token wrong audience")):
+            res = self.client.post(
+                "/api/v1/auth/google",
+                json.dumps({"credential": "wrong.audience.token"}),
+                content_type="application/json"
+            )
+
+        self.assertEqual(res.status_code, 401)
+        self.assertIn("Invalid, forged, or expired Google OAuth credential", res.json().get("detail", ""))
+
+    def test_05_untrusted_issuer_fails_closed(self):
+        """5. Token with an untrusted issuer (not accounts.google.com) fails closed with HTTP 401."""
+        mock_claims = {
+            "iss": "https://attacker-identity-provider.com",
+            "sub": "sub-evil-99",
+            "email": "victim@example.com",
+            "email_verified": True,
+            "aud": "mock-client-id.apps.googleusercontent.com",
+            "exp": int(time.time()) + 3600
+        }
+
+        with patch("google.oauth2.id_token.verify_oauth2_token", return_value=mock_claims):
+            res = self.client.post(
+                "/api/v1/auth/google",
+                json.dumps({"credential": "untrusted.issuer.token"}),
+                content_type="application/json"
+            )
+
+        self.assertEqual(res.status_code, 401)
+        self.assertIn("Untrusted token issuer", res.json().get("detail", ""))
+        self.assertFalse(User.objects.filter(email="victim@example.com").exists())
+
+    def test_06_unverified_email_fails_closed(self):
+        """6. ID token where email_verified is False is rejected with HTTP 401."""
+        mock_claims = {
+            "iss": "https://accounts.google.com",
+            "sub": "sub-unverified-77",
+            "email": "unverified@example.com",
+            "email_verified": False,
+            "aud": "mock-client-id.apps.googleusercontent.com",
+            "exp": int(time.time()) + 3600
+        }
+
+        with patch("google.oauth2.id_token.verify_oauth2_token", return_value=mock_claims):
+            res = self.client.post(
+                "/api/v1/auth/google",
+                json.dumps({"credential": "unverified.email.token"}),
+                content_type="application/json"
+            )
+
+        self.assertEqual(res.status_code, 401)
+        self.assertIn("Google account email address is not verified", res.json().get("detail", ""))
+        self.assertFalse(User.objects.filter(email="unverified@example.com").exists())
+
+    def test_07_network_timeout_during_verification_fails_closed(self):
+        """7. Upstream timeout or connection error contacting Google's certs fails closed with HTTP 502."""
+        with patch("google.oauth2.id_token.verify_oauth2_token", side_effect=TransportError("Google certs timeout")):
+            res = self.client.post(
+                "/api/v1/auth/google",
+                json.dumps({"credential": "timeout.token"}),
+                content_type="application/json"
+            )
+
+        self.assertEqual(res.status_code, 502)
+        self.assertIn("Google authentication verification service is unreachable", res.json().get("detail", ""))
+        self.assertFalse(User.objects.filter(email="timeout@example.com").exists())
+
+    def test_08_existing_user_preserves_quota_history_across_logins(self):
+        """8. Re-authentication of an existing user preserves consumed quota and does not reset usage."""
+        user = User.objects.create(
+            email="returning.user@example.com",
+            username="returning_user",
+            full_name="Returning User",
+            is_verified=True,
+            role="user"
+        )
+        quota = user.ai_quota
+        quota.used_count = 3
+        quota.save(update_fields=["used_count"])
+
+        mock_claims = {
+            "iss": "https://accounts.google.com",
+            "sub": "google-sub-returning",
+            "email": "returning.user@example.com",
+            "email_verified": True,
+            "name": "Returning User Updated",
+            "picture": "https://lh3.googleusercontent.com/new_pic",
+            "aud": "mock-client-id.apps.googleusercontent.com",
+            "exp": int(time.time()) + 3600
+        }
+
+        with patch("google.oauth2.id_token.verify_oauth2_token", return_value=mock_claims):
+            res = self.client.post(
+                "/api/v1/auth/google",
+                json.dumps({"credential": "valid.returning.token"}),
                 content_type="application/json"
             )
 
         self.assertEqual(res.status_code, 200)
         data = res.json()
-        self.assertTrue(data["success"])
-        self.assertEqual(data["user"]["email"], "offline.user@example.com")
-        self.assertEqual(data["user"]["full_name"], "Offline User")
-        self.assertTrue(data["user"]["is_verified"])
-        self.assertEqual(data["quota"]["remaining"], 5)
+        self.assertEqual(data["user"]["id"], str(user.id))
+        self.assertEqual(data["user"]["full_name"], "Returning User Updated")
+        self.assertEqual(data["user"]["avatar_url"], "https://lh3.googleusercontent.com/new_pic")
 
-        # Database verification
-        user = User.objects.get(email="offline.user@example.com")
-        self.assertTrue(user.is_verified)
-        self.assertEqual(user.full_name, "Offline User")
+        # Quota remains preserved: exactly 3 used, 2 remaining
+        self.assertEqual(data["quota"]["limit"], 5)
+        self.assertEqual(data["quota"]["used"], 3)
+        self.assertEqual(data["quota"]["remaining"], 2)
 
-    def test_04_guest_device_linking_on_google_signin(self):
-        """4. Active browser guest device profile is safely linked to user account upon Google login."""
-        # 1. Visitor initializes as guest
-        res_guest = self.client.post("/api/v1/auth/guest")
-        self.assertEqual(res_guest.status_code, 200)
-        guest_id = res_guest.json()["user"]["guest_id"]
+        # Ensure no duplicate accounts were created
+        self.assertEqual(User.objects.filter(email="returning.user@example.com").count(), 1)
 
-        guest_profile = GuestDeviceIdentity.objects.get(guest_id=guest_id)
-        self.assertIsNone(guest_profile.linked_user_id)
+    def test_09_oauth_access_tokens_are_strictly_rejected(self):
+        """9. Submitting an OAuth access token (ya29... or token_type=access_token) returns HTTP 400."""
+        res1 = self.client.post(
+            "/api/v1/auth/google",
+            json.dumps({"credential": "ya29.a0AfH6SMB_fake_access_token_12345"}),
+            content_type="application/json"
+        )
+        self.assertEqual(res1.status_code, 400)
+        self.assertIn("OAuth access tokens are not accepted", res1.json().get("detail", ""))
 
-        # 2. Same browser visitor signs in with Google
-        mock_resp = MagicMock()
-        mock_resp.status_code = 200
-        mock_resp.json.return_value = {
-            "email": "upgraded.visitor@example.com",
-            "name": "Upgraded Visitor",
+        res2 = self.client.post(
+            "/api/v1/auth/google",
+            json.dumps({"credential": "token_abc", "token_type": "access_token"}),
+            content_type="application/json"
+        )
+        self.assertEqual(res2.status_code, 400)
+        self.assertIn("OAuth access tokens are not accepted", res2.json().get("detail", ""))
+
+    def test_10_untrusted_client_payload_is_completely_ignored(self):
+        """10. Untrusted email, name, or avatar submitted by the browser are ignored in favor of verified claims."""
+        mock_claims = {
+            "iss": "https://accounts.google.com",
+            "sub": "google-sub-genuine",
+            "email": "genuine.account@example.com",
+            "email_verified": True,
+            "name": "Genuine Name",
+            "picture": "https://lh3.googleusercontent.com/genuine",
+            "aud": "mock-client-id.apps.googleusercontent.com",
+            "exp": int(time.time()) + 3600
         }
 
-        with patch("requests.get", return_value=mock_resp):
-            res_google = self.client.post(
+        with patch("google.oauth2.id_token.verify_oauth2_token", return_value=mock_claims):
+            res = self.client.post(
                 "/api/v1/auth/google",
-                json.dumps({"credential": "token_for_link"}),
+                json.dumps({
+                    "credential": "valid.token.for.genuine",
+                    # Untrusted values from client attempt to spoof identity
+                    "email": "spoofed.victim@example.com",
+                    "name": "Spoofed Attacker",
+                    "avatar_url": "https://attacker.com/malicious.png"
+                }),
                 content_type="application/json"
             )
-        self.assertEqual(res_google.status_code, 200)
 
-        # 3. Verify guest device record is linked to the new registered user
-        user = User.objects.get(email="upgraded.visitor@example.com")
-        guest_profile.refresh_from_db()
-        self.assertEqual(str(guest_profile.linked_user_id), str(user.id))
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        # Identity strictly reflects verified claims
+        self.assertEqual(data["user"]["email"], "genuine.account@example.com")
+        self.assertEqual(data["user"]["full_name"], "Genuine Name")
+        self.assertEqual(data["user"]["avatar_url"], "https://lh3.googleusercontent.com/genuine")
+        self.assertFalse(User.objects.filter(email="spoofed.victim@example.com").exists())
 
-    def test_05_subsequent_google_login_preserves_existing_quota_and_updates_profile(self):
-        """5. Re-authenticating with Google preserves existing consumed quota and doesn't duplicate user."""
-        mock_resp1 = MagicMock()
-        mock_resp1.status_code = 200
-        mock_resp1.json.return_value = {
-            "email": "repeat.user@example.com",
-            "name": "Initial Name",
-            "picture": None
+    def test_11_missing_sub_claim_fails_closed(self):
+        """11. An ID token payload missing the stable Google 'sub' claim fails closed with HTTP 401."""
+        mock_claims = {
+            "iss": "https://accounts.google.com",
+            "sub": "",  # Missing sub!
+            "email": "no.sub@example.com",
+            "email_verified": True,
+            "aud": "mock-client-id.apps.googleusercontent.com",
+            "exp": int(time.time()) + 3600
         }
 
-        with patch("requests.get", return_value=mock_resp1):
-            res1 = self.client.post(
+        with patch("google.oauth2.id_token.verify_oauth2_token", return_value=mock_claims):
+            res = self.client.post(
                 "/api/v1/auth/google",
-                json.dumps({"credential": "tok1"}),
+                json.dumps({"credential": "no.sub.token"}),
                 content_type="application/json"
             )
-        self.assertEqual(res1.status_code, 200)
-        user_id = res1.json()["user"]["id"]
 
-        # Simulate user consuming 2 AI credits
-        user = User.objects.get(id=user_id)
-        quota = AIUserQuota.objects.get(user=user)
-        quota.used_count = 2
-        quota.save(update_fields=["used_count"])
+        self.assertEqual(res.status_code, 401)
+        self.assertIn("Missing stable Google user identifier (sub)", res.json().get("detail", ""))
 
-        # Second login with updated name and avatar from Google
-        mock_resp2 = MagicMock()
-        mock_resp2.status_code = 200
-        mock_resp2.json.return_value = {
-            "email": "repeat.user@example.com",
-            "name": "Updated Name",
-            "picture": "https://photo.example.com/new.png"
+    def test_12_session_token_authenticates_protected_endpoints(self):
+        """12. Session token created from Google authentication successfully accesses /auth/me and /ai/quota."""
+        mock_claims = {
+            "iss": "https://accounts.google.com",
+            "sub": "google-sub-protected",
+            "email": "protected.endpoints@example.com",
+            "email_verified": True,
+            "name": "Protected Tester",
+            "aud": "mock-client-id.apps.googleusercontent.com",
+            "exp": int(time.time()) + 3600
         }
 
-        with patch("requests.get", return_value=mock_resp2):
-            res2 = self.client.post(
+        with patch("google.oauth2.id_token.verify_oauth2_token", return_value=mock_claims):
+            res = self.client.post(
                 "/api/v1/auth/google",
-                json.dumps({"credential": "tok2"}),
+                json.dumps({"credential": "valid.protected.token"}),
                 content_type="application/json"
             )
-        self.assertEqual(res2.status_code, 200)
-        data2 = res2.json()
+        token = res.json()["token"]
 
-        # Same user ID, no duplicates
-        self.assertEqual(data2["user"]["id"], user_id)
-        self.assertEqual(User.objects.filter(email="repeat.user@example.com").count(), 1)
+        # 1. /auth/me
+        res_me = self.client.get("/api/v1/auth/me", HTTP_AUTHORIZATION=f"Bearer {token}")
+        self.assertEqual(res_me.status_code, 200)
+        self.assertEqual(res_me.json()["user"]["email"], "protected.endpoints@example.com")
 
-        # Profile updated
-        self.assertEqual(data2["user"]["avatar_url"], "https://photo.example.com/new.png")
+        # 2. /ai/quota
+        res_quota = self.client.get("/api/v1/ai/quota", HTTP_AUTHORIZATION=f"Bearer {token}")
+        self.assertEqual(res_quota.status_code, 200)
+        self.assertEqual(res_quota.json()["remaining"], 5)
 
-        # Quota preserved: 2 used, 3 remaining
-        self.assertEqual(data2["quota"]["used"], 2)
-        self.assertEqual(data2["quota"]["limit"], 5)
-        self.assertEqual(data2["quota"]["remaining"], 3)
+    def test_13_frontend_components_use_google_accounts_id_initialize(self):
+        """13. Inspects Login.jsx and LoginModal.jsx to verify ID-token authentication with google.accounts.id.initialize."""
+        login_jsx = Path("frontend/src/pages/Login.jsx").read_text(encoding="utf-8")
+        login_modal_jsx = Path("frontend/src/components/LoginModal.jsx").read_text(encoding="utf-8")
+
+        # Must use google.accounts.id.initialize
+        self.assertIn("google.accounts.id.initialize", login_jsx)
+        self.assertIn("google.accounts.id.initialize", login_modal_jsx)
+
+        # Must NOT use initTokenClient (which returns OAuth access tokens)
+        self.assertNotIn("initTokenClient", login_jsx)
+        self.assertNotIn("initTokenClient", login_modal_jsx)
+
+        # Must send token_type: 'id_token'
+        self.assertIn("token_type: 'id_token'", login_jsx)
+        self.assertIn("token_type: 'id_token'", login_modal_jsx)

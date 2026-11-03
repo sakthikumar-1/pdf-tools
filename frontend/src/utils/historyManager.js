@@ -7,7 +7,7 @@ const GLOBAL_HISTORY_KEY = 'simatrix_pdf_history';
 const MAX_HISTORY_ITEMS = 50;
 
 /**
- * Gets the current active user email if authenticated, or null for guest.
+ * Gets the current active user email if authenticated, or null for visitor.
  */
 function getActiveUserEmail() {
   try {
@@ -59,7 +59,7 @@ export function addHistoryItem({
     toolName: toolName || 'PDF Utility',
     timestamp,
     status: status || 'Completed',
-    userEmail: email || 'guest'
+    userEmail: email || 'visitor'
   };
 
   // Helper to append and trim

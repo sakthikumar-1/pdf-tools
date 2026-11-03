@@ -70,24 +70,17 @@ def get_or_create_quota(user: User) -> AIUserQuota:
     Safely retrieves or initializes an AIUserQuota row without relying on
     select_for_update() on a non-existent row (avoiding MySQL gap locks).
     Safely handles concurrent initialization via atomic IntegrityError catch.
-    Ensures guest users receive 1 operation while registered accounts receive 5.
+    Ensures registered accounts receive 5 lifetime AI operations across all tools.
     """
-    from .rate_limiter import is_guest_user
-    allowed = 1 if is_guest_user(user) else 5
-
     try:
         quota = AIUserQuota.objects.get(user=user)
-        # Reconcile guest quota limit if misconfigured
-        if is_guest_user(user) and quota.total_allowed != 1:
-            quota.total_allowed = 1
-            quota.save(update_fields=['total_allowed'])
         return quota
     except AIUserQuota.DoesNotExist:
         try:
             with transaction.atomic():
                 quota, _ = AIUserQuota.objects.get_or_create(
                     user=user,
-                    defaults={'total_allowed': allowed, 'used_count': 0, 'is_blocked': False}
+                    defaults={'total_allowed': 5, 'used_count': 0, 'is_blocked': False}
                 )
                 return quota
         except IntegrityError:
@@ -276,14 +269,7 @@ def settle_reservation(
             quota.used_count += 1
             quota.save(update_fields=['used_count', 'updated_at'])
 
-            # Synchronize persistent GuestDeviceIdentity if this is a guest user
-            if hasattr(reservation.user, 'guest_device_identity'):
-                try:
-                    gdi = reservation.user.guest_device_identity
-                    gdi.ai_operations_used = quota.used_count
-                    gdi.save(update_fields=['ai_operations_used', 'last_seen'])
-                except Exception as sync_err:
-                    logger.warning(f"Failed to sync guest device usage: {sync_err}")
+
 
             # Calculate estimated USD cost
             prompt_tokens = ai_response.prompt_tokens if ai_response else 0

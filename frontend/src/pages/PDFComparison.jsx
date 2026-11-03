@@ -1,3 +1,5 @@
+import { useAuth } from '../context/AuthContext';
+import LoginModal from '../components/LoginModal';
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -15,7 +17,6 @@ import {
 import {
   AIQuotaBanner,
   AIConsentDialog,
-  AIConsentDisclosure,
   hasUserGivenAIConsent,
   setUserAIConsent,
   AIProcessingIndicator,
@@ -29,6 +30,9 @@ import { comparePdfAI, fetchAIQuota, recordAIConsent } from '../services/api';
 import './PDFComparison.css';
 
 export default function PDFComparison() {
+  const { isAuthenticated } = useAuth();
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
+
   const [file1, setFile1] = useState(null);
   const [file2, setFile2] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -40,7 +44,6 @@ export default function PDFComparison() {
   const [consentDialogOpen, setConsentDialogOpen] = useState(false);
   const [limitModalOpen, setLimitModalOpen] = useState(false);
   const [consented, setConsented] = useState(() => hasUserGivenAIConsent());
-  const [consentError, setConsentError] = useState(false);
 
   const fileInputRef1 = useRef(null);
   const fileInputRef2 = useRef(null);
@@ -80,17 +83,6 @@ export default function PDFComparison() {
   };
 
 
-  const handleConsentChange = async (checked) => {
-    setConsented(checked);
-    setUserAIConsent(checked);
-    setConsentError(false);
-    try {
-      await recordAIConsent(checked);
-    } catch (e) {
-      console.warn('Could not record AI consent:', e);
-    }
-  };
-
   const handleClearAll = () => {
     setFile1(null);
     setFile2(null);
@@ -100,6 +92,11 @@ export default function PDFComparison() {
   };
 
   const executeComparison = async () => {
+    if (!isAuthenticated) {
+      setLoginModalOpen(true);
+      return;
+    }
+
     if (!file1 || isProcessing) return;
 
     if (typeof navigator !== 'undefined' && !navigator.onLine) {
@@ -115,8 +112,9 @@ export default function PDFComparison() {
       return;
     }
 
-    if (!consented && !hasUserGivenAIConsent()) {
-      setConsentError(true);
+    if (!hasUserGivenAIConsent(quota)) {
+      pendingOperationRef.current = executeComparison;
+      setConsentDialogOpen(true);
       return;
     }
 
@@ -154,6 +152,9 @@ export default function PDFComparison() {
 
   const handleConsentConfirm = () => {
     setUserAIConsent(true);
+    if (quota) {
+      setQuota((prev) => prev ? { ...prev, consent_given: true, consent_policy_version: '2026.1' } : prev);
+    }
     setConsentDialogOpen(false);
     if (pendingOperationRef.current) {
       const op = pendingOperationRef.current;
@@ -294,13 +295,6 @@ export default function PDFComparison() {
           </div>
         </div>
 
-        <AIConsentDisclosure
-          consented={consented}
-          onConsentChange={handleConsentChange}
-          error={consentError}
-          disabled={isProcessing}
-        />
-
         {/* Action Controls */}
         <div className="cmp-actions-center">
           <button
@@ -310,7 +304,7 @@ export default function PDFComparison() {
             disabled={!file1 || isProcessing}
           >
             <FontAwesomeIcon icon={faCodeCompare} />
-            <span>Compare Documents Now</span>
+            <span>{isAuthenticated ? "Compare Documents Now" : "Sign in to Compare"}</span>
           </button>
 
 
@@ -454,6 +448,7 @@ export default function PDFComparison() {
         isOpen={limitModalOpen}
         onClose={() => setLimitModalOpen(false)}
       />
+          <LoginModal isOpen={loginModalOpen} onClose={() => setLoginModalOpen(false)} />
     </div>
   );
 }
