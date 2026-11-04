@@ -4,48 +4,31 @@
   text-decoration: none;
   color: inherit;
   user-select: none;
+  border-radius: var(--radius-sm);
 }
 
 .simatrix-logo-link:hover {
   text-decoration: none;
 }
 
+.simatrix-logo-link:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
 .simatrix-brand-badge {
   display: inline-flex;
   align-items: center;
-  gap: 0.65rem;
 }
 
-.simatrix-logo-mark {
-  width: 28px;
-  height: 28px;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.simatrix-logo-mark .logo-svg {
-  width: 100%;
-  height: 100%;
+.simatrix-brand-logo {
   display: block;
+  height: 42px;
+  width: auto;
 }
 
-.simatrix-brand-name {
-  font-family: var(--font-family-primary);
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--color-heading);
-  letter-spacing: -0.015em;
-  line-height: 1;
+@media (max-width: 640px) {
+  .simatrix-brand-logo {
+    height: 32px;
+  }
 }
-
-.simatrix-brand-name .simatrix-brand-sub {
-  font-weight: 700;
-  color: var(--color-heading);
-}
-
-[data-theme="dark"] .simatrix-brand-name {
-  color: #F8FAFC;
-}
-

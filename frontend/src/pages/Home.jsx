@@ -7,54 +7,147 @@ import {
   faArrowRight,
   faWandMagicSparkles,
   faFilterCircleXmark,
-  faFileLines,
   faShieldHalved,
   faTrashCan,
-  faLock,
-  faChevronDown
+  faBolt,
+  faMobileScreen,
+  faGift,
+  faChevronDown,
+  faCloudArrowUp,
+  faHandPointer,
+  faDownload,
+  faFilePdf,
+  faCircleCheck,
+  faQuoteLeft
 } from '@fortawesome/free-solid-svg-icons';
-import ToolCard from '../components/ToolCard';
 import { TOOLS_DATA, TOOL_CATEGORIES, filterTools } from '../utils/toolsData';
 import './Home.css';
 
+const QUICK_TOOL_IDS = ['merge-pdf', 'compress-pdf', 'pdf-to-word', 'edit-pdf', 'sign-pdf', 'ai-summarizer'];
 const POPULAR_TOOL_IDS = ['pdf-to-word', 'pdf-to-jpg', 'merge-pdf', 'compress-pdf'];
+
+// Accent class per category, used to tint tool icon tiles
+const CATEGORY_ACCENTS = {
+  'organize-pdf': 'accent-organize',
+  'convert-pdf': 'accent-convert',
+  'compress-pdf': 'accent-compress',
+  'security-protect': 'accent-secure',
+  'ai-tools': 'accent-ai'
+};
+
+const AI_TOOL_COUNT = TOOLS_DATA.filter((t) => t.category === 'ai-tools').length;
+const CORE_TOOL_COUNT = TOOLS_DATA.length - AI_TOOL_COUNT;
+
+const TRUST_ITEMS = [
+  { icon: faTrashCan, label: 'Files auto-deleted after processing' },
+  { icon: faShieldHalved, label: 'Secure, private processing' },
+  { icon: faGift, label: 'Free, no watermarks' },
+  { icon: faMobileScreen, label: 'Works on any device' }
+];
+
+const STEPS = [
+  { icon: faHandPointer, title: 'Choose a tool', desc: 'Pick from organize, convert, compress, edit, or AI tools.' },
+  { icon: faCloudArrowUp, title: 'Upload your PDF', desc: 'Drag and drop a file up to 50MB. Many tools run right in your browser.' },
+  { icon: faDownload, title: 'Download the result', desc: 'Get your processed file in seconds. Uploads are cleaned up automatically.' }
+];
+
+const FEATURES = [
+  {
+    icon: faShieldHalved,
+    title: 'Privacy first',
+    desc: 'Many tools process files locally in your browser. Server uploads are deleted automatically after processing.'
+  },
+  {
+    icon: faBolt,
+    title: 'Fast by design',
+    desc: 'Lightweight, optimized engines handle conversions and edits in seconds, not minutes.'
+  },
+  {
+    icon: faGift,
+    title: 'Free to use',
+    desc: 'Core PDF tools are free with no watermarks and no account required.'
+  },
+  {
+    icon: faWandMagicSparkles,
+    title: 'AI when you need it',
+    desc: 'Summarize, translate, compare, and chat with documents using built-in AI tools.'
+  }
+];
 
 const FAQ_ITEMS = [
   {
-    question: 'Are Simatrix PDF tools free?',
-    answer: 'Yes, all 19 tools are 100% free with no hidden fees, subscriptions, or watermarks.'
+    question: 'Are these PDF tools free?',
+    answer: `Yes. All ${CORE_TOOL_COUNT} core PDF tools are free with no hidden fees, subscriptions, or watermarks. AI tools include free credits with a Google sign-in.`
   },
   {
     question: 'How are uploaded documents handled?',
-    answer: 'Files are processed client-side via WebAssembly where possible, or automatically deleted from temporary memory immediately after conversion.'
+    answer: 'Files are processed client-side in your browser where possible. Files sent to our servers are deleted automatically shortly after processing.'
   },
   {
     question: 'What is the maximum supported file size?',
-    answer: 'You can upload documents up to 50MB per file for instant, high-speed processing.'
-  },
-  {
-    question: 'Can I convert scanned PDFs?',
-    answer: 'Yes, our conversion engines preserve text and embedded images accurately across all document formats.'
+    answer: 'You can upload documents up to 50MB per file.'
   },
   {
     question: 'Do I need to create an account?',
-    answer: 'No sign-up is required to use any of our 19 PDF utilities. You can use all tools instantly.'
+    answer: 'No account is needed for the core PDF tools. AI tools require a quick, free Google sign-in so we can manage usage credits.'
   },
   {
-    question: 'Can I use Simatrix PDF on mobile?',
-    answer: 'Yes, the interface is fully responsive and works smoothly on smartphones, tablets, and laptops.'
+    question: 'Can I use it on mobile?',
+    answer: 'Yes. The interface is fully responsive and works on smartphones, tablets, and laptops.'
   },
   {
     question: 'How does AI summarization work?',
-    answer: 'Our AI analyzes document content to extract key highlights, important dates, and concise executive summaries.'
+    answer: 'The AI reads your document text and produces concise summaries, key points, and answers with page citations so you can verify every claim.'
   }
 ];
+
+function getAccentClass(tool) {
+  return CATEGORY_ACCENTS[tool.category] || 'accent-organize';
+}
+
+function HomeToolCard({ tool }) {
+  const accent = getAccentClass(tool);
+  const isPopular = POPULAR_TOOL_IDS.includes(tool.id);
+  const inner = (
+    <>
+      <div className="hp-card-top">
+        <span className={`hp-card-icon ${accent}`} aria-hidden="true">
+          <FontAwesomeIcon icon={tool.icon} />
+        </span>
+        {tool.comingSoon ? (
+          <span className="hp-card-tag is-muted">Coming soon</span>
+        ) : isPopular ? (
+          <span className="hp-card-tag">Popular</span>
+        ) : tool.category === 'ai-tools' ? (
+          <span className="hp-card-tag is-ai">AI</span>
+        ) : null}
+      </div>
+      <h3 className="hp-card-title">{tool.title}</h3>
+      <p className="hp-card-desc">{tool.description}</p>
+      {!tool.comingSoon && (
+        <span className="hp-card-cta" aria-hidden="true">
+          Open tool <FontAwesomeIcon icon={faArrowRight} />
+        </span>
+      )}
+    </>
+  );
+
+  if (tool.comingSoon) {
+    return <div className="hp-tool-card is-disabled" aria-disabled="true">{inner}</div>;
+  }
+
+  return (
+    <Link to={tool.path} className="hp-tool-card">
+      {inner}
+    </Link>
+  );
+}
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const [openFaqIndex, setOpenFaqIndex] = useState(null);
+  const [openFaqIndex, setOpenFaqIndex] = useState(0);
   const searchInputRef = useRef(null);
   const navigate = useNavigate();
 
@@ -63,10 +156,11 @@ export default function Home() {
     return filterTools(searchQuery, activeCategory);
   }, [searchQuery, activeCategory]);
 
-  // Popular tools list (4 cards)
-  const popularTools = useMemo(() => {
-    return TOOLS_DATA.filter((t) => POPULAR_TOOL_IDS.includes(t.id));
+  const quickTools = useMemo(() => {
+    return QUICK_TOOL_IDS.map((id) => TOOLS_DATA.find((t) => t.id === id)).filter(Boolean);
   }, []);
+
+  const aiTools = useMemo(() => TOOLS_DATA.filter((t) => t.category === 'ai-tools'), []);
 
   // Category counts
   const getCategoryCount = (categoryId) => {
@@ -101,10 +195,6 @@ export default function Home() {
     }
   };
 
-  const toggleFaq = (index) => {
-    setOpenFaqIndex((prev) => (prev === index ? null : index));
-  };
-
   // Keyboard shortcut Ctrl+K
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -119,350 +209,328 @@ export default function Home() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  const showSuggestions = searchQuery.trim() && isSearchFocused;
+
   return (
-    <div className="home-dashboard-page">
-      <div className="home-main-grid">
-        {/* ====================================================================
-            LEFT / MAIN COLUMN (Hero, Popular Tools, All Utilities, How It Works)
-            ==================================================================== */}
-        <div className="home-main-column">
-          {/* 1. HERO SECTION WITH STATS HIGHLIGHTS */}
-          <section className="home-hero-card" aria-label="Hero Section">
-            <div className="hero-content-split">
-              <div className="hero-text-block">
-                <span className="hero-kicker-label">FREE ONLINE PDF TOOLS</span>
-                <h1 className="hero-headline">
-                  Every PDF Task.<br />
-                  <span className="hero-headline-red">One Simple Workspace.</span>
-                </h1>
-                <p className="hero-subtext">
-                  Convert, merge, compress, edit, and summarize PDFs with free online tools designed for speed, simplicity, and privacy.
-                </p>
+    <div className="hp-page">
+      {/* 1. HERO */}
+      <section className="hp-hero" aria-labelledby="hp-hero-title">
+        <div className="hp-hero-bg" aria-hidden="true" />
+        <div className="hp-container hp-hero-inner">
+          <span className="hp-eyebrow">
+            <span className="hp-eyebrow-dot" aria-hidden="true" />
+            {TOOLS_DATA.length} free PDF tools &middot; No sign-up for core tools
+          </span>
 
-                {/* Hero Search Box */}
-                <form className="hero-search-form" onSubmit={handleSearchSubmit}>
-                  <FontAwesomeIcon icon={faMagnifyingGlass} className="hero-search-icon" />
-                  <input
-                    ref={searchInputRef}
-                    type="text"
-                    className="hero-search-input"
-                    placeholder="Search PDF tools (e.g. merge, compress, to word...)"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    onFocus={() => setIsSearchFocused(true)}
-                    onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)}
-                    aria-label="Search PDF tools"
-                  />
-                  {searchQuery && (
-                    <button
-                      type="button"
-                      className="hero-search-clear"
-                      onClick={handleClearSearch}
-                      aria-label="Clear search"
-                    >
-                      <FontAwesomeIcon icon={faXmark} />
-                    </button>
-                  )}
-                  <button type="submit" className="hero-search-submit-btn" aria-label="Search">
-                    <FontAwesomeIcon icon={faMagnifyingGlass} />
-                  </button>
+          <h1 id="hp-hero-title" className="hp-hero-title">
+            Every PDF tool you need.
+            <span className="hp-hero-title-accent">One simple workspace.</span>
+          </h1>
 
-                  {/* Instant Search Suggestions Dropdown */}
-                  {searchQuery.trim() && isSearchFocused && (
-                    <div className="hero-suggestions-dropdown" role="listbox">
-                      {filteredTools.slice(0, 5).map((tool) => (
-                        <button
-                          key={tool.id}
-                          type="button"
-                          className="hero-suggestion-item"
-                          onMouseDown={() => navigate(tool.path)}
-                        >
-                          <div className="suggestion-details">
-                            <span className="suggestion-title">{tool.title}</span>
-                            <span className="suggestion-desc">{tool.description}</span>
-                          </div>
-                          <FontAwesomeIcon icon={faArrowRight} className="suggestion-arrow" />
-                        </button>
-                      ))}
-                      {filteredTools.length === 0 && (
-                        <div className="hero-suggestion-empty">
-                          No tools found matching &ldquo;{searchQuery}&rdquo;.
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </form>
+          <p className="hp-hero-sub">
+            Merge, split, compress, convert, edit, sign, and summarize PDFs online.
+            Fast, private, and free.
+          </p>
 
-                {/* Hero Action Buttons */}
-                <div className="hero-buttons-row">
-                  <a href="#all-tools" className="btn btn-primary hero-btn-primary">
-                    <span>Explore Tools</span>
-                    <FontAwesomeIcon icon={faArrowRight} />
-                  </a>
-                  <Link to="/ai-summarizer" className="btn btn-secondary hero-btn-secondary">
-                    <span>Try AI Summarizer</span>
-                  </Link>
-                </div>
-              </div>
-
-              {/* Hero Features Highlight (Right side of Hero Card) */}
-              <div className="hero-stats-panel" aria-label="Key Platform Features">
-                <div className="hero-stat-item">
-                  <div className="hero-stat-icon-box">
-                    <FontAwesomeIcon icon={faFileLines} />
-                  </div>
-                  <div className="hero-stat-info">
-                    <span className="hero-stat-title">19 PDF Utilities</span>
-                    <span className="hero-stat-desc">Multiple PDF tools in one place.</span>
-                  </div>
-                </div>
-
-                <div className="hero-stat-item">
-                  <div className="hero-stat-icon-box">
-                    <FontAwesomeIcon icon={faWandMagicSparkles} />
-                  </div>
-                  <div className="hero-stat-info">
-                    <span className="hero-stat-title">AI-Powered Document Tools</span>
-                    <span className="hero-stat-desc">Summarize, extract key points and more.</span>
-                  </div>
-                </div>
-
-                <div className="hero-stat-item">
-                  <div className="hero-stat-icon-box">
-                    <FontAwesomeIcon icon={faShieldHalved} />
-                  </div>
-                  <div className="hero-stat-info">
-                    <span className="hero-stat-title">Privacy-Focused Processing</span>
-                    <span className="hero-stat-desc">Your files are processed securely.</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* 2. POPULAR TOOLS (Four Cards) */}
-          <section className="home-popular-section" aria-label="Popular Tools">
-            <div className="section-title-row">
-              <div>
-                <h2 className="section-title-heading">Popular Tools</h2>
-                <p className="section-subtitle-text">Most used PDF tools to get your work done faster.</p>
-              </div>
-              <a href="#all-tools" className="section-view-all-link">
-                <span>View All Tools</span>
-                <FontAwesomeIcon icon={faArrowRight} />
-              </a>
-            </div>
-
-            <div className="popular-tools-grid">
-              {popularTools.map((tool) => (
-                <ToolCard
-                  key={tool.id}
-                  title={tool.title}
-                  description={tool.description}
-                  icon={tool.icon}
-                  path={tool.path}
-                  variant="popular"
-                  comingSoon={tool.comingSoon}
-                  badge={tool.badge}
-                />
-              ))}
-            </div>
-          </section>
-
-          {/* 3. ALL PDF UTILITIES WITH CATEGORY FILTERS */}
-          <section className="home-all-tools-section" id="all-tools" aria-label="All PDF Utilities">
-            <div className="section-title-row">
-              <div>
-                <h2 className="section-title-heading">All PDF Utilities</h2>
-                <p className="section-subtitle-text">Everything you need to work with PDF documents.</p>
-              </div>
-            </div>
-
-            {/* Category Filter Pills */}
-            <div className="category-filter-pills" role="tablist" aria-label="Category Filters">
-              {TOOL_CATEGORIES.map((cat) => {
-                const count = getCategoryCount(cat.id);
-                const isActive = activeCategory === cat.id;
-                return (
-                  <button
-                    key={cat.id}
-                    type="button"
-                    role="tab"
-                    aria-selected={isActive}
-                    className={`cat-pill-button ${isActive ? 'is-active' : ''}`}
-                    onClick={() => setActiveCategory(cat.id)}
-                  >
-                    <span>{cat.label}</span>
-                    <span className="cat-pill-count">{count}</span>
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Clean Grid of Tools (4 columns) */}
-            {filteredTools.length > 0 ? (
-              <div className="all-tools-grid">
-                {filteredTools.map((tool) => (
-                  <ToolCard
-                    key={tool.id}
-                    title={tool.title}
-                    description={tool.description}
-                    icon={tool.icon}
-                    path={tool.path}
-                    variant="compact"
-                    comingSoon={tool.comingSoon}
-                    badge={tool.badge}
-                  />
-                ))}
-              </div>
+          {/* Search */}
+          <form className={`hp-search ${showSuggestions ? 'is-open' : ''}`} onSubmit={handleSearchSubmit} role="search">
+            <FontAwesomeIcon icon={faMagnifyingGlass} className="hp-search-icon" aria-hidden="true" />
+            <input
+              ref={searchInputRef}
+              type="text"
+              className="hp-search-input"
+              placeholder="Search tools, e.g. merge, compress, PDF to Word"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => setIsSearchFocused(true)}
+              onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)}
+              aria-label="Search PDF tools"
+              autoComplete="off"
+            />
+            {searchQuery ? (
+              <button type="button" className="hp-search-clear" onClick={handleClearSearch} aria-label="Clear search">
+                <FontAwesomeIcon icon={faXmark} />
+              </button>
             ) : (
-              <div className="catalog-empty-state">
-                <FontAwesomeIcon icon={faFilterCircleXmark} className="empty-state-icon" />
-                <h3 className="empty-state-title">No tools found</h3>
-                <p className="empty-state-text">
-                  No tools match &ldquo;<strong>{searchQuery}</strong>&rdquo;.
-                </p>
-                <button
-                  type="button"
-                  className="btn btn-secondary btn-sm"
-                  onClick={handleClearSearch}
-                >
-                  Clear search
-                </button>
+              <kbd className="hp-search-kbd" aria-hidden="true">Ctrl K</kbd>
+            )}
+            <button type="submit" className="hp-search-submit">
+              Search
+            </button>
+
+            {showSuggestions && (
+              <div className="hp-suggestions" role="listbox">
+                {filteredTools.slice(0, 5).map((tool) => (
+                  <button
+                    key={tool.id}
+                    type="button"
+                    role="option"
+                    aria-selected="false"
+                    className="hp-suggestion"
+                    onMouseDown={() => navigate(tool.path)}
+                  >
+                    <span className={`hp-suggestion-icon ${getAccentClass(tool)}`} aria-hidden="true">
+                      <FontAwesomeIcon icon={tool.icon} />
+                    </span>
+                    <span className="hp-suggestion-text">
+                      <span className="hp-suggestion-title">{tool.title}</span>
+                      <span className="hp-suggestion-desc">{tool.description}</span>
+                    </span>
+                    <FontAwesomeIcon icon={faArrowRight} className="hp-suggestion-arrow" aria-hidden="true" />
+                  </button>
+                ))}
+                {filteredTools.length === 0 && (
+                  <div className="hp-suggestion-empty">
+                    No tools found matching &ldquo;{searchQuery}&rdquo;.
+                  </div>
+                )}
               </div>
             )}
-          </section>
+          </form>
 
-          {/* 4. HOW SIMATRIX PDF WORKS */}
-          <section className="how-it-works-section" aria-label="How Simatrix PDF Works">
-            <h2 className="how-it-works-title">How Simatrix PDF Works</h2>
-            <div className="how-it-works-steps">
-              <div className="work-step-item">
-                <span className="work-step-num">1</span>
-                <div className="work-step-content">
-                  <span className="work-step-heading">Choose a Utility</span>
-                  <span className="work-step-desc">Pick the tool you need from our collection.</span>
-                </div>
-              </div>
-
-              <div className="work-step-divider" aria-hidden="true">
-                <FontAwesomeIcon icon={faArrowRight} />
-              </div>
-
-              <div className="work-step-item">
-                <span className="work-step-num">2</span>
-                <div className="work-step-content">
-                  <span className="work-step-heading">Upload Documents</span>
-                  <span className="work-step-desc">Upload your PDF file securely.</span>
-                </div>
-              </div>
-
-              <div className="work-step-divider" aria-hidden="true">
-                <FontAwesomeIcon icon={faArrowRight} />
-              </div>
-
-              <div className="work-step-item">
-                <span className="work-step-num">3</span>
-                <div className="work-step-content">
-                  <span className="work-step-heading">Download & Done</span>
-                  <span className="work-step-desc">Get your processed file and you&apos;re all set.</span>
-                </div>
-              </div>
-            </div>
-          </section>
+          {/* Quick access chips */}
+          <div className="hp-quick" aria-label="Popular tools">
+            <span className="hp-quick-label">Popular:</span>
+            {quickTools.map((tool) => (
+              <Link key={tool.id} to={tool.path} className="hp-quick-chip">
+                <FontAwesomeIcon icon={tool.icon} className={`hp-quick-icon ${getAccentClass(tool)}`} aria-hidden="true" />
+                <span>{tool.title.replace('AI PDF ', '')}</span>
+              </Link>
+            ))}
+          </div>
         </div>
 
-        {/* ====================================================================
-            RIGHT COLUMN (AI Summarizer Promo, Privacy Card, FAQs Accordion)
-            Commented out per user request; layout extended to 100% full width
-            ==================================================================== */}
-        {/*
-        <aside className="home-side-column" aria-label="Promotions and FAQs">
-          // Card 1: AI Summarizer Promo Panel
-          <div className="side-card ai-side-promo-card">
-            <h3 className="side-card-title">Turn Long PDFs into Clear, Useful Insights.</h3>
-            <p className="side-card-desc">
-              Summarize documents, extract key points, find important dates, and ask questions about your PDF using AI.
+        {/* Trust strip */}
+        <div className="hp-container">
+          <ul className="hp-trust">
+            {TRUST_ITEMS.map((item) => (
+              <li key={item.label} className="hp-trust-item">
+                <FontAwesomeIcon icon={item.icon} aria-hidden="true" />
+                <span>{item.label}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      {/* 2. ALL TOOLS */}
+      <section className="hp-section hp-tools" id="all-tools" aria-labelledby="hp-tools-title">
+        <div className="hp-container">
+          <div className="hp-section-head">
+            <div>
+              <span className="hp-section-kicker">The toolkit</span>
+              <h2 id="hp-tools-title" className="hp-section-title">All PDF tools</h2>
+              <p className="hp-section-sub">Everything you need to work with PDF documents, organized by task.</p>
+            </div>
+          </div>
+
+          <div className="hp-tabs" role="tablist" aria-label="Filter tools by category">
+            {TOOL_CATEGORIES.map((cat) => {
+              const isActive = activeCategory === cat.id;
+              return (
+                <button
+                  key={cat.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={isActive}
+                  className={`hp-tab ${isActive ? 'is-active' : ''}`}
+                  onClick={() => setActiveCategory(cat.id)}
+                >
+                  <FontAwesomeIcon icon={cat.icon} className="hp-tab-icon" aria-hidden="true" />
+                  <span>{cat.label}</span>
+                  <span className="hp-tab-count">{getCategoryCount(cat.id)}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {searchQuery.trim() && (
+            <p className="hp-filter-note">
+              Showing {filteredTools.length} result{filteredTools.length === 1 ? '' : 's'} for &ldquo;{searchQuery.trim()}&rdquo;
+              <button type="button" className="hp-link-btn" onClick={handleClearSearch}>Clear</button>
             </p>
-            <Link to="/ai-summarizer" className="btn btn-primary side-card-btn">
-              <span>Summarize a PDF</span>
-              <FontAwesomeIcon icon={faArrowRight} />
-            </Link>
-          </div>
+          )}
 
-          // Card 2: Your Documents. Your Privacy.
-          <div className="side-card privacy-side-card">
-            <h3 className="side-card-title">Your Documents. Your Privacy.</h3>
-            <div className="privacy-feature-list">
-              <div className="privacy-feature-item">
-                <div className="privacy-icon-box">
-                  <FontAwesomeIcon icon={faShieldHalved} />
-                </div>
-                <div className="privacy-feature-info">
-                  <span className="privacy-feature-title">Secure Processing</span>
-                  <span className="privacy-feature-desc">Your files are processed safely.</span>
-                </div>
-              </div>
+          {filteredTools.length > 0 ? (
+            <div className="hp-tool-grid">
+              {filteredTools.map((tool) => (
+                <HomeToolCard key={tool.id} tool={tool} />
+              ))}
+            </div>
+          ) : (
+            <div className="hp-empty">
+              <FontAwesomeIcon icon={faFilterCircleXmark} className="hp-empty-icon" aria-hidden="true" />
+              <h3 className="hp-empty-title">No tools found</h3>
+              <p className="hp-empty-text">
+                No tools match &ldquo;<strong>{searchQuery}</strong>&rdquo;.
+              </p>
+              <button type="button" className="btn btn-secondary btn-sm" onClick={handleClearSearch}>
+                Clear search
+              </button>
+            </div>
+          )}
+        </div>
+      </section>
 
-              <div className="privacy-feature-item">
-                <div className="privacy-icon-box">
-                  <FontAwesomeIcon icon={faTrashCan} />
-                </div>
-                <div className="privacy-feature-info">
-                  <span className="privacy-feature-title">Automatic File Deletion</span>
-                  <span className="privacy-feature-desc">Files are removed after processing.</span>
-                </div>
-              </div>
-
-              <div className="privacy-feature-item">
-                <div className="privacy-icon-box">
-                  <FontAwesomeIcon icon={faLock} />
-                </div>
-                <div className="privacy-feature-info">
-                  <span className="privacy-feature-title">Confidential</span>
-                  <span className="privacy-feature-desc">Your documents remain private.</span>
-                </div>
+      {/* 3. AI FEATURE BAND */}
+      <section className="hp-section hp-ai-section" aria-labelledby="hp-ai-title">
+        <div className="hp-container">
+          <div className="hp-ai-band">
+            <div className="hp-ai-copy">
+              <span className="hp-ai-kicker">
+                <FontAwesomeIcon icon={faWandMagicSparkles} aria-hidden="true" /> AI PDF tools
+              </span>
+              <h2 id="hp-ai-title" className="hp-ai-title">Turn long PDFs into clear answers.</h2>
+              <p className="hp-ai-sub">
+                Summarize reports, chat with your documents, translate, extract data, and compare versions.
+                Every answer links back to the page it came from.
+              </p>
+              <ul className="hp-ai-list">
+                {aiTools.slice(0, 6).map((tool) => (
+                  <li key={tool.id}>
+                    <Link to={tool.path} className="hp-ai-link">
+                      <FontAwesomeIcon icon={tool.icon} aria-hidden="true" />
+                      <span>{tool.title}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+              <div className="hp-ai-actions">
+                <Link to="/ai-summarizer" className="hp-btn hp-btn-light">
+                  Summarize a PDF <FontAwesomeIcon icon={faArrowRight} />
+                </Link>
+                <Link to="/tools/ai" className="hp-btn hp-btn-ghost-light">
+                  View all {AI_TOOL_COUNT} AI tools
+                </Link>
               </div>
             </div>
-            <a href="#privacy" className="privacy-learn-more-link">
-              <span>Learn more</span>
-              <FontAwesomeIcon icon={faArrowRight} />
-            </a>
-          </div>
 
-          // Card 3: Frequently Asked Questions
-          <div className="side-card faq-side-card">
-            <h3 className="side-card-title">Frequently Asked Questions</h3>
-            <div className="faq-accordion-list">
-              {FAQ_ITEMS.map((item, index) => {
-                const isOpen = openFaqIndex === index;
-                return (
-                  <div key={index} className={`faq-accordion-item ${isOpen ? 'is-open' : ''}`}>
-                    <button
-                      type="button"
-                      className="faq-question-btn"
-                      onClick={() => toggleFaq(index)}
-                      aria-expanded={isOpen}
-                    >
-                      <span className="faq-question-text">{item.question}</span>
-                      <FontAwesomeIcon
-                        icon={faChevronDown}
-                        className={`faq-chevron ${isOpen ? 'rotated' : ''}`}
-                      />
-                    </button>
-                    {isOpen && (
-                      <div className="faq-answer-panel">
-                        <p>{item.answer}</p>
-                      </div>
-                    )}
+            {/* Illustrative product preview */}
+            <div className="hp-ai-preview" aria-hidden="true">
+              <div className="hp-preview-card">
+                <div className="hp-preview-head">
+                  <span className="hp-preview-file">
+                    <FontAwesomeIcon icon={faFilePdf} /> Annual_Report.pdf
+                  </span>
+                  <span className="hp-preview-meta">42 pages</span>
+                </div>
+                <div className="hp-preview-body">
+                  <span className="hp-preview-label">Summary</span>
+                  <ul className="hp-preview-points">
+                    <li><FontAwesomeIcon icon={faCircleCheck} /> Revenue grew 18% year over year</li>
+                    <li><FontAwesomeIcon icon={faCircleCheck} /> Operating costs reduced by 6%</li>
+                    <li><FontAwesomeIcon icon={faCircleCheck} /> Two new markets launched in Q3</li>
+                  </ul>
+                </div>
+                <div className="hp-preview-chat">
+                  <div className="hp-bubble is-user">What are the main risks?</div>
+                  <div className="hp-bubble is-ai">
+                    <FontAwesomeIcon icon={faQuoteLeft} className="hp-bubble-quote" />
+                    Supply chain costs and currency exposure are flagged as key risks.
+                    <span className="hp-cite">p. 12</span>
                   </div>
-                );
-              })}
+                </div>
+              </div>
             </div>
           </div>
-        </aside>
-        */}
-      </div>
+        </div>
+      </section>
+
+      {/* 4. HOW IT WORKS */}
+      <section className="hp-section" aria-labelledby="hp-steps-title">
+        <div className="hp-container">
+          <div className="hp-section-head is-center">
+            <span className="hp-section-kicker">How it works</span>
+            <h2 id="hp-steps-title" className="hp-section-title">Done in three simple steps</h2>
+          </div>
+          <ol className="hp-steps">
+            {STEPS.map((step, i) => (
+              <li key={step.title} className="hp-step">
+                <span className="hp-step-num">{String(i + 1).padStart(2, '0')}</span>
+                <span className="hp-step-icon" aria-hidden="true">
+                  <FontAwesomeIcon icon={step.icon} />
+                </span>
+                <h3 className="hp-step-title">{step.title}</h3>
+                <p className="hp-step-desc">{step.desc}</p>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </section>
+
+      {/* 5. WHY US */}
+      <section className="hp-section hp-features-section" aria-labelledby="hp-features-title">
+        <div className="hp-container">
+          <div className="hp-section-head is-center">
+            <span className="hp-section-kicker">Why choose us</span>
+            <h2 id="hp-features-title" className="hp-section-title">Built for speed, simplicity, and privacy</h2>
+          </div>
+          <div className="hp-features">
+            {FEATURES.map((f) => (
+              <div key={f.title} className="hp-feature">
+                <span className="hp-feature-icon" aria-hidden="true">
+                  <FontAwesomeIcon icon={f.icon} />
+                </span>
+                <h3 className="hp-feature-title">{f.title}</h3>
+                <p className="hp-feature-desc">{f.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 6. FAQ */}
+      <section className="hp-section" aria-labelledby="hp-faq-title">
+        <div className="hp-container hp-faq-layout">
+          <div className="hp-faq-intro">
+            <span className="hp-section-kicker">FAQ</span>
+            <h2 id="hp-faq-title" className="hp-section-title">Frequently asked questions</h2>
+            <p className="hp-section-sub">Quick answers about files, privacy, and accounts.</p>
+          </div>
+          <div className="hp-faq-list">
+            {FAQ_ITEMS.map((item, index) => {
+              const isOpen = openFaqIndex === index;
+              return (
+                <div key={item.question} className={`hp-faq-item ${isOpen ? 'is-open' : ''}`}>
+                  <button
+                    type="button"
+                    className="hp-faq-q"
+                    onClick={() => setOpenFaqIndex(isOpen ? null : index)}
+                    aria-expanded={isOpen}
+                    aria-controls={`hp-faq-a-${index}`}
+                  >
+                    <span>{item.question}</span>
+                    <FontAwesomeIcon icon={faChevronDown} className="hp-faq-chevron" aria-hidden="true" />
+                  </button>
+                  <div id={`hp-faq-a-${index}`} className="hp-faq-a" role="region">
+                    <div className="hp-faq-a-inner">
+                      <p>{item.answer}</p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* 7. CLOSING CTA */}
+      <section className="hp-section hp-cta-section" aria-label="Get started">
+        <div className="hp-container">
+          <div className="hp-cta">
+            <div>
+              <h2 className="hp-cta-title">Ready to work with your PDFs?</h2>
+              <p className="hp-cta-sub">Pick a tool and get started in seconds. No installation needed.</p>
+            </div>
+            <div className="hp-cta-actions">
+              <a href="#all-tools" className="hp-btn hp-btn-primary">
+                Explore all tools <FontAwesomeIcon icon={faArrowRight} />
+              </a>
+              <Link to="/tools/merge-pdf" className="hp-btn hp-btn-secondary">Merge PDF</Link>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

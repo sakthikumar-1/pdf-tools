@@ -3,47 +3,36 @@
    ============================================================================== */
 
 .top-nav-bar {
-  height: 56px;
+  height: var(--header-height);
   position: sticky;
   top: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 1rem;
   padding: 0 1.5rem;
   background-color: var(--color-header-bg);
   border-bottom: 1px solid var(--color-border);
-  z-index: 90;
+  box-shadow: 0 1px 0 rgba(16, 24, 40, 0.02), 0 1px 3px rgba(16, 24, 40, 0.04);
+  z-index: 100;
   flex-shrink: 0;
   box-sizing: border-box;
   width: 100%;
 }
 
-/* Left Group */
+/* Left Group: Logo + Desktop Navigation */
 .top-nav-left {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  flex-shrink: 0;
+  gap: 1.75rem;
+  height: 100%;
+  min-width: 0;
 }
 
-.header-toggle-btn {
-  background: transparent;
-  border: 1px solid var(--color-border);
-  color: var(--color-text-secondary);
-  cursor: pointer;
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius-sm);
-  display: inline-flex;
+.top-nav-desktop-menu {
+  height: 100%;
+  display: flex;
   align-items: center;
-  justify-content: center;
-  transition: background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
-}
-
-.header-toggle-btn:hover {
-  color: var(--color-heading);
-  border-color: var(--color-border-hover);
-  background-color: var(--color-hover-bg);
 }
 
 /* Center Group: Wide PDF Tool Search Field */
@@ -221,6 +210,25 @@
   color: var(--color-heading);
   border-color: var(--color-border-hover);
   background-color: var(--color-hover-bg);
+}
+
+.header-icon-action:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.header-settings-link {
+  text-decoration: none;
+}
+
+.header-settings-link.is-active {
+  color: var(--color-heading);
+  border-color: var(--color-border-hover);
+  background-color: var(--color-hover-bg);
+}
+
+.header-menu-toggle {
+  display: none;
 }
 
 .header-divider {
@@ -417,6 +425,15 @@
 }
 
 /* Responsiveness */
+@media (max-width: 1100px) {
+  .top-nav-desktop-menu {
+    display: none;
+  }
+  .header-menu-toggle {
+    display: inline-flex;
+  }
+}
+
 @media (max-width: 900px) {
   .top-nav-center {
     display: none;
@@ -431,6 +448,12 @@
     display: none;
   }
   .header-signin-btn span {
+    display: none;
+  }
+  .top-nav-right {
+    gap: 0.5rem;
+  }
+  .user-name-text {
     display: none;
   }
 }

@@ -1,6 +1,6 @@
 /* ==============================================================================
    SIMATRIX SHARED FIXED APPLICATION LAYOUT
-   Fixed top header, fixed left sidebar, independent scrollable main content
+   Fixed top navigation bar, full-width independently scrollable main content
    ============================================================================== */
 
 .app-shell {
@@ -16,11 +16,11 @@
   position: relative;
 }
 
-/* App Body: holds fixed sidebar and scrollable main content */
+/* App Body: holds the full-width scrollable main content */
 .app-body {
   display: flex;
   flex: 1;
-  height: calc(100vh - 56px);
+  height: calc(100vh - var(--header-height));
   width: 100%;
   overflow: hidden;
   position: relative;

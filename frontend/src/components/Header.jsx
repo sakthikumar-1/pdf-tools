@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faSun,
@@ -11,17 +11,21 @@ import {
   faCircleCheck,
   faWifi,
   faMagnifyingGlass,
-  faArrowRight
+  faArrowRight,
+  faBars,
+  faXmark
 } from '@fortawesome/free-solid-svg-icons';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { TOOLS_DATA, filterTools } from '../utils/toolsData';
-import SidebarToggleIcon from './SidebarToggleIcon';
 import SimatrixLogo from './SimatrixLogo';
+import { TopNavMenu, MobileNavPanel } from './TopNav';
 import './Header.css';
 
-export default function Header({ onToggleSidebar, onOpenAuth, onOpenSearch, isCollapsed }) {
+export default function Header({ onOpenAuth, onOpenSearch }) {
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const closeMobileNav = useCallback(() => setMobileNavOpen(false), []);
   const [isOnline, setIsOnline] = useState(() => (typeof navigator !== 'undefined' ? navigator.onLine : true));
   const [avatarError, setAvatarError] = useState(false);
   const [headerSearchQuery, setHeaderSearchQuery] = useState('');
@@ -100,19 +104,12 @@ export default function Header({ onToggleSidebar, onOpenAuth, onOpenSearch, isCo
 
   return (
     <header className="top-nav-bar" role="banner">
-      {/* 1. Header Left: Toggle & Logo */}
+      {/* 1. Header Left: Logo & Desktop Category Navigation */}
       <div className="top-nav-left">
-        <button
-          type="button"
-          className="header-toggle-btn"
-          onClick={onToggleSidebar}
-          aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-          title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-        >
-          <SidebarToggleIcon isCollapsed={isCollapsed} />
-        </button>
-
         <SimatrixLogo asLink={true} />
+        <div className="top-nav-desktop-menu">
+          <TopNavMenu />
+        </div>
       </div>
 
       {/* 2. Header Center: Wide PDF Tool Search Field (commented out per user request)
@@ -177,6 +174,16 @@ export default function Header({ onToggleSidebar, onOpenAuth, onOpenSearch, isCo
         >
           <FontAwesomeIcon icon={theme === 'dark' ? faSun : faMoon} />
         </button>
+
+        {/* Settings */}
+        <NavLink
+          to="/settings"
+          className={({ isActive }) => `header-icon-action header-settings-link ${isActive ? 'is-active' : ''}`}
+          aria-label="Settings"
+          title="Settings"
+        >
+          <FontAwesomeIcon icon={faGear} />
+        </NavLink>
 
         {/* Subtle Divider */}
         <div className="header-divider" aria-hidden="true" />
@@ -284,7 +291,21 @@ export default function Header({ onToggleSidebar, onOpenAuth, onOpenSearch, isCo
             </div>
           )}
         </div>
+
+        {/* Mobile / Tablet Menu Toggle */}
+        <button
+          type="button"
+          className="header-icon-action header-menu-toggle"
+          onClick={() => setMobileNavOpen(prev => !prev)}
+          aria-label={mobileNavOpen ? 'Close menu' : 'Open menu'}
+          aria-expanded={mobileNavOpen}
+          aria-controls="mobile-nav-panel"
+        >
+          <FontAwesomeIcon icon={mobileNavOpen ? faXmark : faBars} />
+        </button>
       </div>
+
+      <MobileNavPanel isOpen={mobileNavOpen} onClose={closeMobileNav} />
     </header>
   );
 }
