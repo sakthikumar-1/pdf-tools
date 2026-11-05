@@ -1,4 +1,5 @@
 import os
+import sys
 from pathlib import Path
 from io import BytesIO
 from PIL import Image, ImageDraw
@@ -11,7 +12,7 @@ FIXTURES_DIR.mkdir(parents=True, exist_ok=True)
 
 print(f"Generating test fixtures in: {FIXTURES_DIR} using ReportLab, Pillow, and pypdf...")
 
-# 1. Valid one-page PDF with selectable text
+# 1. Valid one-page PDF with selectable text (invariant=1 for 100% deterministic bytes)
 c1_buf = BytesIO()
 c1 = canvas.Canvas(c1_buf, pagesize=letter, invariant=1)
 c1.setFont("Helvetica-Bold", 16)
@@ -58,7 +59,46 @@ c3.showPage()
 c3.save()
 (FIXTURES_DIR / "sample_with_image.pdf").write_bytes(c3_buf.getvalue())
 
-# 5. Protected PDF (AES-256 encrypted with pypdf)
+# 5. PDF with structured tables (if not already present with official hash)
+table_path = FIXTURES_DIR / "sample_table.pdf"
+if not table_path.exists():
+    c4 = canvas.Canvas(str(table_path), pagesize=letter, invariant=1)
+    c4.setFont("Helvetica-Bold", 16)
+    c4.drawString(72, 720, "Monthly Financial Report - Table Document")
+    c4.setFont("Helvetica-Bold", 11)
+    c4.drawString(72, 672, "Department")
+    c4.drawString(220, 672, "Quarter 1")
+    c4.drawString(350, 672, "Quarter 2")
+    c4.drawString(470, 672, "Total Revenue")
+    rows = [
+        ("Engineering", "$125,000", "$145,000", "$270,000"),
+        ("Marketing", "$85,000", "$92,000", "$177,000"),
+        ("Customer Support", "$45,000", "$48,000", "$93,000"),
+        ("Sales Operations", "$210,000", "$235,000", "$445,000"),
+    ]
+    y = 642
+    c4.setFont("Helvetica", 10)
+    for row in rows:
+        c4.drawString(72, y, row[0])
+        c4.drawString(220, y, row[1])
+        c4.drawString(350, y, row[2])
+        c4.drawString(470, y, row[3])
+        y -= 25
+    c4.showPage()
+    c4.save()
+
+# 6. Rotated-page PDF (90 degrees)
+rotated_path = FIXTURES_DIR / "sample_rotated.pdf"
+if not rotated_path.exists():
+    reader_rot = PdfReader(BytesIO(c1_buf.getvalue()))
+    writer_rot = PdfWriter()
+    for p in reader_rot.pages:
+        p.rotate(90)
+        writer_rot.add_page(p)
+    with open(rotated_path, "wb") as f:
+        writer_rot.write(f)
+
+# 7. Protected PDF (AES-256 encrypted with pypdf)
 writer = PdfWriter()
 reader = PdfReader(BytesIO(c1_buf.getvalue()))
 for page in reader.pages:
@@ -67,12 +107,12 @@ writer.encrypt(user_password="secretpassword", algorithm="AES-256")
 with open(FIXTURES_DIR / "sample_protected.pdf", "wb") as f:
     writer.write(f)
 
-# 6. Blank / Empty PDF
+# 8. Blank / Empty PDF
 c_empty = canvas.Canvas(str(FIXTURES_DIR / "sample_empty.pdf"), pagesize=letter, invariant=1)
 c_empty.showPage()
 c_empty.save()
 
-# 7. Scanned PDF (single full-page raster image, standard A4 dimensions)
+# 9. Scanned PDF (single full-page raster image, standard A4 dimensions)
 a4_width, a4_height = 595.275590551181, 841.8897637795276
 scanned_img = Image.new('RGB', (int(a4_width), int(a4_height)), color=(245, 245, 245))
 s_draw = ImageDraw.Draw(scanned_img)
@@ -87,4 +127,17 @@ c_scan.save()
 if scanned_img_path.exists():
     scanned_img_path.unlink()
 
-print("All fixtures successfully generated using ReportLab, Pillow, and pypdf.")
+# 10. Damaged / Corrupt PDF
+with open(FIXTURES_DIR / "damaged_corrupt.pdf", "wb") as f:
+    f.write(b"%PDF-1.4\n%This is a completely broken and damaged file that should fail gracefully\x00\xff")
+
+# 11. Filename with spaces and Unicode
+unicode_fixture = FIXTURES_DIR / "test doc 🚀 ñ.pdf"
+if not unicode_fixture.exists():
+    c_uni = canvas.Canvas(str(unicode_fixture), pagesize=letter, invariant=1)
+    c_uni.setFont("Helvetica-Bold", 16)
+    c_uni.drawString(72, 720, "Unicode Filename Test Document")
+    c_uni.showPage()
+    c_uni.save()
+
+print("All test fixtures successfully generated using ReportLab, Pillow, and pypdf.")
