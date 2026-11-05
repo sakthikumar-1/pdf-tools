@@ -248,7 +248,7 @@ export default function ReorderPages() {
           <FontAwesomeIcon icon={faUpDown} />
         </div>
         <div className="capability-chip">
-          <FontAwesomeIcon icon={faWandMagicSparkles} /> PyMuPDF Page Sequence Engine
+          <FontAwesomeIcon icon={faWandMagicSparkles} /> Lossless Page Sequence Engine
         </div>
         <h1 className="reorder-pages-title">Reorder PDF Pages</h1>
         <p className="reorder-pages-desc">

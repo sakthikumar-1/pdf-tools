@@ -96,50 +96,75 @@ function PDFToJPGInner() {
 
       // Fallback or Direct client-side PDF rendering
       if (useClientRendering) {
-        const arrayBuffer = await file.arrayBuffer();
-        const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer, isEvalSupported: false });
-        const pdf = await loadingTask.promise;
-        const total = pdf.numPages;
-        setTotalPages(total);
+        try {
+          const arrayBuffer = await file.arrayBuffer();
+          const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer, isEvalSupported: false });
+          const pdf = await loadingTask.promise;
+          const total = pdf.numPages;
+          setTotalPages(total);
 
-        const images = [];
-        const scale = qualityDpi / 72; // Standard PDF DPI is 72
+          const images = [];
+          const scale = qualityDpi / 72; // Standard PDF DPI is 72
 
-        for (let pageNum = 1; pageNum <= total; pageNum++) {
-          setCurrentPage(pageNum);
-          const page = await pdf.getPage(pageNum);
-          const viewport = page.getViewport({ scale });
+          for (let pageNum = 1; pageNum <= total; pageNum++) {
+            setCurrentPage(pageNum);
+            const page = await pdf.getPage(pageNum);
+            const viewport = page.getViewport({ scale });
 
-          const canvas = document.createElement('canvas');
-          const context = canvas.getContext('2d');
-          canvas.height = viewport.height;
-          canvas.width = viewport.width;
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
 
-          const renderContext = {
-            canvasContext: context,
-            viewport: viewport,
-          };
+            const renderContext = {
+              canvasContext: context,
+              viewport: viewport,
+            };
 
-          await page.render(renderContext).promise;
+            await page.render(renderContext).promise;
 
-          // Convert canvas to JPG data URL
-          const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
-          const pageFileName = `${file.name.replace(/\.[^/.]+$/, "")}_page_${pageNum}.jpg`;
+            // Convert canvas to JPG data URL
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+            const pageFileName = `${file.name.replace(/\.[^/.]+$/, "")}_page_${pageNum}.jpg`;
 
-          images.push({
-            pageNumber: pageNum,
-            dataUrl: dataUrl,
-            name: pageFileName,
-            width: viewport.width,
-            height: viewport.height,
+            images.push({
+              pageNumber: pageNum,
+              dataUrl: dataUrl,
+              name: pageFileName,
+              width: viewport.width,
+              height: viewport.height,
+            });
+
+            const currentPercent = Math.round((pageNum / total) * 100);
+            setProgress(currentPercent);
+          }
+
+          setConvertedImages(images);
+          setStatus('success');
+        } catch (clientErr) {
+          console.warn('[PDFToJPG] Client canvas rendering encountered error, falling back to server pypdfium2 engine:', clientErr);
+          const result = await convertPdfToJpgPython(file, qualityDpi, (percent) => {
+            setProgress(Math.min(95, Math.round(percent)));
           });
-
-          const currentPercent = Math.round((pageNum / total) * 100);
-          setProgress(currentPercent);
+          if (result && result.success && result.images && result.images.length > 0) {
+            if (result.isZip && result.downloadUrl) {
+              setBackendZipUrl(result.downloadUrl);
+            }
+            const formatted = result.images.map((img) => ({
+              pageNumber: img.page,
+              fileName: img.filename,
+              url: img.download_url,
+              previewUrl: img.download_url ? `${img.download_url}?inline=1` : img.download_url,
+              size: img.size_bytes,
+            }));
+            setConvertedImages(formatted);
+            setTotalPages(result.pageCount || result.images.length);
+            setStatus('success');
+            setProgress(100);
+          } else {
+            throw clientErr;
+          }
         }
-
-        setConvertedImages(images);
-        setStatus('success');
       }
     } catch (err) {
       console.error('[PDFToJPG Error]:', err);

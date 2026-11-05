@@ -7,6 +7,11 @@ from django.http import HttpResponse, FileResponse
 from django.views.static import serve
 from .api import api
 
+# Register MIME types for modern web assets (ES modules, WebAssembly, CMap binary tables)
+mimetypes.add_type('text/javascript', '.mjs')
+mimetypes.add_type('application/wasm', '.wasm')
+mimetypes.add_type('application/octet-stream', '.bcmap')
+
 # Project root directory (e:/pdf-tools)
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 FRONTEND_DIST = ROOT_DIR / 'frontend' / 'dist'
@@ -69,8 +74,10 @@ urlpatterns = [
     path('api/v1/', api.urls),
     # Serve Vite compiled assets with 1-year immutable caching
     re_path(r'^assets/(?P<path>.*)$', serve_immutable_asset),
-    # Serve root PWA & static assets (manifest.json, sw.js, favicon.svg, wasm, etc.)
-    re_path(r'^(?P<path>[^/]+\.(?:json|js|ico|png|svg|wasm|webmanifest|txt))$', serve, {'document_root': FRONTEND_DIST}),
+    # Serve PDF.js CMap files, standard fonts, and brand assets from dist
+    re_path(r'^(?P<path>(?:cmaps|standard_fonts|brand)/.*)$', serve, {'document_root': FRONTEND_DIST}),
+    # Serve root PWA & static assets (manifest.json, sw.js, favicon.svg, wasm, mjs, worker, etc.)
+    re_path(r'^(?P<path>[^/]+\.(?:json|js|mjs|map|ico|png|svg|wasm|webmanifest|txt|xml|woff|woff2|ttf))$', serve, {'document_root': FRONTEND_DIST}),
     # Catch-all route to serve React index.html for client-side routing
     re_path(r'^(?!admin/|api/|static/).*$', index_view),
 ]

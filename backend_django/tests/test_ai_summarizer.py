@@ -23,7 +23,8 @@ import time
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
-import pymupdf as fitz
+import io
+from reportlab.pdfgen import canvas
 from django.conf import settings
 from django.test import TestCase, Client, override_settings
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -228,12 +229,12 @@ class AISummarizerEngineAndApiTests(TestCase):
     # --------------------------------------------------------------------------
     def test_07_missing_provider_configuration(self):
         """Verifies HTTP 503 is returned when no AI provider credentials are configured."""
-        import fitz
-        doc = fitz.open()
-        p = doc.new_page()
-        p.insert_text((72, 72), "Non demo unique document text for test 07 missing provider verification.")
-        pdf_bytes = doc.tobytes()
-        doc.close()
+        buf = io.BytesIO()
+        c = canvas.Canvas(buf)
+        c.drawString(72, 700, "Non demo unique document text for test 07 missing provider verification.")
+        c.showPage()
+        c.save()
+        pdf_bytes = buf.getvalue()
         uploaded = SimpleUploadedFile("custom.pdf", pdf_bytes, content_type="application/pdf")
 
         with patch('ai.api.global_ai_router.execute') as mock_route:
@@ -253,12 +254,12 @@ class AISummarizerEngineAndApiTests(TestCase):
     # --------------------------------------------------------------------------
     def test_08_provider_timeout_and_error(self):
         """Verifies upstream AI provider timeouts return HTTP 504 and rate limits return HTTP 429."""
-        import fitz
-        doc = fitz.open()
-        p = doc.new_page()
-        p.insert_text((72, 72), "Non demo unique document text for test 08 timeout verification.")
-        pdf_bytes = doc.tobytes()
-        doc.close()
+        buf = io.BytesIO()
+        c = canvas.Canvas(buf)
+        c.drawString(72, 700, "Non demo unique document text for test 08 timeout verification.")
+        c.showPage()
+        c.save()
+        pdf_bytes = buf.getvalue()
 
         # Subcase A: Provider Timeout
         with patch('ai.api.global_ai_router.execute') as mock_route:
@@ -287,20 +288,18 @@ class AISummarizerEngineAndApiTests(TestCase):
         # Build a PDF whose total text clearly exceeds 14,000 characters per page
         # Each page has ~2,500 chars * 8 pages = ~20,000 chars total > 14,000 char limit
         chunk_pdf_path = self.scratch_dir / 'large_chunk_test.pdf'
-        doc = fitz.open()
+        c = canvas.Canvas(str(chunk_pdf_path), pagesize=(595, 842))
 
         for i in range(8):
-            page = doc.new_page(width=595, height=842)
-            y = 50
+            y = 800
             for line_idx in range(40):
-                page.insert_text(
-                    fitz.Point(50, y),
-                    f"Page {i + 1} Line {line_idx}: Detailed technical architecture analysis metrics, latency observations, and distributed evaluation pipeline benchmark verification data.",
-                    fontsize=8
+                c.drawString(
+                    50, y,
+                    f"Page {i + 1} Line {line_idx}: Detailed technical architecture analysis metrics, latency observations, and distributed evaluation pipeline benchmark verification data."
                 )
-                y += 18
-        doc.save(str(chunk_pdf_path))
-        doc.close()
+                y -= 18
+            c.showPage()
+        c.save()
 
         # Execute direct summarizer engine with mock provider
         mock_provider = MockAIProvider()
@@ -353,12 +352,11 @@ class AISummarizerEngineAndApiTests(TestCase):
         """Verifies 25MB file size limit and 100-page limit are strictly enforced."""
         # Page count limit > 100 pages
         excessive_pdf = self.scratch_dir / 'excessive_105_pages.pdf'
-        doc = fitz.open()
+        c = canvas.Canvas(str(excessive_pdf), pagesize=(595, 842))
         for i in range(105):
-            page = doc.new_page(width=595, height=842)
-            page.insert_text(fitz.Point(50, 72), f"Page {i + 1} content text here", fontsize=10)
-        doc.save(str(excessive_pdf))
-        doc.close()
+            c.drawString(50, 700, f"Page {i + 1} content text here")
+            c.showPage()
+        c.save()
 
         with open(excessive_pdf, 'rb') as f:
             uploaded = SimpleUploadedFile("excessive.pdf", f.read(), content_type="application/pdf")

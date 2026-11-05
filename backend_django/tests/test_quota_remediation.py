@@ -1,5 +1,7 @@
+import io
 import uuid
 import time
+from reportlab.pdfgen import canvas
 from django.test import TestCase, Client, override_settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.utils import timezone
@@ -13,16 +15,15 @@ from ai.provider_base import AIResponse, AIProviderRateLimitError
 from ai.mock_provider import MockAIProvider
 from ai.router import AIProviderRouter
 from ai.rate_limiter import reset_rate_limit_memory
-import fitz
 
 
 def create_unique_pdf(text: str) -> SimpleUploadedFile:
-    doc = fitz.open()
-    p = doc.new_page()
-    p.insert_text((72, 72), f"{text} - {uuid.uuid4().hex}")
-    pdf_bytes = doc.tobytes()
-    doc.close()
-    return SimpleUploadedFile(f"{uuid.uuid4().hex[:8]}.pdf", pdf_bytes, content_type="application/pdf")
+    buffer = io.BytesIO()
+    c = canvas.Canvas(buffer)
+    c.drawString(72, 720, f"{text} - {uuid.uuid4().hex}")
+    c.showPage()
+    c.save()
+    return SimpleUploadedFile(f"{uuid.uuid4().hex[:8]}.pdf", buffer.getvalue(), content_type="application/pdf")
 
 
 @override_settings(AI_PROVIDER='mock', IS_TESTING=True)

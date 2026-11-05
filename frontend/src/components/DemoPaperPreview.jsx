@@ -66,10 +66,11 @@ export default function DemoPaperPreview({
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(docPageCount || 1);
   const [isRendering, setIsRendering] = useState(false);
-  const [hasRenderedCanvas, setHasRenderedCanvas] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState(null);
   const [pdfDoc, setPdfDoc] = useState(null);
 
-  const canvasRef = useRef(null);
+  const renderTaskRef = useRef(null);
+  const pageCacheRef = useRef({});
   const toolNameLower = title.toLowerCase();
   const isWatermarkTool = toolNameLower.includes('watermark');
   const isPageNumTool = toolNameLower.includes('page number') || toolNameLower.includes('add page');
@@ -81,9 +82,17 @@ export default function DemoPaperPreview({
   useEffect(() => {
     let isMounted = true;
     setCurrentPage(1);
+    pageCacheRef.current = {};
+
+    if (renderTaskRef.current) {
+      try {
+        renderTaskRef.current.cancel();
+      } catch (e) {}
+      renderTaskRef.current = null;
+    }
 
     if (!file || !(file.type === 'application/pdf' || file.name?.toLowerCase().endsWith('.pdf'))) {
-      setHasRenderedCanvas(false);
+      setPreviewUrl(null);
       setPdfDoc(null);
       return;
     }
@@ -92,7 +101,14 @@ export default function DemoPaperPreview({
       try {
         setIsRendering(true);
         const arrayBuffer = await file.arrayBuffer();
-        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer, isEvalSupported: false }).promise;
+        const origin = typeof window !== 'undefined' ? window.location.origin : '';
+        const pdf = await pdfjsLib.getDocument({
+          data: arrayBuffer,
+          isEvalSupported: false,
+          cMapUrl: `${origin}/cmaps/`,
+          cMapPacked: true,
+          standardFontDataUrl: `${origin}/standard_fonts/`,
+        }).promise;
         if (!isMounted) return;
 
         setPdfDoc(pdf);
@@ -100,7 +116,7 @@ export default function DemoPaperPreview({
       } catch (err) {
         console.warn('[DemoPaperPreview] PDF preview load error:', err);
         if (isMounted) {
-          setHasRenderedCanvas(false);
+          setPreviewUrl(null);
           setIsRendering(false);
         }
       }
@@ -110,6 +126,12 @@ export default function DemoPaperPreview({
 
     return () => {
       isMounted = false;
+      if (renderTaskRef.current) {
+        try {
+          renderTaskRef.current.cancel();
+        } catch (e) {}
+        renderTaskRef.current = null;
+      }
     };
   }, [file]);
 
@@ -120,39 +142,81 @@ export default function DemoPaperPreview({
     }
   }, [docPageCount]);
 
-  // Render current page onto canvas
+  // Render current page onto offscreen canvas and generate preview image URL with persistent caching
   useEffect(() => {
     let isCancelled = false;
 
     const renderCurrentPage = async () => {
-      if (!pdfDoc || !canvasRef.current) return;
+      if (!pdfDoc) {
+        setPreviewUrl(null);
+        return;
+      }
+
+      const safePageNum = Math.min(Math.max(1, currentPage), pdfDoc.numPages);
+
+      // Instant cache hit
+      if (pageCacheRef.current[safePageNum]) {
+        setPreviewUrl(pageCacheRef.current[safePageNum]);
+        setIsRendering(false);
+        return;
+      }
+
+      if (renderTaskRef.current) {
+        try {
+          renderTaskRef.current.cancel();
+        } catch (e) {}
+        renderTaskRef.current = null;
+      }
 
       try {
         setIsRendering(true);
-        const safePageNum = Math.min(Math.max(1, currentPage), pdfDoc.numPages);
         const page = await pdfDoc.getPage(safePageNum);
         if (isCancelled) return;
 
         const baseViewport = page.getViewport({ scale: 1.0 });
-        const targetWidth = 330;
-        const scale = targetWidth / baseViewport.width;
+        const targetWidth = 360;
+        const scale = targetWidth / Math.max(1, baseViewport.width);
         const viewport = page.getViewport({ scale: scale * 1.5 }); // High-res rendering
 
-        const canvas = canvasRef.current;
-        if (!canvas) return;
+        const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
+        canvas.width = Math.floor(viewport.width);
+        canvas.height = Math.floor(viewport.height);
 
-        await page.render({ canvasContext: ctx, viewport }).promise;
+        const renderTask = page.render({ canvasContext: ctx, viewport });
+        renderTaskRef.current = renderTask;
+
+        await renderTask.promise;
         if (!isCancelled) {
-          setHasRenderedCanvas(true);
+          const url = canvas.toDataURL('image/png');
+          pageCacheRef.current[safePageNum] = url;
+          setPreviewUrl(url);
           setIsRendering(false);
+          renderTaskRef.current = null;
+
+          // Background pre-render other pages so subsequent clicks are instantaneous
+          for (let pNum = 1; pNum <= pdfDoc.numPages; pNum++) {
+            if (pNum !== safePageNum && !pageCacheRef.current[pNum]) {
+              pdfDoc.getPage(pNum).then((p) => {
+                const bVp = p.getViewport({ scale: 1.0 });
+                const sc = targetWidth / Math.max(1, bVp.width);
+                const vp = p.getViewport({ scale: sc * 1.5 });
+                const c = document.createElement('canvas');
+                c.width = Math.floor(vp.width);
+                c.height = Math.floor(vp.height);
+                const cCtx = c.getContext('2d');
+                p.render({ canvasContext: cCtx, viewport: vp }).promise.then(() => {
+                  pageCacheRef.current[pNum] = c.toDataURL('image/png');
+                }).catch(() => {});
+              }).catch(() => {});
+            }
+          }
         }
       } catch (err) {
-        console.warn('[DemoPaperPreview] Canvas render failed:', err);
+        if (err?.name !== 'RenderingCancelledException') {
+          console.warn('[DemoPaperPreview] Page render error:', err);
+        }
         if (!isCancelled) {
-          setHasRenderedCanvas(false);
           setIsRendering(false);
         }
       }
@@ -162,6 +226,12 @@ export default function DemoPaperPreview({
 
     return () => {
       isCancelled = true;
+      if (renderTaskRef.current) {
+        try {
+          renderTaskRef.current.cancel();
+        } catch (e) {}
+        renderTaskRef.current = null;
+      }
     };
   }, [pdfDoc, currentPage]);
 
@@ -326,14 +396,15 @@ export default function DemoPaperPreview({
             transform: isRotateTool ? `rotate(${rotateAngle}deg)` : undefined
           }}
         >
-          {/* Actual Rendered PDF Canvas */}
-          <canvas
-            ref={canvasRef}
-            className={`pdf-rendered-canvas ${hasRenderedCanvas ? 'is-visible' : 'is-hidden'}`}
-          />
-
-          {/* Skeleton Document Page Fallback (when rendering or non-PDF) */}
-          {!hasRenderedCanvas && (
+          {/* Actual Rendered PDF Page Image */}
+          {previewUrl ? (
+            <img
+              src={previewUrl}
+              alt={`Page ${currentPage} preview`}
+              className="pdf-rendered-page-image"
+            />
+          ) : (
+            /* Skeleton Document Page Fallback (when rendering or non-PDF) */
             <div className="paper-skeleton-layout" aria-hidden="true">
               <div className="skeleton-line title" />
               <div className="skeleton-line subtitle" />

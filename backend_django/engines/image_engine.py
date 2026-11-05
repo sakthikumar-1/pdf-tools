@@ -1,6 +1,6 @@
 """
 PDF to Image Engine for Simatrix Academy PDF Tools.
-Converts PDF pages into high-resolution JPG images using PyMuPDF.
+Converts PDF pages into high-resolution JPG images using pypdfium2.
 Bundles multi-page documents into clean ZIP archives.
 Eliminates all dependencies on external system binaries (Imagick / pdftoppm).
 """
@@ -11,7 +11,8 @@ import logging
 from pathlib import Path
 from typing import Dict, Any, List
 
-import pymupdf as fitz
+import pypdfium2 as pdfium
+from PIL import Image
 
 from .word_engine import (
     WordEngineException,
@@ -67,16 +68,18 @@ def convert_pdf_to_jpg(
     if not header.startswith(b'%PDF-'):
         raise InvalidPdfError("The uploaded file does not have a valid PDF header.")
 
+    doc = None
     try:
-        doc = fitz.open(input_pdf_path)
+        doc = pdfium.PdfDocument(str(input_path))
+    except pdfium.PdfiumError as err:
+        err_msg = str(err).lower()
+        if "password" in err_msg or "encrypted" in err_msg:
+            raise PasswordProtectedPdfError("This PDF is password-protected. Please remove the password before converting.")
+        raise InvalidPdfError(f"Unable to parse PDF document: {str(err)}")
     except Exception as err:
         import gc
         gc.collect()
         raise InvalidPdfError(f"Unable to parse PDF document: {str(err)}")
-
-    if doc.is_encrypted and doc.needs_pass:
-        doc.close()
-        raise PasswordProtectedPdfError("This PDF is password-protected. Please remove the password before converting.")
 
     page_count = len(doc)
     if page_count == 0:
@@ -85,17 +88,21 @@ def convert_pdf_to_jpg(
 
     rendered_images: List[Dict[str, Any]] = []
     generated_file_paths: List[Path] = []
+    scale = float(dpi) / 72.0
 
     try:
         for idx in range(page_count):
             page = doc[idx]
-            pix = page.get_pixmap(dpi=dpi)
+            pil_image = page.render(scale=scale).to_pil()
+            page.close()
 
             page_num = idx + 1
             image_filename = f"{output_basename}_page_{page_num}.jpg"
             image_path = out_dir / image_filename
 
-            pix.save(str(image_path))
+            # Convert to RGB (in case of RGBA/palette) and save as high-quality JPEG
+            rgb_image = pil_image.convert("RGB")
+            rgb_image.save(str(image_path), "JPEG", quality=90)
             generated_file_paths.append(image_path)
 
             file_size = image_path.stat().st_size
@@ -110,7 +117,11 @@ def convert_pdf_to_jpg(
             f.unlink(missing_ok=True)
         raise ImageEngineException(f"Failed to render PDF page: {str(render_err)}")
     finally:
-        doc.close()
+        if doc is not None:
+            try:
+                doc.close()
+            except Exception:
+                pass
 
     # Determine primary deliverable
     if page_count == 1:

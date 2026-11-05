@@ -11,7 +11,8 @@ import io
 import time
 from pathlib import Path
 
-import pymupdf as fitz
+import io
+from reportlab.pdfgen import canvas
 from django.test import TestCase, Client
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.conf import settings
@@ -42,22 +43,21 @@ startxref
 
 def create_huge_dimension_pdf() -> bytes:
     """PDF with extreme page dimensions (e.g. 14,400 x 14,400 pt) designed to cause raster explosion."""
-    doc = fitz.open()
-    # 14400 pt is 200 inches at 72 dpi; rasterizing at 300 dpi would consume gigabytes of RAM
-    page = doc.new_page(width=14400, height=14400)
-    page.insert_text((100, 100), "Extreme dimension page")
-    pdf_bytes = doc.tobytes()
-    doc.close()
-    return pdf_bytes
+    buffer = io.BytesIO()
+    c = canvas.Canvas(buffer, pagesize=(14400, 14400))
+    c.drawString(100, 100, "Extreme dimension page")
+    c.showPage()
+    c.save()
+    return buffer.getvalue()
 
 
 def create_valid_dummy_pdf() -> bytes:
-    doc = fitz.open()
-    page = doc.new_page(width=612, height=792)
-    page.insert_text((50, 100), "Normal page")
-    b = doc.tobytes()
-    doc.close()
-    return b
+    buffer = io.BytesIO()
+    c = canvas.Canvas(buffer, pagesize=(612, 792))
+    c.drawString(50, 700, "Normal page")
+    c.showPage()
+    c.save()
+    return buffer.getvalue()
 
 
 class AdversarialFileSecurityTests(TestCase):

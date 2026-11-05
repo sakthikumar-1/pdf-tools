@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build && node compress_dist.mjs",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "postinstall": "node setup_pdfjs.js"
   },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^7.3.1",

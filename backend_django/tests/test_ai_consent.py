@@ -12,7 +12,8 @@ import json
 import uuid
 from unittest.mock import patch, MagicMock
 
-import pymupdf as fitz
+import io
+from reportlab.pdfgen import canvas
 from django.test import TestCase, Client
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.utils import timezone
@@ -67,12 +68,12 @@ class AIConsentLifecycleTests(TestCase):
         self.mock_router_patcher.stop()
 
     def _create_sample_pdf(self) -> SimpleUploadedFile:
-        doc = fitz.open()
-        page = doc.new_page(width=300, height=300)
-        page.insert_text((50, 50), "Document content for consent validation testing.")
-        pdf_bytes = doc.tobytes()
-        doc.close()
-        return SimpleUploadedFile("consent_sample.pdf", pdf_bytes, content_type="application/pdf")
+        buffer = io.BytesIO()
+        c = canvas.Canvas(buffer, pagesize=(300, 300))
+        c.drawString(50, 250, "Document content for consent validation testing.")
+        c.showPage()
+        c.save()
+        return SimpleUploadedFile("consent_sample.pdf", buffer.getvalue(), content_type="application/pdf")
 
     def test_01_request_rejected_without_stored_consent_or_param(self):
         """Verifies an unconsented user without stored consent record receives 400 AI_CONSENT_REQUIRED."""

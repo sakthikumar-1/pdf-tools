@@ -256,19 +256,23 @@ def get_capabilities(request):
     return {
         "status": "ok",
         "engines": {
-            "pymupdf": True,
-            "pdf2docx": True,
+            "pypdf": True,
+            "pypdfium2": True,
+            "pdfminer_six": True,
+            "pikepdf": True,
+            "reportlab": True,
             "python_pptx": True,
+            "python_docx": True,
             "aes256_encryption": True,
             "image_rasterizer": True,
             "client_vector_engine": True,
             "ai_engine": ai_status.get("configured", False)
         },
         "tools": {
-            "pdf-to-word": {"available": True, "engine": "Python pdf2docx Engine", "status": "AVAILABLE"},
-            "pdf-to-powerpoint": {"available": True, "engine": "PyMuPDF + python-pptx Engine", "status": "AVAILABLE"},
-            "protect-pdf": {"available": True, "engine": "PyMuPDF 256-bit AES Engine", "status": "AVAILABLE"},
-            "pdf-to-jpg": {"available": True, "engine": "PyMuPDF High-DPI Engine", "status": "AVAILABLE"},
+            "pdf-to-word": {"available": True, "engine": "Simatrix Reconstruction Engine", "status": "AVAILABLE"},
+            "pdf-to-powerpoint": {"available": True, "engine": "Simatrix Presentation Engine", "status": "AVAILABLE"},
+            "protect-pdf": {"available": True, "engine": "pypdf 256-bit AES Engine", "status": "AVAILABLE"},
+            "pdf-to-jpg": {"available": True, "engine": "pypdfium2 High-DPI Engine", "status": "AVAILABLE"},
             "merge-pdf": {"available": True, "engine": "Client WebWorker Engine", "status": "AVAILABLE"},
             "split-pdf": {"available": True, "engine": "Client WebWorker Engine", "status": "AVAILABLE"},
             "compress-pdf": {"available": True, "engine": "Client WebWorker Engine", "status": "AVAILABLE"},
@@ -279,12 +283,12 @@ def get_capabilities(request):
             "pdf-to-text": {"available": True, "engine": "Client WebWorker Engine", "status": "AVAILABLE"},
             "pdf-to-excel": {"available": True, "engine": "Tabular Extraction Engine", "status": "AVAILABLE"},
             "pdf-to-ppt": {"available": True, "engine": "OpenXML Slide Engine", "status": "AVAILABLE"},
-            "add-page-numbers": {"available": True, "engine": "PyMuPDF Page Numbering Engine", "status": "AVAILABLE"},
-            "watermark-pdf": {"available": True, "engine": "PyMuPDF Watermark Engine", "status": "AVAILABLE"},
-            "crop-pdf": {"available": True, "engine": "PyMuPDF Crop Engine", "status": "AVAILABLE"},
-            "edit-metadata": {"available": True, "engine": "PyMuPDF Metadata Engine", "status": "AVAILABLE"},
-            "reorder-pdf": {"available": True, "engine": "PyMuPDF Page Sequence Engine", "status": "AVAILABLE"},
-            "sign-pdf": {"available": True, "engine": "PyMuPDF Electronic Signature Engine", "status": "AVAILABLE"},
+            "add-page-numbers": {"available": True, "engine": "ReportLab Page Numbering Engine", "status": "AVAILABLE"},
+            "watermark-pdf": {"available": True, "engine": "ReportLab Watermark Engine", "status": "AVAILABLE"},
+            "crop-pdf": {"available": True, "engine": "pypdf Crop Engine", "status": "AVAILABLE"},
+            "edit-metadata": {"available": True, "engine": "pypdf Metadata Engine", "status": "AVAILABLE"},
+            "reorder-pdf": {"available": True, "engine": "pypdf Page Sequence Engine", "status": "AVAILABLE"},
+            "sign-pdf": {"available": True, "engine": "ReportLab Electronic Signature Engine", "status": "AVAILABLE"},
             "ai-summarizer": {
                 "available": ai_status.get("configured", False),
                 "engine": f"AI Engine ({ai_status.get('provider', 'AI')})",
@@ -533,7 +537,7 @@ def convert_pdf_to_word_endpoint(request, file: UploadedFile = File(...), mode: 
 )
 def convert_pdf_to_powerpoint_endpoint(request, file: UploadedFile = File(...), mode: str = Form("editable")):
     """
-    Converts a PDF document to Microsoft PowerPoint (.pptx) format using PyMuPDF + python-pptx.
+    Converts a PDF document to Microsoft PowerPoint (.pptx) format using pdfminer + python-pptx.
     Supports 'editable' and 'visual' modes. Enforces magic byte validation and page limits.
     """
     allowed, _, retry_after = check_utility_rate_limit(request)

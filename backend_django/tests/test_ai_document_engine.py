@@ -55,7 +55,7 @@ class DocumentEngineExtractionTests(TransactionTestCase):
         self.assertGreater(doc.char_count, 50)
         self.assertGreater(doc.word_count, 10)
         self.assertGreater(doc.estimated_tokens, 5)
-        self.assertEqual(doc.sha256, "5f1fb36426b89f2867b045c7884471ea21267444293aaecf026d2e8600a8c24c")
+        self.assertEqual(doc.sha256, "2218e0bc7d8d1801353ebac23e1d1d11887d15f56758d2f680d99b7b47a36dfb")
 
     def test_extract_multi_page_pdf(self):
         pdf_path = FIXTURES_DIR / "sample_multi_page.pdf"

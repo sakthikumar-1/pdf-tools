@@ -25,8 +25,13 @@ export async function fetchServerCapabilities() {
   cachedCapabilities = {
     status: 'ok',
     engines: {
-      pymupdf: true,
-      pdf2docx: true,
+      pypdf: true,
+      pypdfium2: true,
+      pdfminer_six: true,
+      pikepdf: true,
+      reportlab: true,
+      python_docx: true,
+      python_pptx: true,
       aes256_encryption: true,
       image_rasterizer: true,
       client_vector_engine: true,
@@ -34,19 +39,19 @@ export async function fetchServerCapabilities() {
     tools: {
       'protect-pdf': {
         available: true,
-        engine: 'PyMuPDF 256-bit AES Engine',
+        engine: 'pypdf 256-bit AES Engine',
         status: 'AVAILABLE',
         reason: 'Native Python 256-bit AES document security.',
       },
       'pdf-to-word': {
         available: true,
-        engine: 'Python pdf2docx Engine',
+        engine: 'Simatrix Reconstruction Engine',
         status: 'AVAILABLE',
         reason: 'Document layout reconstruction active.',
       },
       'pdf-to-jpg': {
         available: true,
-        engine: 'PyMuPDF High-DPI Engine',
+        engine: 'pypdfium2 High-DPI Engine',
         status: 'AVAILABLE',
         reason: 'High-fidelity server rasterization active.',
       },
@@ -76,7 +81,7 @@ export function getToolCapability(toolTitle, capabilitiesMap) {
     return {
       available: true,
       status: 'AVAILABLE',
-      engine: 'PyMuPDF 256-bit AES Engine',
+      engine: 'pypdf 256-bit AES Engine',
       reason: 'Server-side 256-bit AES password encryption active with client WASM fallback.',
     };
   }
@@ -85,7 +90,7 @@ export function getToolCapability(toolTitle, capabilitiesMap) {
     return {
       available: true,
       status: 'AVAILABLE',
-      engine: 'Python pdf2docx Engine',
+      engine: 'Simatrix Reconstruction Engine',
       reason: 'Full document layout reconstruction active, preserving paragraphs, formatting, and tables.',
     };
   }
@@ -94,7 +99,7 @@ export function getToolCapability(toolTitle, capabilitiesMap) {
     return {
       available: true,
       status: 'AVAILABLE',
-      engine: 'PyMuPDF High-DPI Engine',
+      engine: 'pypdfium2 High-DPI Engine',
       reason: 'High-resolution server image rendering with client-side canvas fallback.',
     };
   }
@@ -112,7 +117,7 @@ export function getToolCapability(toolTitle, capabilitiesMap) {
     return {
       available: true,
       status: 'AVAILABLE',
-      engine: 'PyMuPDF + python-pptx Engine',
+      engine: 'Simatrix Presentation Engine',
       reason: 'Slide text shape generator active.',
     };
   }
@@ -121,7 +126,7 @@ export function getToolCapability(toolTitle, capabilitiesMap) {
     return {
       available: true,
       status: 'AVAILABLE',
-      engine: 'PyMuPDF + pdf-lib Engine',
+      engine: 'ReportLab + pypdf Engine',
       reason: 'Rotation-aware page numbering active.',
     };
   }
@@ -130,7 +135,7 @@ export function getToolCapability(toolTitle, capabilitiesMap) {
     return {
       available: true,
       status: 'AVAILABLE',
-      engine: 'PyMuPDF + pdf-lib Engine',
+      engine: 'ReportLab + pypdf Engine',
       reason: 'Vector and text watermark engine active.',
     };
   }
@@ -139,7 +144,7 @@ export function getToolCapability(toolTitle, capabilitiesMap) {
     return {
       available: true,
       status: 'AVAILABLE',
-      engine: 'PyMuPDF + pdf-lib Engine',
+      engine: 'pypdf Engine',
       reason: 'Lossless margin trimming active.',
     };
   }
@@ -148,7 +153,7 @@ export function getToolCapability(toolTitle, capabilitiesMap) {
     return {
       available: true,
       status: 'AVAILABLE',
-      engine: 'PyMuPDF + pdf-lib Engine',
+      engine: 'pypdf Engine',
       reason: 'PDF dictionary metadata editing active.',
     };
   }
@@ -157,7 +162,7 @@ export function getToolCapability(toolTitle, capabilitiesMap) {
     return {
       available: true,
       status: 'AVAILABLE',
-      engine: 'PyMuPDF + pdf-lib Engine',
+      engine: 'pypdf Engine',
       reason: 'Visual page sequence reordering active.',
     };
   }

@@ -3,10 +3,11 @@ import uuid
 from pathlib import Path
 from io import BytesIO
 
+import pypdf
+from reportlab.pdfgen import canvas
 from django.test import TestCase, Client
 from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
-import pymupdf as fitz
 
 from core.api import token_signer
 from engines.word_engine import convert_pdf_to_docx
@@ -15,13 +16,12 @@ from engines.image_engine import convert_pdf_to_jpg
 
 
 def create_test_pdf(num_pages=1, text="Sample text content") -> bytes:
-    doc = fitz.open()
-    for i in range(num_pages):
-        page = doc.new_page()
-        page.insert_text((50, 50), f"{text} - Page {i + 1}")
     buf = BytesIO()
-    doc.save(buf)
-    doc.close()
+    c = canvas.Canvas(buf)
+    for i in range(num_pages):
+        c.drawString(50, 700, f"{text} - Page {i + 1}")
+        c.showPage()
+    c.save()
     return buf.getvalue()
 
 
@@ -42,7 +42,8 @@ class FullPythonSuiteTests(TestCase):
         self.assertEqual(res.status_code, 200)
         data = res.json()
         self.assertEqual(data['status'], 'ok')
-        self.assertTrue(data['engines']['pymupdf'])
+        self.assertTrue(data['engines']['pypdf'])
+        self.assertTrue(data['engines']['pypdfium2'])
         self.assertTrue(data['engines']['aes256_encryption'])
         self.assertTrue(data['engines']['image_rasterizer'])
         self.assertTrue(data['tools']['protect-pdf']['available'])
@@ -82,14 +83,12 @@ class FullPythonSuiteTests(TestCase):
         self.assertEqual(dl_res.status_code, 200)
         self.assertEqual(dl_res['Content-Type'], 'application/pdf')
 
-        # Read downloaded bytes with PyMuPDF
+        # Read downloaded bytes with pypdf
         pdf_bytes = b"".join(dl_res.streaming_content)
-        enc_doc = fitz.open(stream=pdf_bytes, filetype="pdf")
-        self.assertTrue(enc_doc.is_encrypted)
-        self.assertTrue(enc_doc.needs_pass)
-        auth_result = enc_doc.authenticate('SecretPassword123!')
+        reader = pypdf.PdfReader(BytesIO(pdf_bytes))
+        self.assertTrue(reader.is_encrypted)
+        auth_result = reader.decrypt('SecretPassword123!')
         self.assertGreater(auth_result, 0)  # Authenticated successfully
-        enc_doc.close()
 
     def test_protect_pdf_empty_password_fails(self):
         pdf_bytes = create_test_pdf(1)

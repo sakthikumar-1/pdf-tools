@@ -177,7 +177,17 @@
   user-select: none;
 }
 
-/* Rendered Canvas on Sheet */
+/* Rendered Page Image & Canvas on Sheet */
+.pdf-rendered-page-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  user-select: none;
+  pointer-events: none;
+  background-color: #FFFFFF;
+}
+
 .pdf-rendered-canvas {
   width: 100%;
   height: 100%;

@@ -25,7 +25,8 @@ from pathlib import Path
 from unittest.mock import patch, MagicMock
 from datetime import timedelta
 
-import pymupdf as fitz
+import io
+from reportlab.pdfgen import canvas
 from django.test import TransactionTestCase, Client, override_settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.utils import timezone
@@ -56,11 +57,12 @@ if not FIXTURES_DIR.exists():
 
 def make_custom_pdf(text: str = "Unique non-demo content for live document testing") -> SimpleUploadedFile:
     """Generates an in-memory PDF whose SHA-256 does not match demo fixtures."""
-    doc = fitz.open()
-    page = doc.new_page()
-    page.insert_text(fitz.Point(50, 72), f"{text}\nRandom seed: {uuid.uuid4().hex}")
-    pdf_bytes = doc.tobytes()
-    doc.close()
+    buffer = io.BytesIO()
+    c = canvas.Canvas(buffer)
+    c.drawString(50, 700, f"{text} - Random seed: {uuid.uuid4().hex}")
+    c.showPage()
+    c.save()
+    pdf_bytes = buffer.getvalue()
     return SimpleUploadedFile(f"live_{uuid.uuid4().hex[:6]}.pdf", pdf_bytes, content_type="application/pdf")
 
 

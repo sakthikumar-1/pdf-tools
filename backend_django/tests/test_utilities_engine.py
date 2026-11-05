@@ -2,7 +2,7 @@ import io
 import os
 import json
 from pathlib import Path
-import pymupdf as fitz
+import pypdf
 from django.conf import settings
 from django.test import TestCase, Client
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -39,7 +39,7 @@ class UtilitiesEngineIntegrationTests(TestCase):
 
     # --- 1. ADD PAGE NUMBERS TESTS ---
     def test_01_add_page_numbers_direct(self):
-        """Verify direct Python PyMuPDF page numbering engine."""
+        """Verify direct Python page numbering engine."""
         output_path = self.scratch_dir / 'test_numbered.pdf'
         res = add_page_numbers_py(
             str(self.multi_page_pdf),
@@ -58,14 +58,13 @@ class UtilitiesEngineIntegrationTests(TestCase):
         self.assertEqual(res['page_count'], 3)
         self.assertGreater(res['size_bytes'], 0)
 
-        # Inspect with PyMuPDF
-        doc = fitz.open(str(output_path))
-        self.assertEqual(len(doc), 3)
-        p1_text = doc[0].get_text()
+        # Inspect with pypdf
+        reader = pypdf.PdfReader(str(output_path))
+        self.assertEqual(len(reader.pages), 3)
+        p1_text = reader.pages[0].extract_text()
         self.assertIn("Page 1 of 3", p1_text)
-        p3_text = doc[2].get_text()
+        p3_text = reader.pages[2].extract_text()
         self.assertIn("Page 3 of 3", p3_text)
-        doc.close()
 
     def test_02_add_page_numbers_rotated(self):
         """Verify page numbering on rotated page orientation."""
@@ -76,10 +75,9 @@ class UtilitiesEngineIntegrationTests(TestCase):
             {'startNumber': 10, 'format': 'Page {n}'}
         )
         self.assertEqual(res['page_count'], 1)
-        doc = fitz.open(str(output_path))
-        self.assertEqual(doc[0].rotation, 90)
-        self.assertIn("Page 10", doc[0].get_text())
-        doc.close()
+        reader = pypdf.PdfReader(str(output_path))
+        self.assertEqual(reader.pages[0].rotation, 90)
+        self.assertIn("Page 10", reader.pages[0].extract_text())
 
     def test_03_add_page_numbers_range(self):
         """Verify numbering applied strictly to requested page range."""
@@ -89,15 +87,14 @@ class UtilitiesEngineIntegrationTests(TestCase):
             str(output_path),
             {'startNumber': 1, 'format': 'NUM-{n}', 'pageRange': '2-3'}
         )
-        doc = fitz.open(str(output_path))
-        self.assertNotIn("NUM-", doc[0].get_text())  # Page 1 skipped
-        self.assertIn("NUM-1", doc[1].get_text())     # Page 2 numbered
-        self.assertIn("NUM-2", doc[2].get_text())     # Page 3 numbered
-        doc.close()
+        reader = pypdf.PdfReader(str(output_path))
+        self.assertNotIn("NUM-", reader.pages[0].extract_text())  # Page 1 skipped
+        self.assertIn("NUM-1", reader.pages[1].extract_text())     # Page 2 numbered
+        self.assertIn("NUM-2", reader.pages[2].extract_text())     # Page 3 numbered
 
     # --- 2. WATERMARK PDF TESTS ---
     def test_04_watermark_direct(self):
-        """Verify direct Python PyMuPDF watermark application."""
+        """Verify direct Python watermark application."""
         output_path = self.scratch_dir / 'test_watermarked.pdf'
         res = watermark_pdf_py(
             str(self.multi_page_pdf),
@@ -114,10 +111,9 @@ class UtilitiesEngineIntegrationTests(TestCase):
         )
         self.assertTrue(output_path.exists())
         self.assertEqual(res['page_count'], 3)
-        doc = fitz.open(str(output_path))
-        for page in doc:
-            self.assertIn("CONFIDENTIAL AUDIT", page.get_text())
-        doc.close()
+        reader = pypdf.PdfReader(str(output_path))
+        for page in reader.pages:
+            self.assertIn("CONFIDENTIAL AUDIT", page.extract_text())
 
     def test_05_watermark_range(self):
         """Verify watermark applied only to selected pages."""
@@ -127,10 +123,9 @@ class UtilitiesEngineIntegrationTests(TestCase):
             str(output_path),
             {'text': 'DRAFT', 'pageRange': '1'}
         )
-        doc = fitz.open(str(output_path))
-        self.assertIn("DRAFT", doc[0].get_text())
-        self.assertNotIn("DRAFT", doc[1].get_text())
-        doc.close()
+        reader = pypdf.PdfReader(str(output_path))
+        self.assertIn("DRAFT", reader.pages[0].extract_text())
+        self.assertNotIn("DRAFT", reader.pages[1].extract_text())
 
     # --- 3. CROP PDF TESTS ---
     def test_06_crop_direct(self):
@@ -147,15 +142,13 @@ class UtilitiesEngineIntegrationTests(TestCase):
         self.assertTrue(output_path.exists())
         self.assertEqual(res['page_count'], 3)
 
-        orig_doc = fitz.open(str(self.multi_page_pdf))
-        orig_rect = orig_doc[0].rect
-        orig_doc.close()
+        orig_reader = pypdf.PdfReader(str(self.multi_page_pdf))
+        orig_rect = orig_reader.pages[0].mediabox
 
-        cropped_doc = fitz.open(str(output_path))
-        crop_box = cropped_doc[0].cropbox
-        self.assertAlmostEqual(crop_box.width, orig_rect.width - 72.0, delta=1.0)
-        self.assertAlmostEqual(crop_box.height, orig_rect.height - 72.0, delta=1.0)
-        cropped_doc.close()
+        cropped_reader = pypdf.PdfReader(str(output_path))
+        crop_box = cropped_reader.pages[0].cropbox
+        self.assertAlmostEqual(float(crop_box.width), float(orig_rect.width) - 72.0, delta=1.0)
+        self.assertAlmostEqual(float(crop_box.height), float(orig_rect.height) - 72.0, delta=1.0)
 
     def test_07_crop_invalid_margin_guard(self):
         """Verify excessive crop margins raise UtilitiesEngineException."""
@@ -185,13 +178,13 @@ class UtilitiesEngineIntegrationTests(TestCase):
         self.assertEqual(res['metadata']['title'], 'Updated Title 2026')
         self.assertEqual(res['metadata']['author'], 'Simatrix Quality Team')
 
-        doc = fitz.open(str(output_path))
-        meta = doc.metadata
-        self.assertEqual(meta['title'], 'Updated Title 2026')
-        self.assertEqual(meta['author'], 'Simatrix Quality Team')
-        self.assertEqual(meta['subject'], 'Automated Testing Subject')
-        self.assertIn('simatrix', meta['keywords'].lower())
-        doc.close()
+        reader = pypdf.PdfReader(str(output_path))
+        meta = reader.metadata
+        self.assertEqual(meta.title, 'Updated Title 2026')
+        self.assertEqual(meta.author, 'Simatrix Quality Team')
+        self.assertEqual(meta.subject, 'Automated Testing Subject')
+        keywords = meta.get('/Keywords', '') or ''
+        self.assertIn('simatrix', keywords.lower())
 
     # --- 5. REORDER PAGES TESTS ---
     def test_09_reorder_pages_direct(self):
@@ -205,11 +198,10 @@ class UtilitiesEngineIntegrationTests(TestCase):
         self.assertTrue(output_path.exists())
         self.assertEqual(res['page_count'], 3)
 
-        doc = fitz.open(str(output_path))
-        self.assertIn("Page 3", doc[0].get_text())
-        self.assertIn("Page 1", doc[1].get_text())
-        self.assertIn("Page 2", doc[2].get_text())
-        doc.close()
+        reader = pypdf.PdfReader(str(output_path))
+        self.assertIn("Page 3", reader.pages[0].extract_text())
+        self.assertIn("Page 1", reader.pages[1].extract_text())
+        self.assertIn("Page 2", reader.pages[2].extract_text())
 
     def test_10_reorder_pages_invalid_guard(self):
         """Verify invalid out-of-bounds page indices raise UtilitiesEngineException."""
@@ -243,10 +235,9 @@ class UtilitiesEngineIntegrationTests(TestCase):
         dl_res = self.client.get(data['download_url'])
         self.assertEqual(dl_res.status_code, 200)
         content = b''.join(dl_res.streaming_content)
-        doc = fitz.open(stream=content, filetype='pdf')
-        self.assertEqual(len(doc), 3)
-        self.assertIn("Page 1 of 3", doc[0].get_text())
-        doc.close()
+        reader = pypdf.PdfReader(io.BytesIO(content))
+        self.assertEqual(len(reader.pages), 3)
+        self.assertIn("Page 1 of 3", reader.pages[0].extract_text())
 
     def test_12_api_watermark_workflow(self):
         """Verify POST /api/v1/tools/watermark end-to-end."""
@@ -267,9 +258,8 @@ class UtilitiesEngineIntegrationTests(TestCase):
         dl_res = self.client.get(data['download_url'])
         self.assertEqual(dl_res.status_code, 200)
         content = b''.join(dl_res.streaming_content)
-        doc = fitz.open(stream=content, filetype='pdf')
-        self.assertIn("TOP SECRET", doc[0].get_text())
-        doc.close()
+        reader = pypdf.PdfReader(io.BytesIO(content))
+        self.assertIn("TOP SECRET", reader.pages[0].extract_text())
 
     def test_13_api_crop_workflow(self):
         """Verify POST /api/v1/tools/crop end-to-end."""
@@ -291,9 +281,8 @@ class UtilitiesEngineIntegrationTests(TestCase):
         dl_res = self.client.get(data['download_url'])
         self.assertEqual(dl_res.status_code, 200)
         content = b''.join(dl_res.streaming_content)
-        doc = fitz.open(stream=content, filetype='pdf')
-        self.assertEqual(len(doc), 3)
-        doc.close()
+        reader = pypdf.PdfReader(io.BytesIO(content))
+        self.assertEqual(len(reader.pages), 3)
 
     def test_14_api_metadata_workflow(self):
         """Verify POST /api/v1/tools/metadata end-to-end."""
@@ -313,10 +302,9 @@ class UtilitiesEngineIntegrationTests(TestCase):
         dl_res = self.client.get(data['download_url'])
         self.assertEqual(dl_res.status_code, 200)
         content = b''.join(dl_res.streaming_content)
-        doc = fitz.open(stream=content, filetype='pdf')
-        self.assertEqual(doc.metadata['title'], 'API Test Document')
-        self.assertEqual(doc.metadata['author'], 'API Tester')
-        doc.close()
+        reader = pypdf.PdfReader(io.BytesIO(content))
+        self.assertEqual(reader.metadata.title, 'API Test Document')
+        self.assertEqual(reader.metadata.author, 'API Tester')
 
     def test_15_api_reorder_workflow(self):
         """Verify POST /api/v1/tools/reorder end-to-end."""
@@ -335,8 +323,7 @@ class UtilitiesEngineIntegrationTests(TestCase):
         dl_res = self.client.get(data['download_url'])
         self.assertEqual(dl_res.status_code, 200)
         content = b''.join(dl_res.streaming_content)
-        doc = fitz.open(stream=content, filetype='pdf')
-        self.assertEqual(len(doc), 3)
-        self.assertIn("Page 3", doc[0].get_text())
-        self.assertIn("Page 1", doc[2].get_text())
-        doc.close()
+        reader = pypdf.PdfReader(io.BytesIO(content))
+        self.assertEqual(len(reader.pages), 3)
+        self.assertIn("Page 3", reader.pages[0].extract_text())
+        self.assertIn("Page 1", reader.pages[2].extract_text())

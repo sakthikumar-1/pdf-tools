@@ -12,7 +12,7 @@ from engines.powerpoint_engine import convert_pdf_to_pptx, inspect_pdf_for_pptx
 
 class PowerPointEngineIntegrationTests(TestCase):
     """
-    Automated tests for PyMuPDF + python-pptx PowerPoint conversion engine and endpoint.
+    Automated tests for pdfminer.six + pypdfium2 + python-pptx PowerPoint conversion engine and endpoint.
     """
 
     def setUp(self):

@@ -17,6 +17,7 @@ Verifies:
 13. Concurrent requests cannot exceed the registered 5-credit quota.
 """
 
+import io
 import json
 import time
 import uuid
@@ -24,7 +25,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import unittest
 from unittest.mock import patch, MagicMock
 
-import pymupdf as fitz
+from reportlab.pdfgen import canvas
 from django.test import TransactionTestCase, Client
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import connection, connections
@@ -42,12 +43,12 @@ from core.api import token_signer
 
 
 def make_test_pdf(text: str = "Simatrix Authenticated AI Test Content") -> SimpleUploadedFile:
-    doc = fitz.open()
-    page = doc.new_page()
-    page.insert_text((50, 72), f"{text} - {uuid.uuid4().hex}")
-    pdf_bytes = doc.tobytes()
-    doc.close()
-    return SimpleUploadedFile(f"{uuid.uuid4().hex[:8]}.pdf", pdf_bytes, content_type="application/pdf")
+    buffer = io.BytesIO()
+    c = canvas.Canvas(buffer)
+    c.drawString(50, 700, f"{text} - {uuid.uuid4().hex}")
+    c.showPage()
+    c.save()
+    return SimpleUploadedFile(f"{uuid.uuid4().hex[:8]}.pdf", buffer.getvalue(), content_type="application/pdf")
 
 
 class GuestRemovalAndRegisteredQuotaTests(TransactionTestCase):

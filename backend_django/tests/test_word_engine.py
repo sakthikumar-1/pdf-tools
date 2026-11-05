@@ -7,7 +7,7 @@ from django.conf import settings
 from django.test import TestCase, Client
 from django.core.files.uploadedfile import SimpleUploadedFile
 
-from engines.word_engine import normalize_indic_text, validate_docx_structure
+from engines.word_engine import normalize_indic_text, validate_docx_structure, decode_legacy_indic_tokens
 
 
 class WordEngineIntegrationTests(TestCase):
@@ -118,9 +118,10 @@ class WordEngineIntegrationTests(TestCase):
         import docx
         doc = docx.Document(io.BytesIO(docx_bytes))
 
-        # 1. Table structure: exactly 1 table with 4 columns
-        self.assertEqual(len(doc.tables), 1, f"Expected 1 table, found {len(doc.tables)}")
-        table = doc.tables[0]
+        # 1. Table structure: Verify grammar table with 4 columns
+        grammar_tables = [t for t in doc.tables if any('இறந்தகாலம்' in cell.text for row in t.rows for cell in row.cells)]
+        self.assertEqual(len(grammar_tables), 1, "Expected 1 grammar table with tense columns")
+        table = grammar_tables[0]
         self.assertEqual(len(table.columns), 4, f"Expected 4 columns, found {len(table.columns)}")
         headers = [cell.text.strip() for cell in table.rows[0].cells]
         self.assertIn('இறந்தகாலம்', headers)
@@ -132,8 +133,11 @@ class WordEngineIntegrationTests(TestCase):
             media_files = [n for n in z.namelist() if n.startswith('word/media/')]
             self.assertEqual(len(media_files), 2, f"Expected 2 media images, found {len(media_files)}")
 
-        # 3. Text integrity: All paragraphs combined
-        full_text = '\n'.join([p.text for p in doc.paragraphs] + [cell.text for row in table.rows for cell in row.cells])
+        # 3. Text integrity: All paragraphs and table cells combined
+        full_text = '\n'.join(
+            [p.text for p in doc.paragraphs] +
+            [cell.text for t in doc.tables for row in t.rows for cell in row.cells]
+        )
         self.assertIn('தேர்வு 2 - மாதிரி வினாத்தாள்', full_text)
         self.assertIn('உலகத் தமிழ்க் கல்விக்கழகம்', full_text)
         self.assertIn('எழுத்துத் தேர்வு', full_text)
@@ -171,6 +175,19 @@ class WordEngineIntegrationTests(TestCase):
         self.assertEqual(normalize_indic_text('\u0BC7\u0B95\u0BBE\u0BB2\u0BAE\u0BCD'), 'கோலம்')
         # Visual ை (U+0BC8) + க (U+0B95) -> Logical கை
         self.assertEqual(normalize_indic_text('\u0BC8\u0B95'), 'கை')
+
+        # C. Legacy 8-bit encoded glyph decoding (Mylai/TAB/TSCII)
+        self.assertEqual(decode_legacy_indic_tokens("தமி&"), "தமிழ்")
+        self.assertEqual(decode_legacy_indic_tokens("இல'கிய"), "இலக்கிய")
+        self.assertEqual(decode_legacy_indic_tokens("தா'+த,'+"), "தாக்குதலுக்கு")
+        self.assertEqual(
+            decode_legacy_indic_tokens('"ஜனர:சகமாக எ.8வ8 இல\'கியமா+மா?”'),
+            '"ஜனரஞ்சகமாக எழுதுவது இலக்கியமாகுமா?”'
+        )
+
+        # D. English sentences with punctuation and numbers must remain 100% UNTOUCHED
+        english_sentence = "This is an English test with 'quotes' & numbers: 1, 2, 7, 8."
+        self.assertEqual(decode_legacy_indic_tokens(english_sentence), english_sentence)
 
     def test_06_hindi_devanagari_and_table_reconstruction(self):
         """Verify Hindi Devanagari conversion with conjuncts, matras, and table reconstruction."""

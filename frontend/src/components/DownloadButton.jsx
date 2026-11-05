@@ -123,7 +123,7 @@ export default function DownloadButton({
             <div className="image-card" key={idx}>
               <div className="image-preview-wrapper">
                 <img
-                  src={img.dataUrl || img.url}
+                  src={img.previewUrl || img.dataUrl || (img.url ? (img.url.includes('?') ? `${img.url}&inline=1` : `${img.url}?inline=1`) : '')}
                   alt={`Page ${idx + 1}`}
                   className="converted-img"
                   loading="lazy"

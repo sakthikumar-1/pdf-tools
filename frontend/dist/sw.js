@@ -1,4 +1,4 @@
-const CACHE_NAME = 'simatrix-pdf-cache-v6';
+const CACHE_NAME = 'simatrix-pdf-cache-v7';
 
 // Fast critical assets to precache immediately on install (lightweight only)
 const PRECACHE_ASSETS = [
@@ -32,6 +32,11 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const request = event.request;
   const url = new URL(request.url);
+
+  // Never intercept or cache localhost development traffic
+  if (url.hostname === 'localhost' || url.hostname === '127.0.0.1') {
+    return;
+  }
 
   // 1. NEVER cache API requests (security, private files, auth tokens)
   if (url.pathname.startsWith('/api/') || request.method !== 'GET') {

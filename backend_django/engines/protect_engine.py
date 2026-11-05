@@ -1,6 +1,6 @@
 """
 Protect PDF Engine for Simatrix Academy PDF Tools.
-Provides native 256-bit AES encryption for PDF files using PyMuPDF.
+Provides native 256-bit AES encryption for PDF files using pypdf.
 Eliminates all dependencies on external system binaries (e.g. qpdf).
 """
 
@@ -9,7 +9,7 @@ import logging
 from pathlib import Path
 from typing import Dict, Any
 
-import pymupdf as fitz
+import pypdf
 
 from .word_engine import (
     WordEngineException,
@@ -58,34 +58,41 @@ def protect_pdf_document(
         raise InvalidPdfError("The uploaded file does not have a valid PDF header.")
 
     try:
-        doc = fitz.open(input_pdf_path)
+        reader = pypdf.PdfReader(str(input_path))
     except Exception as err:
         import gc
         gc.collect()
         raise InvalidPdfError(f"Unable to parse PDF document: {str(err)}")
 
-    if doc.is_encrypted and doc.needs_pass:
-        doc.close()
-        raise PasswordProtectedPdfError("The document is already password-protected.")
+    if reader.is_encrypted:
+        try:
+            res = reader.decrypt("")
+            if res == 0:
+                raise PasswordProtectedPdfError("The document is already password-protected.")
+        except PasswordProtectedPdfError:
+            raise
+        except Exception:
+            raise PasswordProtectedPdfError("The document is already password-protected.")
 
-    page_count = len(doc)
+    page_count = len(reader.pages)
     if page_count == 0:
-        doc.close()
         raise InvalidPdfError("The PDF document contains 0 pages.")
 
     try:
-        # Save document with 256-bit AES encryption and standard accessibility permissions
-        doc.save(
-            str(output_path),
-            encryption=fitz.PDF_ENCRYPT_AES_256,
-            user_pw=password,
-            owner_pw=password,
-            permissions=fitz.PDF_PERM_ACCESSIBILITY | fitz.PDF_PERM_PRINT | fitz.PDF_PERM_COPY
+        # Build encrypted PDF using 256-bit AES encryption and standard permissions
+        writer = pypdf.PdfWriter()
+        writer.append(reader)
+        writer.encrypt(
+            user_password=password,
+            owner_password=password,
+            algorithm="AES-256",
+            permissions_flag=pypdf.constants.UserAccessPermissions.PRINT |
+                             pypdf.constants.UserAccessPermissions.EXTRACT
         )
+        with open(str(output_path), "wb") as f_out:
+            writer.write(f_out)
     except Exception as enc_err:
         raise ProtectEngineException(f"Encryption failed: {str(enc_err)}")
-    finally:
-        doc.close()
 
     if not output_path.exists() or output_path.stat().st_size == 0:
         raise ProtectEngineException("Encryption completed but the output file is missing or empty.")

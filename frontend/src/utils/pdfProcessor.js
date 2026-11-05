@@ -480,7 +480,7 @@ export async function protectPdf(file, password, onProgress) {
 
   if (onProgress) onProgress(20);
 
-  // 1. Attempt Python PyMuPDF 256-bit AES encryption backend
+  // 1. Attempt Python pypdf 256-bit AES encryption backend
   try {
     const formData = new FormData();
     formData.append('file', file);

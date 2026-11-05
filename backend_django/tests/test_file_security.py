@@ -16,7 +16,9 @@ import json
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
-import pymupdf as fitz
+import pikepdf
+from pypdf import PdfReader, PdfWriter
+from reportlab.pdfgen import canvas
 from django.test import TestCase, Client
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.conf import settings
@@ -38,50 +40,40 @@ from ninja.errors import HttpError
 
 def create_minimal_pdf_bytes(page_count: int = 1, text: str = "Test document content") -> bytes:
     """Generates a valid in-memory PDF with specified number of pages."""
-    doc = fitz.open()
+    buffer = io.BytesIO()
+    c = canvas.Canvas(buffer, pagesize=(612, 792))
     for i in range(page_count):
-        page = doc.new_page(width=612, height=792)
-        page.insert_text((50, 100), f"{text} - Page {i + 1}")
-    pdf_bytes = doc.tobytes()
-    doc.close()
-    return pdf_bytes
+        c.drawString(50, 700, f"{text} - Page {i + 1}")
+        c.showPage()
+    c.save()
+    return buffer.getvalue()
 
 
 def create_encrypted_pdf_bytes(password: str = "Secret123!") -> bytes:
-    """Generates an AES-256 encrypted PDF requiring a password to open."""
-    doc = fitz.open()
-    page = doc.new_page(width=612, height=792)
-    page.insert_text((50, 100), "Confidential encrypted content")
-    # Encrypt document with user password
-    perm = int(
-        fitz.PDF_PERM_ACCESSIBILITY
-        | fitz.PDF_PERM_PRINT
-        | fitz.PDF_PERM_COPY
-    )
-    pdf_bytes = doc.tobytes(
-        encryption=fitz.PDF_ENCRYPT_AES_256,
-        owner_pw="OwnerPass987!",
-        user_pw=password,
-        permissions=perm
-    )
-    doc.close()
-    return pdf_bytes
+    """Generates an AES encrypted PDF requiring a password to open."""
+    raw_pdf = create_minimal_pdf_bytes(1, "Confidential encrypted content")
+    reader = PdfReader(io.BytesIO(raw_pdf))
+    writer = PdfWriter()
+    for page in reader.pages:
+        writer.add_page(page)
+    writer.encrypt(user_password=password, owner_password="OwnerPass987!")
+    out = io.BytesIO()
+    writer.write(out)
+    return out.getvalue()
 
 
 def create_js_pdf_bytes() -> bytes:
     """Generates a PDF containing OpenAction JavaScript."""
-    doc = fitz.open()
-    page = doc.new_page(width=612, height=792)
-    page.insert_text((50, 100), "Document with interactive trigger")
-    raw = doc.tobytes()
-    doc.close()
-
-    doc2 = fitz.open(stream=raw, filetype="pdf")
-    catalog = doc2.pdf_catalog()
-    doc2.xref_set_key(catalog, "OpenAction", "<< /S /JavaScript /JS (app.alert('XSS');) >>")
-    pdf_bytes = doc2.tobytes()
-    doc2.close()
-    return pdf_bytes
+    raw_pdf = create_minimal_pdf_bytes(1, "Document with interactive trigger")
+    with pikepdf.Pdf.open(io.BytesIO(raw_pdf)) as pdf:
+        action = pikepdf.Dictionary(
+            S=pikepdf.Name("/JavaScript"),
+            JS=pikepdf.String("app.alert('XSS');")
+        )
+        pdf.Root["/OpenAction"] = action
+        out = io.BytesIO()
+        pdf.save(out)
+        return out.getvalue()
 
 
 class FileAndPdfSecurityTests(TestCase):
@@ -222,14 +214,10 @@ class FileAndPdfSecurityTests(TestCase):
             self.assertTrue(info["has_javascript"])
 
             # Verify that subsequent inspection confirms neutralization
-            doc_check = fitz.open(str(temp_file))
-            catalog = doc_check.pdf_catalog()
-            keys = doc_check.xref_get_keys(catalog) if catalog > 0 else []
-            # OpenAction must no longer be active JavaScript
-            if "OpenAction" in keys:
-                val = doc_check.xref_get_key(catalog, "OpenAction")[1]
-                self.assertNotIn("JavaScript", val)
-            doc_check.close()
+            with pikepdf.Pdf.open(temp_file) as pdf_check:
+                if "/OpenAction" in pdf_check.Root:
+                    oa = pdf_check.Root["/OpenAction"]
+                    self.assertNotIn("JavaScript", str(oa))
         finally:
             temp_file.unlink(missing_ok=True)
 

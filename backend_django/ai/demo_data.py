@@ -8,7 +8,8 @@ from typing import Dict, Any, Optional
 
 # Cryptographic SHA-256 Hashes of official Simatrix demo documents
 OFFICIAL_DEMO_HASHES: Dict[str, str] = {
-    # fixtures/sample_one_page.pdf
+    # fixtures/sample_one_page.pdf (ReportLab invariant deterministic & legacy)
+    "2218e0bc7d8d1801353ebac23e1d1d11887d15f56758d2f680d99b7b47a36dfb": "sample_one_page",
     "5f1fb36426b89f2867b045c7884471ea21267444293aaecf026d2e8600a8c24c": "sample_one_page",
     # fixtures/sample_multi_page.pdf
     "82c960af251d8bc33b037f5d745087b5adda7008e184a902139ca6c7102df4db": "sample_multi_page",
@@ -123,7 +124,7 @@ def get_demo_chat_response(query: str) -> Dict[str, Any]:
     else:
         answer = (
             f"Based on the demonstration document [Page 1, Page 2]: This document covers the Simatrix PDF AI architecture. "
-            f"Regarding your query ('{query}'), the document highlights secure document parsing with PyMuPDF, "
+            f"Regarding your query ('{query}'), the document highlights secure document parsing, "
             f"intelligent token chunking, and verifiable page citations."
         )
         sources = [1, 2]
@@ -154,7 +155,7 @@ def get_demo_translation(target_language: str) -> Dict[str, Any]:
             "- MySQL 8.0 InnoDB அட்டவணை பூட்டுதல் மூலம் ஒரு பயனருக்கு 5 AI கோரிக்கைகள் மட்டுமே என்ற கடுமையான கணக்கு வரம்பு.\n\n"
             "--- [பக்கம் 2] ---\n"
             "### தொழில்நுட்ப அளவீடுகள் மற்றும் செயல்திறன்\n\n"
-            "PyMuPDF தொழில்நுட்பம் மூலம் பக்க வாரியாக உரை பிரித்தெடுக்கப்பட்டு, அசல் பக்க எண்களுடன் [Page X] குறிப்பிடப்படுகிறது."
+            "உயர் துல்லிய தொழில்நுட்பம் மூலம் பக்க வாரியாக உரை பிரித்தெடுக்கப்பட்டு, அசல் பக்க எண்களுடன் [Page X] குறிப்பிடப்படுகிறது."
         )
         lang_name = "Tamil (தமிழ்)"
     elif "hindi" in lang or lang == "hi":
@@ -167,7 +168,7 @@ def get_demo_translation(target_language: str) -> Dict[str, Any]:
             "- प्रति उपयोगकर्ता 5 एआई अनुरोधों की सख्त सीमा, जो MySQL InnoDB पंक्ति-स्तरीय लॉकिंग द्वारा सुरक्षित है।\n\n"
             "--- [पृष्ठ 2] ---\n"
             "### तकनीकी मानक और प्रदर्शन\n\n"
-            "PyMuPDF के माध्यम से पृष्ठ-दर-पृष्ठ पाठ निकाला जाता है और मूल पृष्ठ संख्या [Page X] सुरक्षित रखी जाती है।"
+            "दस्तावेज़ इंजन के माध्यम से पृष्ठ-दर-पृष्ठ पाठ निकाला जाता है और मूल पृष्ठ संख्या [Page X] सुरक्षित रखी जाती है।"
         )
         lang_name = "Hindi (हिन्दी)"
     elif "spanish" in lang or lang == "es":

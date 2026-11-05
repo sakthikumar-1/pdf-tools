@@ -40,16 +40,21 @@ export async function fetchServerCapabilities() {
   return {
     status: 'ok',
     engines: {
-      pymupdf: true,
-      pdf2docx: true,
+      pypdf: true,
+      pypdfium2: true,
+      pdfminer_six: true,
+      pikepdf: true,
+      reportlab: true,
+      python_docx: true,
+      python_pptx: true,
       aes256_encryption: true,
       image_rasterizer: true,
       client_vector_engine: true,
     },
     tools: {
-      'pdf-to-word': { available: true, engine: 'Python pdf2docx Engine', status: 'AVAILABLE' },
-      'protect-pdf': { available: true, engine: 'PyMuPDF 256-bit AES Engine', status: 'AVAILABLE' },
-      'pdf-to-jpg': { available: true, engine: 'PyMuPDF High-DPI Engine', status: 'AVAILABLE' },
+      'pdf-to-word': { available: true, engine: 'Simatrix Reconstruction Engine', status: 'AVAILABLE' },
+      'protect-pdf': { available: true, engine: 'pypdf 256-bit AES Engine', status: 'AVAILABLE' },
+      'pdf-to-jpg': { available: true, engine: 'pypdfium2 High-DPI Engine', status: 'AVAILABLE' },
     },
   };
 }
@@ -123,7 +128,7 @@ export async function convertPdfToWordPython(file, onProgress, mode = 'editable'
 }
 
 /**
- * Converts a PDF to Microsoft PowerPoint (.pptx) using the Python Django backend with PyMuPDF + python-pptx.
+ * Converts a PDF to Microsoft PowerPoint (.pptx) using the Python Django backend.
  * @param {File} file
  * @param {string} mode ('editable' | 'visual')
  * @param {Function} onProgress
@@ -190,7 +195,7 @@ export async function convertPdfToPowerpointPython(file, mode = 'editable', onPr
 }
 
 /**
- * Encrypts a PDF document with strong 256-bit AES password encryption using Python PyMuPDF.
+ * Encrypts a PDF document with strong 256-bit AES password encryption using Python pypdf.
  * @param {File} file
  * @param {string} password
  * @param {Function} onProgress
@@ -255,7 +260,7 @@ export async function protectPdfPython(file, password, onProgress) {
 }
 
 /**
- * Converts a PDF to high-resolution JPG images using Python PyMuPDF.
+ * Converts a PDF to high-resolution JPG images using Python pypdfium2.
  * @param {File} file
  * @param {number} dpi (default 150)
  * @param {Function} onProgress
@@ -386,7 +391,7 @@ async function executePythonUtility(url, formData, file, defaultSuffix, onProgre
 }
 
 /**
- * Adds page numbers to a PDF using Python PyMuPDF.
+ * Adds page numbers to a PDF using Python utilities engine.
  */
 export async function addPageNumbersPython(file, options = {}, onProgress) {
   const formData = new FormData();
@@ -403,7 +408,7 @@ export async function addPageNumbersPython(file, options = {}, onProgress) {
 }
 
 /**
- * Watermarks a PDF using Python PyMuPDF.
+ * Watermarks a PDF using Python utilities engine.
  */
 export async function watermarkPdfPython(file, options = {}, onProgress) {
   const formData = new FormData();
@@ -420,7 +425,7 @@ export async function watermarkPdfPython(file, options = {}, onProgress) {
 }
 
 /**
- * Crops a PDF using Python PyMuPDF.
+ * Crops a PDF using Python utilities engine.
  */
 export async function cropPdfPython(file, options = {}, onProgress) {
   const formData = new FormData();
@@ -436,7 +441,7 @@ export async function cropPdfPython(file, options = {}, onProgress) {
 }
 
 /**
- * Updates PDF metadata properties using Python PyMuPDF.
+ * Updates PDF metadata properties using Python utilities engine.
  */
 export async function editPdfMetadataPython(file, metadata = {}, onProgress) {
   const formData = new FormData();
@@ -450,7 +455,7 @@ export async function editPdfMetadataPython(file, metadata = {}, onProgress) {
 }
 
 /**
- * Reorders PDF pages using Python PyMuPDF.
+ * Reorders PDF pages using Python utilities engine.
  */
 export async function reorderPdfPagesPython(file, pageOrderArray, onProgress) {
   const formData = new FormData();

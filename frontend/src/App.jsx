@@ -4,26 +4,33 @@ import MainLayout from './layouts/MainLayout';
 import ErrorBoundary from './components/ErrorBoundary';
 import { checkBackendHealth } from './services/api';
 
-// Safe dynamic import with automatic chunk-mismatch reload guard (Issue 3)
+// Safe dynamic import with automatic retry and chunk-mismatch reload guard
 function safeLazy(importFn) {
   return lazy(async () => {
-    try {
-      return await importFn();
-    } catch (err) {
-      console.warn('[SafeLazy] Chunk loading failure:', err);
-      const isChunkOrCssError =
-        err?.message?.includes('Failed to fetch dynamically imported module') ||
-        err?.message?.includes('Unable to preload CSS') ||
-        err?.name === 'ChunkLoadError';
-
-      const reloadKey = `simatrix_lazy_reload_${window.location.pathname}`;
-      if (isChunkOrCssError && !sessionStorage.getItem(reloadKey)) {
-        sessionStorage.setItem(reloadKey, 'true');
-        window.location.reload();
-        return new Promise(() => {});
+    let lastErr;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        return await importFn();
+      } catch (err) {
+        lastErr = err;
+        const isTransient =
+          err?.message?.includes('Failed to fetch dynamically imported module') ||
+          err?.message?.includes('Unable to preload CSS') ||
+          err?.name === 'ChunkLoadError';
+        if (!isTransient) {
+          throw err;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 300 * (attempt + 1)));
       }
-      throw err;
     }
+    console.warn('[SafeLazy] Chunk loading failure after retries:', lastErr);
+    const reloadKey = `simatrix_lazy_reload_${window.location.pathname}`;
+    if (!sessionStorage.getItem(reloadKey)) {
+      sessionStorage.setItem(reloadKey, 'true');
+      window.location.reload();
+      return new Promise(() => {});
+    }
+    throw lastErr;
   });
 }
 

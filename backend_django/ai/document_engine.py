@@ -12,9 +12,10 @@ import hashlib
 import logging
 from pathlib import Path
 from typing import Optional, Dict, Any, List, Union
+import io
 from dataclasses import dataclass, field
 
-import pymupdf as fitz
+import pypdf
 from django.conf import settings
 
 logger = logging.getLogger(__name__)
@@ -184,22 +185,31 @@ def extract_document(
     # 3. Calculate SHA-256 for integrity and official demo document detection
     sha256_hash = hashlib.sha256(file_bytes).hexdigest().lower()
 
-    # 4. Open document via PyMuPDF stream
-    doc = None
+    # 4. Open document via pypdf stream
     try:
         try:
-            doc = fitz.open(stream=file_bytes, filetype="pdf")
+            reader = pypdf.PdfReader(io.BytesIO(file_bytes))
         except Exception as exc:
             raise InvalidPdfError(f"Failed to parse PDF document structure: {str(exc)}")
 
         # Check encryption / password
-        if doc.is_encrypted or doc.needs_pass:
-            raise PasswordProtectedPdfError(
-                "This PDF document is encrypted or password-protected. "
-                "Please unlock or decrypt the document before AI processing."
-            )
+        if reader.is_encrypted:
+            try:
+                res = reader.decrypt("")
+                if res == 0:
+                    raise PasswordProtectedPdfError(
+                        "This PDF document is encrypted or password-protected. "
+                        "Please unlock or decrypt the document before AI processing."
+                    )
+            except PasswordProtectedPdfError:
+                raise
+            except Exception:
+                raise PasswordProtectedPdfError(
+                    "This PDF document is encrypted or password-protected. "
+                    "Please unlock or decrypt the document before AI processing."
+                )
 
-        total_pages = len(doc)
+        total_pages = len(reader.pages)
         if total_pages == 0:
             raise EmptyPdfError("This PDF document contains 0 pages.")
 
@@ -213,11 +223,15 @@ def extract_document(
         total_images = 0
         pages_with_scant_text = 0
 
-        for page_idx in range(total_pages):
-            page_obj = doc[page_idx]
-            raw_text = (page_obj.get_text() or '').strip()
-            images = page_obj.get_images()
-            img_count = len(images)
+        for page_idx, page_obj in enumerate(reader.pages):
+            try:
+                raw_text = (page_obj.extract_text() or '').strip()
+            except Exception:
+                raw_text = ''
+            try:
+                img_count = len(page_obj.images)
+            except Exception:
+                img_count = 0
             total_images += img_count
 
             clean_chars = len(re.sub(r'\s+', '', raw_text))
@@ -274,13 +288,13 @@ def extract_document(
         # 9. Extract metadata safely
         meta = {}
         try:
-            raw_meta = doc.metadata or {}
+            raw_meta = reader.metadata or {}
             meta = {
-                "title": (raw_meta.get("title") or "").strip(),
-                "author": (raw_meta.get("author") or "").strip(),
-                "subject": (raw_meta.get("subject") or "").strip(),
-                "producer": (raw_meta.get("producer") or "").strip(),
-                "creation_date": (raw_meta.get("creationDate") or "").strip()
+                "title": str(raw_meta.get("/Title", "")).strip(),
+                "author": str(raw_meta.get("/Author", "")).strip(),
+                "subject": str(raw_meta.get("/Subject", "")).strip(),
+                "producer": str(raw_meta.get("/Producer", "")).strip(),
+                "creation_date": str(raw_meta.get("/CreationDate", "")).strip()
             }
         except Exception:
             pass
@@ -303,10 +317,5 @@ def extract_document(
         )
 
     finally:
-        # Always close PyMuPDF handle so Windows allows safe deletion of temp files
-        if doc is not None:
-            try:
-                doc.close()
-            except Exception:
-                pass
+        pass
 

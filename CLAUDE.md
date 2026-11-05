@@ -2,7 +2,7 @@
 
 A web PDF toolkit (convert, organize, edit, sign, protect) with an AI suite (summarize, chat with PDF, translate, key points, data extraction, question generation, rewrite, compare). Deployed on Render.
 
-- **Backend**: Django 5 + Django Ninja REST API, Python 3.12, PyMuPDF / pdf2docx / python-docx / python-pptx engines. `backend_django/`
+- **Backend**: Django 5 + Django Ninja REST API, Python 3.12, pypdf / pypdfium2 / pdfminer.six / pikepdf / ReportLab / python-docx / python-pptx engines. `backend_django/`
 - **Frontend**: React 18 SPA, Vite 5, React Router 6, plain CSS per component, Font Awesome + lucide icons, pdf.js / pdf-lib / qpdf-wasm for in-browser processing. `frontend/`
 - **DB**: SQLite locally by default; MySQL (PyMySQL) via `DB_*` env vars; Postgres via `DATABASE_URL` on Render.
 - **AI**: provider router — DeepSeek primary, Gemini fallback, `MockAIProvider` in tests. Keys are server-side only.
@@ -35,7 +35,7 @@ There is no JS test runner, linter, formatter, or type checker configured on eit
 ## Layout
 
 ```
-manage.py, app.py, wsgi.py, YOUR_PROJECT_NAME/   root shims that add backend_django/ to sys.path (Render entrypoints)
+manage.py, app.py, wsgi.py   root shims that add backend_django/ to sys.path (Render entrypoints)
 requirements.txt                                  duplicate of backend_django/requirements.txt; keep both in sync
 render.yaml, build.sh, Procfile, gunicorn.conf.py deployment (backend web, static frontend, 15-min cleanup cron)
 backend_django/
@@ -82,7 +82,7 @@ frontend/
 - Endpoints: Ninja `Schema` response models, `HttpError(400)` for client/document errors, `HttpError(429)` for rate limits, `HttpError(500)` for engine failures; log unexpected exceptions with `exc_info=True`.
 - Never trust upload filenames: use `sanitize_stem` / `sanitize_filename` and UUID job names. Always go through `core/file_security.py` for uploads.
 - Settings read env vars with safe defaults in `base.py`; production overrides belong in `production.py`. Add new env vars to `backend_django/.env.example`.
-- Tests: `django.test.TestCase` + `Client`, build PDFs in memory with PyMuPDF or use `fixtures/`. Never call real AI providers.
+- Tests: `django.test.TestCase` + `Client`, build PDFs in memory with ReportLab/pypdf/pikepdf or use `fixtures/`. Never call real AI providers.
 
 **Frontend**
 - Function components with hooks, `.jsx`, one co-located `.css` file per component/page (no CSS modules, Tailwind, or CSS-in-JS).

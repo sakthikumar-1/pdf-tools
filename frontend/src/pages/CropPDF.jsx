@@ -373,7 +373,7 @@ export default function CropPDF() {
           <FontAwesomeIcon icon={faCropSimple} />
         </div>
         <div className="capability-chip">
-          <FontAwesomeIcon icon={faWandMagicSparkles} /> PyMuPDF ISO-Standard Crop Engine
+          <FontAwesomeIcon icon={faWandMagicSparkles} /> Lossless ISO-Standard Crop Engine
         </div>
         <h1 className="crop-pdf-title">Crop PDF Pages</h1>
         <p className="crop-pdf-desc">

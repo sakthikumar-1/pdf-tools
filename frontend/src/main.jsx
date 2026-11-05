@@ -26,13 +26,25 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   </React.StrictMode>
 );
 
-// Register service worker for offline tool caching
+// Register service worker for offline tool caching only in production
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').then((reg) => {
-      console.log('[ServiceWorker] Registered with scope:', reg.scope);
-    }).catch((err) => {
-      console.log('[ServiceWorker] Registration notice:', err);
+  if (import.meta.env.PROD) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js').then((reg) => {
+        console.log('[ServiceWorker] Registered with scope:', reg.scope);
+      }).catch((err) => {
+        console.log('[ServiceWorker] Registration notice:', err);
+      });
     });
-  });
+  } else {
+    // In dev mode, unregister any active service worker and clear stale caches to prevent Vite HMR poisoning
+    navigator.serviceWorker.getRegistrations().then((registrations) => {
+      registrations.forEach((reg) => reg.unregister());
+    }).catch(() => {});
+    if ('caches' in window) {
+      caches.keys().then((keys) => {
+        keys.forEach((key) => caches.delete(key));
+      }).catch(() => {});
+    }
+  }
 }

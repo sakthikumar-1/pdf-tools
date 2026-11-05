@@ -9,9 +9,10 @@ import re
 import time
 import logging
 from typing import Optional, Dict, Any, List
+import io
 from pathlib import Path
 
-import pymupdf as fitz
+import pypdf
 from django.conf import settings
 
 from ai.provider_base import (
@@ -69,7 +70,7 @@ def extract_document_pages(file_path: str) -> Dict[str, Any]:
     """
     Extracts text from each page of a PDF document while tracking metadata,
     character counts, image counts, and identifying scanned or encrypted files.
-    Always closes the PyMuPDF document handle in the finally block, which is
+    Always closes the pypdf document handle in the finally block, which is
     critical on Windows to allow subsequent file deletion by safe_unlink.
     """
     path = Path(file_path)
@@ -89,21 +90,30 @@ def extract_document_pages(file_path: str) -> Dict[str, Any]:
     if not file_bytes.startswith(b'%PDF-'):
         raise InvalidPdfError("Uploaded file is not a valid PDF document (missing %PDF- header).")
 
-    doc = None
     try:
         try:
-            doc = fitz.open(stream=file_bytes, filetype="pdf")
+            reader = pypdf.PdfReader(io.BytesIO(file_bytes))
         except Exception as exc:
             raise InvalidPdfError(f"Failed to open PDF document: {str(exc)}")
 
         # Check password protection
-        if doc.is_encrypted or doc.needs_pass:
-            raise PasswordProtectedPdfError(
-                "This PDF document is encrypted or password-protected. "
-                "Please unlock or decrypt the document before generating an AI summary."
-            )
+        if reader.is_encrypted:
+            try:
+                res = reader.decrypt("")
+                if res == 0:
+                    raise PasswordProtectedPdfError(
+                        "This PDF document is encrypted or password-protected. "
+                        "Please unlock or decrypt the document before generating an AI summary."
+                    )
+            except PasswordProtectedPdfError:
+                raise
+            except Exception:
+                raise PasswordProtectedPdfError(
+                    "This PDF document is encrypted or password-protected. "
+                    "Please unlock or decrypt the document before generating an AI summary."
+                )
 
-        total_pages = len(doc)
+        total_pages = len(reader.pages)
         if total_pages == 0:
             raise EmptyPdfError("This PDF document contains 0 pages.")
 
@@ -117,11 +127,15 @@ def extract_document_pages(file_path: str) -> Dict[str, Any]:
         total_image_count = 0
         pages_with_scant_text = 0
 
-        for page_num in range(total_pages):
-            page = doc[page_num]
-            text = (page.get_text() or '').strip()
-            images = page.get_images()
-            img_count = len(images)
+        for page_num, page in enumerate(reader.pages):
+            try:
+                text = (page.extract_text() or '').strip()
+            except Exception:
+                text = ''
+            try:
+                img_count = len(page.images)
+            except Exception:
+                img_count = 0
             total_image_count += img_count
 
             clean_chars = len(re.sub(r'\s+', '', text))
@@ -172,13 +186,7 @@ def extract_document_pages(file_path: str) -> Dict[str, Any]:
         }
 
     finally:
-        # Always close the document handle.
-        # On Windows, an unclosed handle prevents safe_unlink from deleting the temp file.
-        if doc is not None:
-            try:
-                doc.close()
-            except Exception:
-                pass
+        pass
 
 
 def chunk_pages_for_summarization(pages: List[Dict[str, Any]], max_chunk_tokens: int = MAX_CHUNK_TOKENS) -> List[str]:

@@ -19,7 +19,9 @@ import logging
 from pathlib import Path
 from typing import Optional, Dict, Any, Tuple, List
 
-import pymupdf as fitz
+import io
+import pypdf
+import pikepdf
 from ninja.files import UploadedFile
 from ninja.errors import HttpError
 from django.conf import settings
@@ -258,7 +260,7 @@ def inspect_and_sanitize_pdf(
 ) -> Dict[str, Any]:
     """
     Inspects structural integrity of a PDF on disk:
-    1. Validates document parses cleanly with PyMuPDF.
+    1. Validates document parses cleanly with pypdf and pikepdf.
     2. Detects password protection / encryption.
     3. Enforces page count ceilings (DoS / Decompression Bomb protection).
     4. Detects and optionally neutralizes embedded JavaScript (/JS, /JavaScript, /AA, /Launch).
@@ -268,88 +270,89 @@ def inspect_and_sanitize_pdf(
     if not p.exists() or p.stat().st_size == 0:
         raise HttpError(400, "The PDF file is empty or does not exist.")
 
-    # 1. Open document safely (using in-memory buffer to prevent Windows OS file lock leaks)
+    # 1. Open document safely using in-memory buffer
     try:
         with open(p, "rb") as f_in:
             data = f_in.read()
-        doc = fitz.open(stream=data, filetype="pdf")
+        reader = pypdf.PdfReader(io.BytesIO(data))
     except Exception as err:
         import gc
         gc.collect()
         raise HttpError(400, f"Unable to parse PDF document structure: {str(err)}")
 
-    try:
-        # 2. Check encryption / password requirement
-        if doc.is_encrypted and doc.needs_pass:
+    # 2. Check encryption / password requirement
+    if reader.is_encrypted:
+        try:
+            res = reader.decrypt("")
+            if res == 0:
+                raise PasswordProtectedDocumentError("This PDF is password-protected. Please unlock the file before processing.")
+        except PasswordProtectedDocumentError:
+            raise
+        except Exception:
             raise PasswordProtectedDocumentError("This PDF is password-protected. Please unlock the file before processing.")
 
-        # 3. Check page count guardrail
-        page_count = len(doc)
-        if page_count == 0:
-            raise HttpError(400, "The PDF document contains 0 pages.")
+    # 3. Check page count guardrail
+    try:
+        page_count = len(reader.pages)
+    except Exception as count_err:
+        raise HttpError(400, f"Unable to read PDF pages: {str(count_err)}")
 
-        if page_count > max_pages:
-            raise DocumentExhaustionError(
-                f"Document contains {page_count} pages, which exceeds the maximum limit of {max_pages} pages."
-            )
+    if page_count == 0:
+        raise HttpError(400, "The PDF document contains 0 pages.")
 
-        # 4. Check for excessive page dimensions (Decompression / raster bomb guard)
-        # Standard page is ~612x792 pt. Page exceeding 15000x15000 pt is suspicious.
-        first_page = doc[0]
-        rect = first_page.rect
-        if rect.width > 15000 or rect.height > 15000:
+    if page_count > max_pages:
+        raise DocumentExhaustionError(
+            f"Document contains {page_count} pages, which exceeds the maximum limit of {max_pages} pages."
+        )
+
+    # 4. Check for excessive page dimensions (Decompression / raster bomb guard)
+    try:
+        first_page = reader.pages[0]
+        mb = first_page.mediabox
+        width = float(mb.width)
+        height = float(mb.height)
+        if width > 15000 or height > 15000:
             raise DocumentExhaustionError("Document page dimensions exceed allowable safety boundaries.")
+    except DocumentExhaustionError:
+        raise
+    except Exception as dim_err:
+        logger.debug(f"Page dimension check notice: {dim_err}")
 
-        # 5. Scan for embedded JavaScript actions
-        has_javascript = False
-        js_keys_found = []
+    # 5. Scan for embedded JavaScript actions and neutralize via pikepdf
+    has_javascript = False
+    js_keys_found = []
 
-        # Check Catalog dictionary for Names/JavaScript or OpenAction
-        try:
-            catalog_xref = doc.pdf_catalog()
-            catalog_keys = doc.xref_get_keys(catalog_xref) if catalog_xref > 0 else []
+    try:
+        with pikepdf.Pdf.open(io.BytesIO(data)) as pdf:
+            root = pdf.Root
 
-            if "OpenAction" in catalog_keys or "AA" in catalog_keys:
+            if "/OpenAction" in root or "/AA" in root:
                 has_javascript = True
                 js_keys_found.append("CatalogActions")
 
-            # Check /Names tree for JavaScript
-            names_xref = doc.xref_get_key(catalog_xref, "Names")[1] if catalog_xref > 0 else ""
-            if "JavaScript" in names_xref:
+            if "/Names" in root and "/JavaScript" in root.Names:
                 has_javascript = True
                 js_keys_found.append("Names/JavaScript")
 
-            # Check embedded files
-            if doc.embfile_count() > 0:
-                logger.info(f"PDF {p.name} contains {doc.embfile_count()} embedded file attachments.")
-        except Exception as scan_err:
-            logger.debug(f"Action scan notice for {p.name}: {scan_err}")
+            if "/EmbeddedFiles" in root.get("/Names", {}):
+                logger.info(f"PDF {p.name} contains embedded file attachments.")
 
-        # Neutralize JavaScript if found and requested
-        if has_javascript and strip_javascript:
-            try:
-                # Remove OpenAction and AA from catalog if present
-                if catalog_xref > 0:
-                    for key in ["OpenAction", "AA"]:
-                        try:
-                            doc.xref_set_key(catalog_xref, key, "null")
-                        except Exception:
-                            pass
-                # Save sanitized version to disk
-                p.write_bytes(doc.tobytes(garbage=3, deflate=True))
+            # Neutralize JavaScript if found and requested
+            if has_javascript and strip_javascript:
+                if "/OpenAction" in root:
+                    del root["/OpenAction"]
+                if "/AA" in root:
+                    del root["/AA"]
+                if "/Names" in root and "/JavaScript" in root.Names:
+                    del root.Names["/JavaScript"]
+                pdf.save(p)
                 logger.info(f"Neutralized interactive JavaScript triggers in {p.name}: {js_keys_found}")
-            except Exception as neut_err:
-                logger.debug(f"Incremental JS neutralization notice: {neut_err}")
+    except Exception as scan_err:
+        logger.debug(f"Pikepdf action scan notice for {p.name}: {scan_err}")
 
-        return {
-            "page_count": page_count,
-            "has_javascript": has_javascript,
-            "js_keys": js_keys_found,
-            "size_bytes": p.stat().st_size
-        }
-
-    finally:
-        try:
-            doc.close()
-        except Exception:
-            pass
+    return {
+        "page_count": page_count,
+        "has_javascript": has_javascript,
+        "js_keys": js_keys_found,
+        "size_bytes": p.stat().st_size
+    }
